@@ -41,6 +41,7 @@ body {
     background: white;
     border-radius: 12px;
     box-shadow: var(--shadow);
+    cursor: pointer;
 }
 
 .breadcrumbs a {
@@ -52,7 +53,7 @@ body {
 
 .breadcrumbs a:hover {
     color: #004499;
-    text-decoration: underline;
+    transform: scale(1.05);
 }
 
 .breadcrumbs .separator {
@@ -65,19 +66,7 @@ body {
     display: flex;
     flex-wrap: wrap;
     gap: 20px;
-    justify-content: center;
-}
-
-/* ===== BOOKMARK TILE ===== */
-.tile {
-    width: var(--tile-size);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    cursor: pointer;
-    transition: var(--transition);
-    animation: fadeIn 0.3s ease forwards;
-    position: relative;
+    justify-content: flex-start;
 }
 
 .tile:hover {
@@ -104,30 +93,35 @@ body {
     width: auto;
     height: auto;
     object-fit: contain;
-
 }
 
-.tile-title {
-    margin-top: 8px; /* Отступ от плитки */
+.tile-title, .folder-title {
     font-size: 14px;
-    color: #333;
     text-align: center;
-    max-width: 100%; /* Максимальная ширина */
+    white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis; /* Обрезка длинных названий */
-    white-space: nowrap; /* Запрет на перенос строк */
+    text-overflow: ellipsis;
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 10px);
+    margin: 0 !important;
+    padding: 2px 5px !important;
+    -webkit-line-clamp: unset !important;
 }
 
 /* ===== FOLDER TILE ===== */
-.folder-tile {
+.tile, .folder-tile {
     width: var(--tile-size);
+    height: var(--tile-size); /* Фиксированная высота */
     display: flex;
     flex-direction: column;
     align-items: center;
     cursor: pointer;
     transition: var(--transition);
-    animation: fadeIn 0.3s ease forwards;
     position: relative;
+    padding-bottom: 25px !important;
 }
 
 .folder-tile:hover {
@@ -135,23 +129,30 @@ body {
 }
 
 /* ===== FOLDER GRID (4x3) ===== */
+.tile-icon, .folder-grid {
+
+    width: 100%;
+    height: 100%; /* Занимает всю площадь плитки */
+    justify-content: center;
+    align-items: center;
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    background: var(--folder-bg);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    backdrop-filter: blur(4px);
+    padding: 10px;
+}
+
 .folder-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     grid-template-rows: repeat(3, 1fr);
     gap: var(--grid-gap);
-    width: 100%;
-    height: calc(3 * var(--cell-size) + 2 * var(--grid-gap) + 20px);
-    padding: 10px;
-    background: var(--folder-bg);
-    border-radius: 12px;
-    box-shadow: var(--shadow);
-    border: 1px solid rgba(0, 0, 0, 0.05);
-    backdrop-filter: blur(4px);
 }
 
 .folder-grid:hover {
-    transform: scale(1.02);
+    transform: scale(1.05);
+
 }
 
 .grid-cell {
@@ -195,21 +196,6 @@ body {
     color: #4a80f0;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
     user-select: none;
-}
-
-/* ===== FOLDER TITLE ===== */
-.folder-title {
-    margin-top: 10px;
-    font-size: 14px;
-    font-weight: 600;
-    color: #333;
-    text-align: center;
-    width: 100%;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    padding: 0 8px;
-    transition: var(--transition);
 }
 
 .folder-tile:hover .folder-title {
