@@ -7,6 +7,7 @@ class SettingsManager {
       fontFamily: 'Segoe UI, system-ui, sans-serif',
     };
 
+    this.defaultSettings = {...this.settings}; // Сохраняем значения по умолчанию
     this.init();
   }
 
@@ -34,20 +35,21 @@ class SettingsManager {
     root.style.setProperty('--tile-bg', this.settings.tileColor);
     root.style.setProperty('--folder-bg', this.settings.folderColor);
     root.style.setProperty('font-family', this.settings.fontFamily);
+
+    // Обновляем отображаемые значения
+    document.getElementById('tileColorValue').textContent = this.settings.tileColor;
+    document.getElementById('folderColorValue').textContent = this.settings.folderColor;
   }
 
   setupEventListeners() {
-    // Получаем элементы DOM
     const toggleButton = document.getElementById('toggleSettings');
     const settingsPanel = document.getElementById('settingsPanel');
 
-    // Проверяем, что элементы существуют
     if (!toggleButton || !settingsPanel) {
       console.error('Не удалось найти кнопку или панель настроек');
       return;
     }
 
-    // Обработчик для ползунка размера плитки
     const tileSizeInput = document.getElementById('tileSize');
     const tileSizeValue = document.getElementById('tileSizeValue');
 
@@ -59,7 +61,6 @@ class SettingsManager {
       });
     }
 
-    // Кнопка сохранения настроек
     const saveButton = document.getElementById('saveSettings');
     if (saveButton) {
       saveButton.addEventListener('click', () => {
@@ -70,34 +71,67 @@ class SettingsManager {
       });
     }
 
-    // Кнопка для открытия/закрытия панели настроек
     toggleButton.addEventListener('click', () => {
       settingsPanel.classList.toggle('active');
-      // Меняем иконку кнопки
       if (settingsPanel.classList.contains('active')) {
-        toggleButton.textContent = '✖️'; // Крестик, если панель открыта
+        toggleButton.textContent = '✖️';
       } else {
-        toggleButton.textContent = '⚙️'; // Шестеренка, если панель закрыта
+        toggleButton.textContent = '⚙️';
       }
     });
 
-    // Загружаем текущие настройки в поля панели
+    const tileColorInput = document.getElementById('tileColor');
+    const folderColorInput = document.getElementById('folderColor');
+
+    if (tileColorInput) {
+      tileColorInput.addEventListener('input', () => {
+        this.settings.tileColor = tileColorInput.value;
+        this.applySettings();
+      });
+    }
+
+    if (folderColorInput) {
+      folderColorInput.addEventListener('input', () => {
+        this.settings.folderColor = folderColorInput.value;
+        this.applySettings();
+      });
+    }
+
+    // Обработчики для кнопок сброса
+    const resetTileColorButton = document.getElementById('resetTileColor');
+    const resetFolderColorButton = document.getElementById('resetFolderColor');
+
+    if (resetTileColorButton) {
+      resetTileColorButton.addEventListener('click', () => {
+        this.settings.tileColor = this.defaultSettings.tileColor;
+        tileColorInput.value = this.settings.tileColor;
+        this.applySettings();
+      });
+    }
+
+    if (resetFolderColorButton) {
+      resetFolderColorButton.addEventListener('click', () => {
+        this.settings.folderColor = this.defaultSettings.folderColor;
+        folderColorInput.value = this.settings.folderColor;
+        this.applySettings();
+      });
+    }
+
     if (tileSizeInput && tileSizeValue) {
       tileSizeInput.value = this.settings.tileSize;
       tileSizeValue.textContent = `${this.settings.tileSize}px`;
     }
-    const tileColorInput = document.getElementById('tileColor');
-    const folderColorInput = document.getElementById('folderColor');
-    const fontFamilyInput = document.getElementById('fontFamily');
-    if (tileColorInput && folderColorInput && fontFamilyInput) {
+    if (tileColorInput && folderColorInput) {
       tileColorInput.value = this.settings.tileColor;
       folderColorInput.value = this.settings.folderColor;
+    }
+    const fontFamilyInput = document.getElementById('fontFamily');
+    if (fontFamilyInput) {
       fontFamilyInput.value = this.settings.fontFamily;
     }
   }
 }
 
-// Инициализация менеджера настроек
 document.addEventListener('DOMContentLoaded', () => {
   const settingsManager = new SettingsManager();
 });

@@ -6,7 +6,7 @@ class BookmarksManager {
     // Привязываем контекст для обработчиков
     this.createBookmarkTile = this.createBookmarkTile.bind(this);
     this.createFolderTile = this.createFolderTile.bind(this);
-    
+
     this.init();
   }
 
