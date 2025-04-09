@@ -65,18 +65,19 @@ body {
     display: flex;
     flex-wrap: wrap;
     gap: 20px;
-    justify-content: flex-start;
+    justify-content: center;
 }
 
 /* ===== BOOKMARK TILE ===== */
 .tile {
-    width: 100px;
+    width: var(--tile-size);
     display: flex;
     flex-direction: column;
     align-items: center;
     cursor: pointer;
-    transition: transform 0.2s;
-    margin: 0 10px 20px;
+    transition: var(--transition);
+    animation: fadeIn 0.3s ease forwards;
+    position: relative;
 }
 
 .tile:hover {
@@ -84,15 +85,17 @@ body {
 }
 
 .tile-icon {
-    width: 80px;
-    height: 80px;
-    background-color: #fff;
-    border-radius: 10px;
     display: flex;
     justify-content: center;
     align-items: center;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    backdrop-filter: blur(4px);
+    padding: 10px;
+    background: var(--folder-bg);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    width: 100%;
+    height: 80%;
 }
 
 .tile-icon img {
@@ -101,15 +104,18 @@ body {
     width: auto;
     height: auto;
     object-fit: contain;
+
 }
 
 .tile-title {
-    margin-top: 8px;
+    margin-top: 8px; /* Отступ от плитки */
     font-size: 14px;
-    text-align: center;
     color: #333;
-    word-break: break-word;
-    max-width: 100px;
+    text-align: center;
+    max-width: 100%; /* Максимальная ширина */
+    overflow: hidden;
+    text-overflow: ellipsis; /* Обрезка длинных названий */
+    white-space: nowrap; /* Запрет на перенос строк */
 }
 
 /* ===== FOLDER TILE ===== */
