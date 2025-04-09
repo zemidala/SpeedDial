@@ -6,7 +6,7 @@
     --folder-bg: #e6f2ff;
     --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     --transition: all 0.2s ease;
-    --bookmark-bg: #f0f0f0;
+    --bookmark-bg: rgba(220, 220, 220, 0.7);
 }
 
 * {
@@ -68,7 +68,6 @@ body {
     justify-content: flex-start;
 }
 
-/* ===== BOOKMARK TILE STYLES (ИСПРАВЛЕНЫ) ===== */
 /* ===== BOOKMARK TILE ===== */
 .tile {
     width: 100px;
@@ -126,7 +125,7 @@ body {
 }
 
 .folder-tile:hover {
-    background: rgba(0,0,0,0.05);
+    color: #0066cc;
 }
 
 /* ===== FOLDER GRID (4x3) ===== */
@@ -143,6 +142,10 @@ body {
     box-shadow: var(--shadow);
     border: 1px solid rgba(0, 0, 0, 0.05);
     backdrop-filter: blur(4px);
+}
+
+.folder-grid:hover {
+    transform: scale(1.02);
 }
 
 .grid-cell {
