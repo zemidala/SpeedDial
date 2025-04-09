@@ -6,7 +6,7 @@
     --folder-bg: #e6f2ff;
     --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     --transition: all 0.2s ease;
-    --bookmark-bg: rgba(220, 220, 220, 0.7);
+    --bookmark-bg: white;;
 }
 
 * {
@@ -144,18 +144,22 @@ body {
 
 /* ===== FOLDER GRID (4x3) ===== */
 .folder-grid {
-
-    width: 100%;
-    height: 100%; /* Занимает всю площадь плитки */
-    justify-content: center;
-    align-items: center;
+    /*width: 100%;*/
+    /*height: 100%; !* Занимает всю площадь плитки *!*/
+    /*justify-content: center;*/
+    /*align-items: center;*/
     border-radius: 12px;
     box-shadow: var(--shadow);
     background: var(--folder-bg);
     border: 1px solid rgba(0, 0, 0, 0.05);
-    backdrop-filter: blur(4px); /* Для современных браузеров */
-    -webkit-backdrop-filter: blur(4px); /* Для Safari и старых версий */
+    /*backdrop-filter: blur(4px); !* Для современных браузеров *!*/
+    /*-webkit-backdrop-filter: blur(4px); !* Для Safari и старых версий *!*/
     padding: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+    align-content: space-between;
+    justify-content: space-between;
 }
 
 .folder-grid {
@@ -178,6 +182,7 @@ body {
     border-radius: 6px;
     transition: var(--transition);
     overflow: hidden;
+    background: var(--bookmark-bg);
 }
 
 /* ===== GRID ICONS ===== */
