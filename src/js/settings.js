@@ -1,7 +1,7 @@
 class SettingsManager {
   constructor() {
     this.settings = {
-      tileSize: 120,
+      tileWidth: 120, // Ширина плитки по умолчанию
       tileColor: '#ffffff',
       folderColor: '#e6f2ff',
       fontFamily: 'Segoe UI, system-ui, sans-serif',
@@ -31,12 +31,16 @@ class SettingsManager {
 
   applySettings() {
     const root = document.documentElement;
-    root.style.setProperty('--tile-size', `${this.settings.tileSize}px`);
+
+    // Применяем настройки через CSS-переменные
+    root.style.setProperty('--tile-size', `${this.settings.tileWidth}px`);
     root.style.setProperty('--tile-bg', this.settings.tileColor);
     root.style.setProperty('--folder-bg', this.settings.folderColor);
     root.style.setProperty('font-family', this.settings.fontFamily);
 
     // Обновляем отображаемые значения
+    document.getElementById('tileWidth').value = this.settings.tileWidth;
+    document.getElementById('tileWidthValue').textContent = `${this.settings.tileWidth}px`;
     document.getElementById('tileColorValue').textContent = this.settings.tileColor;
     document.getElementById('folderColorValue').textContent = this.settings.folderColor;
   }
@@ -57,6 +61,18 @@ class SettingsManager {
       tileSizeInput.addEventListener('input', () => {
         this.settings.tileSize = parseInt(tileSizeInput.value, 10);
         tileSizeValue.textContent = `${this.settings.tileSize}px`;
+        this.applySettings();
+      });
+    }
+
+    // Добавляем обработчик для ширины плитки
+    const tileWidthInput = document.getElementById('tileWidth');
+    const tileWidthValue = document.getElementById('tileWidthValue');
+
+    if (tileWidthInput && tileWidthValue) {
+      tileWidthInput.addEventListener('input', () => {
+        this.settings.tileWidth = parseInt(tileWidthInput.value, 10);
+        tileWidthValue.textContent = `${this.settings.tileWidth}px`;
         this.applySettings();
       });
     }
@@ -117,9 +133,14 @@ class SettingsManager {
       });
     }
 
+    // Загружаем текущие настройки в поля панели
     if (tileSizeInput && tileSizeValue) {
       tileSizeInput.value = this.settings.tileSize;
       tileSizeValue.textContent = `${this.settings.tileSize}px`;
+    }
+    if (tileWidthInput && tileWidthValue) {
+      tileWidthInput.value = this.settings.tileWidth;
+      tileWidthValue.textContent = `${this.settings.tileWidth}px`;
     }
     if (tileColorInput && folderColorInput) {
       tileColorInput.value = this.settings.tileColor;
