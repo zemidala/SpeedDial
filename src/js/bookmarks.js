@@ -2,12 +2,21 @@ class BookmarksManager {
   constructor() {
     this.currentFolderId = '1'; // Root folder
     this.folderStack = [];
+
+    // Привязываем контекст для обработчиков
+    this.createBookmarkTile = this.createBookmarkTile.bind(this);
+    this.createFolderTile = this.createFolderTile.bind(this);
+    
     this.init();
   }
 
   async init() {
-    await this.renderBookmarks();
-    this.setupEventListeners();
+    try {
+      await this.renderBookmarks();
+      this.setupEventListeners();
+    } catch (error) {
+      console.error('Initialization error:', error);
+    }
   }
 
   async getBookmarks(folderId) {
@@ -28,7 +37,7 @@ class BookmarksManager {
             return;
           }
           const node = nodes[0];
-          path.push({ id: node.id, title: node.title });
+          path.push({id: node.id, title: node.title});
           if (node.parentId && node.parentId !== '0') {
             getPath(node.parentId);
           } else {
@@ -41,21 +50,29 @@ class BookmarksManager {
   }
 
   async renderBookmarks(folderId = this.currentFolderId) {
-    const bookmarks = await this.getBookmarks(folderId);
-    const section = document.getElementById('section_bookmarks');
-    section.innerHTML = '';
-
-    // Render breadcrumbs
-    await this.renderBreadcrumbs(folderId);
-
-    // Render bookmarks and folders
-    bookmarks.forEach(item => {
-      if (item.url) {
-        this.createBookmarkTile(item, section);
-      } else {
-        this.createFolderTile(item, section);
+    try {
+      const bookmarks = await this.getBookmarks(folderId);
+      const section = document.getElementById('section_bookmarks');
+      if (!section) {
+        console.error('Section not found');
+        return;
       }
-    });
+      section.innerHTML = '';
+
+      await this.renderBreadcrumbs(folderId);
+
+      bookmarks.forEach(item => {
+        const element = item.url
+          ? this.createBookmarkTile(item, section)
+          : this.createFolderTile(item, section);
+
+        if (element instanceof Node) { // Проверяем, что это DOM-элемент
+          section.appendChild(element);
+        }
+      });
+    } catch (error) {
+      console.error('Render error:', error);
+    }
   }
 
   async renderBreadcrumbs(folderId) {

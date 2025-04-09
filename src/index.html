@@ -3,21 +3,40 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>New Tab</title>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge"> <!-- Добавлено для лучшей совместимости с Edge -->
+  <title>SimpleSpeedDial - New Tab</title> <!-- Более описательный title -->
+
+  <!-- Preload важных ресурсов -->
+  <link rel="preload" href="css/styles.css" as="style">
+  <link rel="preload" href="js/bookmarks.js" as="script">
+  <link rel="preload" href="js/main.js" as="script">
+
   <link rel="stylesheet" href="css/styles.css">
+
+  <!-- Favicon для случаев, если страница открыта вне расширения -->
+  <link rel="icon" href="../icons/icon48.png" type="image/png">
 </head>
 <body>
-<div class="container">
-  <nav class="breadcrumbs" id="breadcrumbs">
-    <a href="#" class="breadcrumb-home">Home</a>
+<!-- Добавлен ARIA-атрибуты для доступности -->
+<div class="container" role="main">
+  <nav class="breadcrumbs" id="breadcrumbs" aria-label="Breadcrumb navigation">
+    <a href="#" class="breadcrumb-home" aria-current="page">Home</a>
   </nav>
 
-  <section class="section_bookmarks" id="section_bookmarks">
+  <section class="section_bookmarks" id="section_bookmarks" aria-live="polite">
     <!-- Bookmarks and folders will be rendered here -->
   </section>
 </div>
 
-<script src="js/bookmarks.js"></script>
-<script src="js/main.js"></script>
+<!-- Скрипты в конце body с атрибутами defer -->
+<script src="js/bookmarks.js" defer></script>
+<script src="js/main.js" defer></script>
+
+<!-- Fallback для случаев, если JavaScript отключен -->
+<noscript>
+  <div class="noscript-warning">
+    <p>Please enable JavaScript to use SimpleSpeedDial extension.</p>
+  </div>
+</noscript>
 </body>
 </html>

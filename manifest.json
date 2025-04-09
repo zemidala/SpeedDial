@@ -4,20 +4,19 @@
   "version": "1.0",
   "description": "A tile-based new tab page with bookmarks for Microsoft Edge",
   "minimum_edge_version": "88.0",
-
   "chrome_url_overrides": {
     "newtab": "src/index.html"
   },
-
-  "permissions": ["bookmarks"],
+  "permissions": [
+    "bookmarks",
+    "storage"
+  ],
   "host_permissions": ["<all_urls>"],
-
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
-
   "action": {
     "default_icon": {
       "16": "icons/icon16.png",
@@ -26,9 +25,13 @@
     },
     "default_title": "Open Tile Bookmarks"
   },
-
   "web_accessible_resources": [{
-    "resources": ["src/*", "icons/*"],
-    "matches": ["<all_urls>"]
-  }]
+    "resources": [
+      "src/*",
+      "icons/*",
+      "styles/*"
+    ],
+    "matches": ["*://*/*" ]
+  }],
+  "short_name": "SpeedDial"
 }
