@@ -173,11 +173,11 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    background: rgba(255, 255, 255, 0.6);
+    background: transparent;
     border-radius: 6px;
     transition: var(--transition);
     overflow: hidden;
-    background: var(--bookmark-bg);
+    /*background: var(--bookmark-bg);*/
 }
 
 /* ===== GRID ICONS ===== */
@@ -196,6 +196,9 @@ body {
 .bookmark-icon {
     background: var(--bookmark-bg);
     padding: 4px;
+    /*height: 29px; !* Установите высоту для bookmark-icon *!*/
+    display: flex;
+    align-items: center;
 }
 
 .bookmark-icon img {
@@ -288,4 +291,19 @@ body {
 .empty-folder .grid-cell::before {
     content: '+';
     font-size: 14px;
+}
+
+/* Placeholder icon */
+.placeholder-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px; /* Установите ширину, соответствующую другим иконкам */
+    height: 16px; /* Установите высоту, соответствующую другим иконкам */
+    background-color: cornflowerblue; /* Цвет фона для иконки */
+    border-radius: 50%; /* Круглая форма */
+    color: #fff; /* Цвет текста */
+    font-size: 16px; /* Размер шрифта */
+    line-height: 40px; /* Выравнивание текста по вертикали */
+    padding-bottom: 3px;
 }

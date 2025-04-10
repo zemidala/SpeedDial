@@ -108,20 +108,36 @@ class BookmarksManager {
 
     const faviconUrl = `https://www.google.com/s2/favicons?domain=${new URL(bookmark.url).hostname}`;
 
-    const tileIcon = document.createElement('div');
-    tileIcon.className = 'tile-icon';
+    const icon = document.createElement('div');
+    icon.className = 'tile-icon';
 
     const img = document.createElement('img');
     img.src = faviconUrl;
     img.alt = '';
     img.className = 'tile-favicon'; // Добавляем класс для стилей
-    tileIcon.appendChild(img);
+
+    // Проверка на наличие favicon
+    fetch(faviconUrl)
+      .then(response => {
+        if (response.ok) {
+          img.src = faviconUrl; // Устанавливаем иконку, если ответ успешный
+          icon.appendChild(img);
+        } else {
+          icon.appendChild(this.createPlaceholderIcon(new URL(bookmark.url).hostname)); // Создаем иконку с первой буквой
+          icon.style.background = 'cornflowerblue';
+        }
+      })
+      .catch(() => {
+        // Игнорируем ошибку и устанавливаем иконку по умолчанию
+        icon.appendChild(this.createPlaceholderIcon(new URL(bookmark.url).hostname)); // Создаем иконку с первой буквой
+        icon.style.background = 'cornflowerblue';
+      });
 
     const tileTitle = document.createElement('div');
     tileTitle.className = 'tile-title';
     tileTitle.textContent = bookmark.title;
 
-    tile.appendChild(tileIcon);
+    tile.appendChild(icon);
     tile.appendChild(tileTitle);
 
     tile.addEventListener('click', (e) => {
@@ -155,10 +171,25 @@ class BookmarksManager {
 
           if (item.url) {
             const img = document.createElement('img');
-            img.src = `https://www.google.com/s2/favicons?domain=${new URL(item.url).hostname}`;
+            const faviconUrl = `https://www.google.com/s2/favicons?domain=${new URL(item.url).hostname}`;
             img.alt = '';
             img.loading = 'lazy';
-            icon.appendChild(img);
+
+            fetch(faviconUrl)
+              .then(response => {
+                if (response.ok) {
+                  img.src = faviconUrl; // Устанавливаем иконку, если ответ успешный
+                  icon.appendChild(img);
+                } else {
+                  icon.appendChild(this.createPlaceholderIcon(new URL(item.url).hostname)); // Создаем иконку с первой буквой
+                  icon.style.background = 'cornflowerblue';
+                }
+              })
+              .catch(() => {
+                // Игнорируем ошибку и устанавливаем иконку по умолчанию
+                icon.appendChild(this.createPlaceholderIcon(new URL(item.url).hostname)); // Создаем иконку с первой буквой
+                icon.style.background = 'cornflowerblue';
+              });
           } else {
             icon.textContent = '📁';
           }
@@ -177,6 +208,13 @@ class BookmarksManager {
     tile.appendChild(title);
     tile.addEventListener('click', () => this.navigateToFolder(folder.id));
     container.appendChild(tile);
+  }
+
+  createPlaceholderIcon(title) {
+    const placeholder = document.createElement('div');
+    placeholder.className = 'placeholder-icon';
+    placeholder.textContent = title.charAt(0).toUpperCase(); // Берем первую букву названия сайта
+    return placeholder;
   }
 
   navigateToFolder(folderId) {
