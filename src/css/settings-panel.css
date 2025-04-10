@@ -177,10 +177,10 @@ input[type="range"]:hover::-moz-range-thumb {
     position: fixed;
     top: 20px;
     right: 20px;
-    background-color: #0066cc;
+    /*background-color: #0066cc;*/
     color: white;
     border: none;
-    padding: 12px;
+    padding: 5px;
     border-radius: 50%;
     cursor: pointer;
     z-index: 1001;
@@ -190,8 +190,6 @@ input[type="range"]:hover::-moz-range-thumb {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 40px; /* Фиксированная ширина */
-    height: 40px; /* Фиксированная высота */
 }
 
 .settings-toggle:hover {

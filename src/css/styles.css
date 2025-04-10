@@ -152,9 +152,7 @@ body {
     box-shadow: var(--shadow);
     background: var(--folder-bg);
     border: 1px solid rgba(0, 0, 0, 0.05);
-    backdrop-filter: blur(4px); /* Для современных браузеров */
-    -webkit-backdrop-filter: blur(4px); /* Для Safari и старых версий */
-    padding: 10px;
+    padding: 8px;
 }
 
 .folder-grid {
@@ -195,7 +193,7 @@ body {
 /* Bookmark icon */
 .bookmark-icon {
     background: var(--bookmark-bg);
-    padding: 4px;
+    /*padding: 4px;*/
     /*height: 29px; !* Установите высоту для bookmark-icon *!*/
     display: flex;
     align-items: center;
