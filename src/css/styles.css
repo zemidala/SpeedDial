@@ -1,19 +1,25 @@
 /* ===== BASE STYLES ===== */
 :root {
-    --tile-size: 120px;
-    --grid-gap: 4px;
-    --tile-bg: #fff;
-    --folder-bg: #e6f2ff;
-    --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    --transition: all 0.2s ease;
-    --bookmark-bg: white;;
+    --tile-size: 120px; /* Ширина плитки по умолчанию */
+    --grid-gap: 20px; /* Отступ между элементами */
+    --tile-bg: #fff; /* Цвет плитки */
+    --folder-bg: #e6f2ff; /* Цвет папки */
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.1); /* Тень */
+    --transition: all 0.2s ease; /* Переходы */
+    --bookmark-bg: white; /* Цвет закладки */
+    --columns: 3; /* Количество колонок по умолчанию */
+    --tile-scale: 1; /* Масштаб контента по умолчанию */
+    --border-radius-folder: 8px; /* Радиус границы для папок */
+    --aspect-ratio-folder: 4 / 3; /* Соотношение сторон для папок */
+    --font-family: 'Segoe UI', system-ui, sans-serif; /* Шрифт по умолчанию */
 }
 
+/* ===== GLOBAL STYLES ===== */
 * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
-    font-family: 'Segoe UI', system-ui, sans-serif;
+    font-family: var(--font-family), sans-serif; /* Используем переменную для шрифта */
 }
 
 body {
@@ -26,7 +32,7 @@ body {
 .container {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: var(--grid-gap); /* Используем переменную для отступов */
     max-width: 1200px;
     margin: 0 auto;
 }
@@ -39,7 +45,7 @@ body {
     gap: 8px;
     padding: 12px 16px;
     background: white;
-    border-radius: 12px;
+    border-radius: var(--border-radius-folder);
     box-shadow: var(--shadow);
     cursor: pointer;
 }
@@ -63,28 +69,17 @@ body {
 
 /* ===== BOOKMARKS SECTION ===== */
 .section_bookmarks {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-    justify-content: flex-start;
+    display: grid;
+    grid-template-columns: repeat(var(--columns), 1fr); /* Используем переменную для количества колонок */
+    gap: var(--grid-gap);
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+    padding: 20px;
 }
 
 .tile:hover {
     transform: scale(1.05);
-}
-
-.tile-icon {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    border: 1px solid rgba(0, 0, 0, 0.05);
-    backdrop-filter: blur(4px);
-    padding: 10px;
-    background: var(--folder-bg);
-    border-radius: 12px;
-    box-shadow: var(--shadow);
-    width: 100%;
-    height: 80%;
 }
 
 .tile-icon img {
@@ -105,66 +100,56 @@ body {
     bottom: 0;
     left: 50%;
     transform: translateX(-50%);
-    width: calc(100% - 10px);
+    width: 100%;
     margin: 0 !important;
     padding: 2px 5px !important;
-    -webkit-line-clamp: unset !important;
+    border-bottom-left-radius: var(--border-radius-folder);
+    border-bottom-right-radius: var(--border-radius-folder);
+    background-color: azure;
 }
 
 /* ===== FOLDER TILE ===== */
 .tile, .folder-tile {
-    width: var(--tile-size);
-    height: var(--tile-size); /* Фиксированная высота */
+    background-color: var(--tile-bg);
+    border: 1px solid #ccc;
+    border-radius: var(--border-radius-folder);
+    text-align: center;
+    transition: transform 0.2s;
+    transform: scale(var(--tile-scale));
     display: flex;
-    flex-direction: column;
+    justify-content: center;
     align-items: center;
+    aspect-ratio: var(--aspect-ratio-folder);
+    width: 100%;
+    height: auto; /* Высота будет автоматически вычисляться */
+    position: relative; /* Для правильного позиционирования дочерних элементов */
     cursor: pointer;
-    transition: var(--transition);
-    position: relative;
-    padding-bottom: 25px !important;
 }
 
 .folder-tile:hover {
-    color: #0066cc;
+    transform: scale(1.05);
 }
 
-.tile-icon {
-    width: 100%;
-    height: 100%; /* Занимает всю площадь плитки */
-    justify-content: center;
-    align-items: center;
-    border-radius: 12px;
-    box-shadow: var(--shadow);
-    background: var(--tile-bg);
-    border: 1px solid rgba(0, 0, 0, 0.05);
-    backdrop-filter: blur(4px); /* Для современных браузеров */
-    -webkit-backdrop-filter: blur(4px); /* Для Safari и старых версий */
-    padding: 10px;
-}
-
-/* ===== FOLDER GRID (4x3) ===== */
-.folder-grid {
-    width: 100%;
-    height: 100%; /* Занимает всю площадь плитки */
-    justify-content: center;
-    align-items: center;
-    border-radius: 12px;
-    box-shadow: var(--shadow);
-    background: var(--folder-bg);
-    border: 1px solid rgba(0, 0, 0, 0.05);
-    padding: 8px;
-}
-
+/* ===== FOLDER GRID ===== */
 .folder-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     grid-template-rows: repeat(3, 1fr);
-    gap: var(--grid-gap);
+    gap: 4px;
+    width: 100%;
+    height: 100%; /* Занимает всю площадь плитки */
+    justify-content: center;
+    align-items: center;
+    border-radius: var(--border-radius-folder);
+    box-shadow: var(--shadow);
+    background: var(--folder-bg);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    padding: 8px 8px 25px;
+    cursor: pointer;
 }
 
 .folder-grid:hover {
     transform: scale(1.05);
-
 }
 
 .grid-cell {
@@ -175,7 +160,6 @@ body {
     border-radius: 6px;
     transition: var(--transition);
     overflow: hidden;
-    /*background: var(--bookmark-bg);*/
 }
 
 /* ===== GRID ICONS ===== */
@@ -193,8 +177,6 @@ body {
 /* Bookmark icon */
 .bookmark-icon {
     background: var(--bookmark-bg);
-    /*padding: 4px;*/
-    /*height: 29px; !* Установите высоту для bookmark-icon *!*/
     display: flex;
     align-items: center;
 }
@@ -214,7 +196,7 @@ body {
     user-select: none;
 }
 
-.folder-tile:hover .folder-title {
+.folder-tile:hover {
     color: #0066cc;
 }
 
@@ -233,8 +215,7 @@ body {
 /* ===== RESPONSIVE DESIGN ===== */
 @media (max-width: 1024px) {
     :root {
-        --tile-size: 140px;
-        --cell-size: 22px;
+        --tile-size: 140px; /* Увеличиваем размер плитки для планшетов */
     }
 
     .section_bookmarks {
@@ -244,9 +225,8 @@ body {
 
 @media (max-width: 768px) {
     :root {
-        --tile-size: 120px;
-        --cell-size: 20px;
-        --grid-gap: 5px;
+        --tile-size: 120px; /* Уменьшаем размер плитки для мобильных устройств */
+        --grid-gap: 5px; /* Уменьшаем отступы */
     }
 
     .folder-grid {
@@ -254,28 +234,27 @@ body {
     }
 
     .folder-icon {
-        font-size: 16px;
+        font-size: 16px; /* Уменьшаем размер шрифта для иконок папок */
     }
 }
 
 @media (max-width: 480px) {
     :root {
-        --tile-size: 100px;
-        --cell-size: 18px;
-        --grid-gap: 4px;
+        --tile-size: 100px; /* Еще меньше размер плитки для маленьких экранов */
+        --grid-gap: 4px; /* Уменьшаем отступы */
     }
 
     .container {
-        padding: 10px;
+        padding: 10px; /* Уменьшаем отступы контейнера */
     }
 
     .breadcrumbs {
-        padding: 10px 12px;
-        font-size: 14px;
+        padding: 10px 12px; /* Уменьшаем отступы для хлебных крошек */
+        font-size: 14px; /* Уменьшаем размер шрифта */
     }
 
     .folder-title {
-        font-size: 13px;
+        font-size: 13px; /* Уменьшаем размер шрифта для заголовков папок */
     }
 }
 

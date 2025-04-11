@@ -307,12 +307,3 @@ input[type="range"]:hover::-moz-range-thumb {
     background: #005bb5;
     transform: scale(1.1);
 }
-
-/* Отображение текущего значения */
-#tileWidthValue {
-    display: block;
-    margin-top: -10px;
-    margin-bottom: 15px;
-    font-size: 14px;
-    color: #555;
-}
