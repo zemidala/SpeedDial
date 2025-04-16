@@ -29,6 +29,7 @@ class SettingsManager {
     this.applySettings(); // Применяем настройки при инициализации
     this.adjustSectionBookmarks(); // Настраиваем section_bookmarks
     this.setupColumnsSelect();
+    this.setupOutsideClickHandler(); // Добавляем обработчик клика вне панели
   }
 
   loadSettings() {
@@ -149,6 +150,22 @@ class SettingsManager {
 
     // Загружаем текущие настройки в поля панели
     this.loadCurrentSettings();
+  }
+
+  setupOutsideClickHandler() {
+    const settingsPanel = document.getElementById('settingsPanel');
+    const toggleButton = document.getElementById('toggleSettings');
+
+    document.addEventListener('click', (e) => {
+      // Проверяем, был ли клик вне панели настроек и кнопки переключения
+      if (settingsPanel.classList.contains('active') &&
+        !settingsPanel.contains(e.target) &&
+        !toggleButton.contains(e.target)) {
+        this.saveSettings(); // Сохраняем настройки
+        settingsPanel.classList.remove('active'); // Закрываем панель
+        toggleButton.textContent = '⚙️'; // Обновляем иконку кнопки
+      }
+    });
   }
 
   loadCurrentSettings() {
