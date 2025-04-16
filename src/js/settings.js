@@ -1,12 +1,22 @@
+// settings.js
+
+import {
+  COLUMNS_OPTIONS,
+  DEFAULT_COLUMNS,
+  DEFAULT_FOLDER_COLOR,
+  DEFAULT_FONT_FAMILY,
+  DEFAULT_TILE_COLOR
+} from './constants.js';
+
 class SettingsManager {
   constructor() {
     // Начальные настройки
     this.settings = {
       tileScale: 1, // Масштаб контента по умолчанию
-      tileColor: '#ffffff', // Цвет плитки по умолчанию
-      folderColor: '#e6f2ff', // Цвет папки по умолчанию
-      fontFamily: 'Segoe UI, system-ui, sans-serif', // Шрифт по умолчанию
-      columns: 3 // Количество колонок по умолчанию
+      tileColor: DEFAULT_TILE_COLOR, // Цвет плитки по умолчанию
+      folderColor: DEFAULT_FOLDER_COLOR, // Цвет папки по умолчанию
+      fontFamily: DEFAULT_FONT_FAMILY, // Шрифт по умолчанию
+      columns: DEFAULT_COLUMNS // Количество колонок по умолчанию
     };
 
     this.defaultSettings = {...this.settings}; // Сохраняем значения по умолчанию
@@ -18,6 +28,7 @@ class SettingsManager {
     this.setupEventListeners(); // Устанавливаем обработчики событий
     this.applySettings(); // Применяем настройки при инициализации
     this.adjustSectionBookmarks(); // Настраиваем section_bookmarks
+    this.setupColumnsSelect();
   }
 
   loadSettings() {
@@ -48,7 +59,6 @@ class SettingsManager {
 
     // Обновляем значения в интерфейсе
     document.getElementById('columns').value = this.settings.columns;
-    document.getElementById('columnsValue').textContent = this.settings.columns;
   }
 
   adjustSectionBookmarks() {
@@ -57,6 +67,24 @@ class SettingsManager {
 
     // Обновляем количество колонок в сетке
     section.style.gridTemplateColumns = `repeat(${this.settings.columns}, 1fr)`;
+  }
+
+  setupColumnsSelect() {
+    const columnsSelect = document.getElementById('columns');
+    if (columnsSelect) {
+      columnsSelect.innerHTML = ''; // Очищаем существующие опции
+
+      // Генерируем опции на основе константы
+      COLUMNS_OPTIONS.forEach(value => {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = value;
+        if (value === this.settings.columns) {
+          option.selected = true; // Выбираем текущее значение
+        }
+        columnsSelect.appendChild(option);
+      });
+    }
   }
 
   setupEventListeners() {
@@ -90,14 +118,12 @@ class SettingsManager {
     }
 
     // Обработчик для количества колонок
-    const columnsInput = document.getElementById('columns');
-    const columnsValue = document.getElementById('columnsValue');
-    if (columnsInput) {
-      columnsInput.addEventListener('input', () => {
-        columnsValue.textContent = columnsInput.value; // Обновляем текстовое значение
-        this.settings.columns = parseInt(columnsInput.value, 10); // Обновляем количество колонок
+    const columnsSelect = document.getElementById('columns');
+    if (columnsSelect) {
+      columnsSelect.addEventListener('change', () => {
+        this.settings.columns = parseInt(columnsSelect.value, 10); // Обновляем количество колонок
         this.adjustSectionBookmarks(); // Применяем изменения к секции
-        localStorage.setItem('columns', this.settings.columns); // Сохраняем количество колонок
+        this.saveSettings(); // Сохраняем настройки
       });
     }
 

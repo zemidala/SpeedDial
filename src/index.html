@@ -11,7 +11,6 @@
   <link rel="preload" href="js/bookmarks.js" as="script">
   <link rel="preload" href="js/main.js" as="script">
   <link rel="stylesheet" href="css/settings-panel.css">
-
   <link rel="stylesheet" href="css/styles.css">
 
   <!-- Favicon для случаев, если страница открыта вне расширения -->
@@ -24,11 +23,8 @@
 <div class="settings-panel" id="settingsPanel">
   <h2>Settings</h2>
 
-  <div>
-    <label for="columns">Количество колонок:</label>
-    <input type="range" id="columns" min="1" max="10" value="6">
-    <span id="columnsValue">3</span>
-  </div>
+  <label for="columns">Количество колонок:</label>
+  <select id="columns"></select>
 
   <!-- Tile Color -->
   <label for="tileColor">Tile Color:</label>
@@ -68,7 +64,7 @@
 <!-- Скрипты в конце body с атрибутами defer -->
 <script src="js/bookmarks.js" defer></script>
 <script src="js/main.js" defer></script>
-<script src="js/settings.js"></script>
+<script type="module" src="js/settings.js"></script>
 
 <!-- Fallback для случаев, если JavaScript отключен -->
 <noscript>
