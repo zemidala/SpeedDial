@@ -1,7 +1,35 @@
+import {
+  BREADCRUMB_HOME_CLASS,
+  BREADCRUMBS_ID,
+  FOLDER_TILE_CLASS,
+  HOME_FOLDER_ID,
+  PLACEHOLDER_ICON_CLASS,
+  ROOT_FOLDER_ID,
+  SECTION_BOOKMARKS_ID,
+  TILE_CLASS,
+} from './constants.js';
+
+export function normalizeUrl(input) {
+  try {
+    // Если URL не содержит протокола, добавляем 'https://' по умолчанию
+    if (!input.startsWith('http://') && !input.startsWith('https://')) {
+      input = 'https://' + input;
+    }
+
+    // Создаем объект URL для проверки и нормализации
+    const url = new URL(input);
+
+    // Возвращаем нормализованный URL
+    return url.toString();
+  } catch (error) {
+    console.error('Invalid URL:', input);
+    return null; // Возвращаем null, если URL некорректный
+  }
+}
+
 class BookmarksManager {
   constructor() {
-    this.currentFolderId = '1'; // Root folder
-    this.folderStack = [];
+    this.currentFolderId = ROOT_FOLDER_ID; // Корневая папка
 
     // Привязываем контекст для обработчиков
     this.createBookmarkTile = this.createBookmarkTile.bind(this);
@@ -51,22 +79,28 @@ class BookmarksManager {
 
   async renderBookmarks(folderId = this.currentFolderId) {
     try {
+      console.log('Rendering bookmarks for folder:', folderId);
       const bookmarks = await this.getBookmarks(folderId);
-      const section = document.getElementById('section_bookmarks');
+      const section = document.getElementById(SECTION_BOOKMARKS_ID);
+
       if (!section) {
         console.error('Section not found');
         return;
       }
+
+      // Очищаем содержимое секции перед отрисовкой новых элементов
       section.innerHTML = '';
 
+      // Отрисовываем хлебные крошки
       await this.renderBreadcrumbs(folderId);
 
-      bookmarks.forEach(item => {
+      // Добавляем новые элементы (закладки и папки)
+      bookmarks.forEach((item) => {
         const element = item.url
           ? this.createBookmarkTile(item, section)
           : this.createFolderTile(item, section);
 
-        if (element instanceof Node) { // Проверяем, что это DOM-элемент
+        if (element instanceof Node) {
           section.appendChild(element);
         }
       });
@@ -76,15 +110,15 @@ class BookmarksManager {
   }
 
   async renderBreadcrumbs(folderId) {
-    const breadcrumbs = document.getElementById('breadcrumbs');
+    const breadcrumbs = document.getElementById(BREADCRUMBS_ID);
     const path = await this.getFolderPath(folderId);
 
-    // Clear existing breadcrumbs except Home
+    // Очищаем существующие крошки, кроме "Домой"
     while (breadcrumbs.children.length > 1) {
       breadcrumbs.removeChild(breadcrumbs.lastChild);
     }
 
-    // Add path breadcrumbs
+    // Добавляем крошки пути
     path.forEach((folder) => {
       const separator = document.createElement('span');
       separator.textContent = '›';
@@ -103,35 +137,52 @@ class BookmarksManager {
 
   createBookmarkTile(bookmark, container) {
     const tile = document.createElement('div');
-    tile.className = 'tile';
+    tile.className = TILE_CLASS;
     tile.dataset.id = bookmark.id;
 
-    const faviconUrl = `https://www.google.com/s2/favicons?domain=${new URL(bookmark.url).hostname}`;
+    // Нормализуем URL
+    const normalizedUrl = normalizeUrl(bookmark.url);
+    if (!normalizedUrl) {
+      console.error('Invalid URL for bookmark:', bookmark.url);
+      return;
+    }
+
+    const hostname = new URL(normalizedUrl).hostname;
+    const faviconUrl = `https://www.google.com/s2/favicons?domain=${hostname}`;
 
     const icon = document.createElement('div');
     icon.className = 'tile-icon';
 
-    const img = document.createElement('img');
-    img.src = faviconUrl;
-    img.alt = '';
-    img.className = 'tile-favicon'; // Добавляем класс для стилей
+    // Проверяем кэш
+    const cachedFavicon = localStorage.getItem(`favicon-${hostname}`);
+    if (cachedFavicon) {
+      const img = document.createElement('img');
+      img.src = cachedFavicon;
+      img.alt = '';
+      img.className = 'tile-favicon';
+      icon.appendChild(img);
+    } else {
+      fetch(faviconUrl)
+        .then((response) => {
+          if (response.ok) {
+            const img = document.createElement('img');
+            img.src = faviconUrl;
+            img.alt = '';
+            img.className = 'tile-favicon';
+            icon.appendChild(img);
 
-    // Проверка на наличие favicon
-    fetch(faviconUrl)
-      .then(response => {
-        if (response.ok) {
-          img.src = faviconUrl; // Устанавливаем иконку, если ответ успешный
-          icon.appendChild(img);
-        } else {
-          icon.appendChild(this.createPlaceholderIcon(new URL(bookmark.url).hostname)); // Создаем иконку с первой буквой
+            // Сохраняем в кэш
+            localStorage.setItem(`favicon-${hostname}`, faviconUrl);
+          } else {
+            icon.appendChild(this.createPlaceholderIcon(hostname));
+            icon.style.background = 'cornflowerblue';
+          }
+        })
+        .catch(() => {
+          icon.appendChild(this.createPlaceholderIcon(hostname));
           icon.style.background = 'cornflowerblue';
-        }
-      })
-      .catch(() => {
-        // Игнорируем ошибку и устанавливаем иконку по умолчанию
-        icon.appendChild(this.createPlaceholderIcon(new URL(bookmark.url).hostname)); // Создаем иконку с первой буквой
-        icon.style.background = 'cornflowerblue';
-      });
+        });
+    }
 
     const tileTitle = document.createElement('div');
     tileTitle.className = 'tile-title';
@@ -142,7 +193,7 @@ class BookmarksManager {
 
     tile.addEventListener('click', (e) => {
       e.preventDefault();
-      window.open(bookmark.url, '_self');
+      window.open(normalizedUrl, '_self');
     });
 
     container.appendChild(tile);
@@ -150,7 +201,7 @@ class BookmarksManager {
 
   createFolderTile(folder, container) {
     const tile = document.createElement('div');
-    tile.className = 'folder-tile';
+    tile.className = FOLDER_TILE_CLASS;
     tile.dataset.id = folder.id;
     tile.title = folder.title;
 
@@ -158,7 +209,7 @@ class BookmarksManager {
     const miniGrid = document.createElement('div');
     miniGrid.className = 'folder-grid';
 
-    this.getBookmarks(folder.id).then(children => {
+    this.getBookmarks(folder.id).then((children) => {
       for (let i = 0; i < 12; i++) {
         const cell = document.createElement('div');
         cell.className = 'grid-cell';
@@ -176,18 +227,17 @@ class BookmarksManager {
             img.loading = 'lazy';
 
             fetch(faviconUrl)
-              .then(response => {
+              .then((response) => {
                 if (response.ok) {
-                  img.src = faviconUrl; // Устанавливаем иконку, если ответ успешный
+                  img.src = faviconUrl;
                   icon.appendChild(img);
                 } else {
-                  icon.appendChild(this.createPlaceholderIcon(new URL(item.url).hostname)); // Создаем иконку с первой буквой
+                  icon.appendChild(this.createPlaceholderIcon(new URL(item.url).hostname));
                   icon.style.background = 'cornflowerblue';
                 }
               })
               .catch(() => {
-                // Игнорируем ошибку и устанавливаем иконку по умолчанию
-                icon.appendChild(this.createPlaceholderIcon(new URL(item.url).hostname)); // Создаем иконку с первой буквой
+                icon.appendChild(this.createPlaceholderIcon(new URL(item.url).hostname));
                 icon.style.background = 'cornflowerblue';
               });
           } else {
@@ -212,8 +262,8 @@ class BookmarksManager {
 
   createPlaceholderIcon(title) {
     const placeholder = document.createElement('div');
-    placeholder.className = 'placeholder-icon';
-    placeholder.textContent = title.charAt(0).toUpperCase(); // Берем первую букву названия сайта
+    placeholder.className = PLACEHOLDER_ICON_CLASS;
+    placeholder.textContent = title.charAt(0).toUpperCase(); // Первая буква названия сайта
     return placeholder;
   }
 
@@ -223,15 +273,15 @@ class BookmarksManager {
   }
 
   setupEventListeners() {
-    // Home breadcrumb click
-    document.querySelector('.breadcrumb-home').addEventListener('click', (e) => {
+    // Обработчик клика по "Домой"
+    document.querySelector(`.${BREADCRUMB_HOME_CLASS}`).addEventListener('click', (e) => {
       e.preventDefault();
-      this.navigateToFolder('0');
+      this.navigateToFolder(HOME_FOLDER_ID);
     });
   }
 }
 
-// Initialize when DOM is loaded
+// Инициализация при загрузке DOM
 document.addEventListener('DOMContentLoaded', () => {
   new BookmarksManager();
 });

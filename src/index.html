@@ -8,10 +8,11 @@
 
   <!-- Preload важных ресурсов -->
   <link rel="preload" href="css/styles.css" as="style">
-  <link rel="preload" href="js/bookmarks.js" as="script">
+  <!--  <link rel="preload" href="js/bookmarks.js" as="script">-->
   <link rel="preload" href="js/main.js" as="script">
   <link rel="stylesheet" href="css/settings-panel.css">
   <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/context-menu.css">
 
   <!-- Favicon для случаев, если страница открыта вне расширения -->
   <link rel="icon" href="../icons/icon48.png" type="image/png">
@@ -62,9 +63,11 @@
 </div>
 
 <!-- Скрипты в конце body с атрибутами defer -->
-<script src="js/bookmarks.js" defer></script>
+
 <script src="js/main.js" defer></script>
 <script type="module" src="js/settings.js"></script>
+<script type="module" src="js/bookmarks.js"></script>
+<script type="module" src="js/context-menu.js"></script>
 
 <!-- Fallback для случаев, если JavaScript отключен -->
 <noscript>

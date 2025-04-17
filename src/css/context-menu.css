@@ -1,0 +1,118 @@
+/* Стили для пользовательского контекстного меню */
+.context-menu {
+    position: absolute;
+    display: block; /* Всегда видимое, пока существует в DOM */
+    z-index: 1000;
+    background: #ffffff;
+    border: 1px solid #ddd;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 6px;
+    overflow: hidden;
+    padding: 5px 0;
+}
+
+.context-menu ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.context-menu li {
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #333;
+    transition: background-color 0.3s;
+}
+
+.context-menu li:hover {
+    background-color: #f0f0f0;
+}
+
+/* Активное состояние контекстного меню */
+.context-menu.active {
+    display: block; /* Показываем меню */
+}
+
+/* Стили для модального окна */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1001;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.modal.active {
+    display: flex; /* Показываем модальное окно */
+}
+
+.modal-content {
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    width: 300px;
+    max-width: 90%;
+}
+
+.modal-content h2 {
+    margin-bottom: 15px;
+    font-size: 18px;
+    color: #333;
+}
+
+.modal-content label {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 14px;
+    color: #555;
+}
+
+.modal-content input {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: space-between;
+}
+
+.modal-actions button {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.save-button {
+    background-color: #0066cc;
+    color: white;
+}
+
+.save-button:hover {
+    background-color: #005bb5;
+}
+
+.cancel-button {
+    background-color: #ff4d4d;
+    color: white;
+}
+
+.cancel-button:hover {
+    background-color: #e60000;
+}
