@@ -3,6 +3,7 @@
 export const THEMES = ['auto', 'light', 'dark'] as const;
 export const BACKGROUNDS = ['none', 'color', 'image', 'bing'] as const;
 export const ICON_STYLES = ['plate', 'fill'] as const;
+export const TITLE_POSITIONS = ['bottom-inside', 'top-inside', 'bottom-outside', 'top-outside'] as const;
 export const LOGO_SERVICE_IDS = ['none', 'google', 'duckduckgo', 'iconhorse', 'logodev', 'custom'] as const;
 export const SEARCH_ENGINES = ['google', 'yandex', 'bing', 'duckduckgo', 'custom'] as const;
 export const SORT_ORDERS = ['none', 'title', 'url', 'dateAdded'] as const;
@@ -11,6 +12,7 @@ export const TYPE_ORDERS = ['none', 'foldersFirst', 'bookmarksFirst'] as const;
 export type Theme = (typeof THEMES)[number];
 export type Background = (typeof BACKGROUNDS)[number];
 export type IconStyle = (typeof ICON_STYLES)[number];
+export type TitlePosition = (typeof TITLE_POSITIONS)[number];
 export type LogoService = (typeof LOGO_SERVICE_IDS)[number];
 export type SearchEngine = (typeof SEARCH_ENGINES)[number];
 export type SortOrder = (typeof SORT_ORDERS)[number];
@@ -46,6 +48,8 @@ export interface Settings {
   showBackTile: boolean;
   showAddTile: boolean;
   showTitles: boolean;
+  /** Где название: сверху или снизу, внутри плитки или под/над ней */
+  titlePosition: TitlePosition;
   showTitleIcons: boolean;
   background: Background;
   backgroundColor: string;
@@ -126,6 +130,7 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = {
   showBackTile: true,
   showAddTile: true,
   showTitles: true,
+  titlePosition: 'bottom-inside',
   showTitleIcons: false,
   background: 'none',
   backgroundColor: '#1f2933',
@@ -163,6 +168,7 @@ const ENUMS: Partial<Record<keyof Settings, readonly string[]>> = {
   theme: THEMES,
   background: BACKGROUNDS,
   iconStyle: ICON_STYLES,
+  titlePosition: TITLE_POSITIONS,
   logoService: LOGO_SERVICE_IDS,
   searchEngine: SEARCH_ENGINES,
   sortOrder: SORT_ORDERS,

@@ -1,33 +1,54 @@
-/* ===== Плитка: закладка, папка, «Назад», «Добавить» ===== */
+/* ===== Плитка: закладка, папка, «Назад», «Добавить» =====
+   .tile — вся плитка (ссылка или кнопка), .tile__card — карточка с картинкой,
+   .tile__title — название: внутри карточки или снаружи, сверху или снизу */
 .tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.tile:focus-visible {
+  outline: none;
+}
+
+.tile__card {
   position: relative;
   display: flex;
   flex-direction: column;
   aspect-ratio: 4 / 3;
   overflow: hidden;
-  /* Размеры внутри плитки считаются от её ширины (единицы cqi) */
+  /* Размеры внутри карточки считаются от её ширины (единицы cqi) */
   container-type: inline-size;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--tile-bg);
   box-shadow: var(--shadow);
   color: var(--tile-text, var(--text));
-  text-decoration: none;
   transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s;
 }
 
-.tile:hover,
-.tile:focus-visible {
+.tile:hover .tile__card,
+.tile:focus-visible .tile__card {
   transform: translateY(-2px);
   box-shadow: var(--shadow-raised);
 }
 
-.tile:focus-visible {
+.tile:focus-visible .tile__card {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
-/* Область над названием: иконка, миниатюра или сетка папки */
+/* Область под картинку: иконка, миниатюра или сетка папки */
 .tile__visual {
   position: relative;
   display: flex;
@@ -46,14 +67,28 @@
   object-position: top center;
 }
 
+/* Значок папки (без миниатюр) и значки служебных плиток */
+.tile__visual .folder-tile__icon {
+  width: auto;
+  height: calc(var(--icon-scale) * 1%);
+  color: var(--accent);
+  stroke-width: 1.5;
+}
+
+.tile__visual .action-tile__icon {
+  width: auto;
+  height: calc(var(--icon-scale) * 0.6%);
+}
+
+/* ===== Название ===== */
 .tile__title {
   display: flex;
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
   gap: 6px;
+  min-width: 0;
   padding: 4px 8px;
-  border-top: 1px solid var(--border);
   font-size: 13px;
 }
 
@@ -63,55 +98,81 @@
   white-space: nowrap;
 }
 
+/* Внутри карточки — полоса с разделителем */
+.tile--title-bottom-inside .tile__title {
+  border-top: 1px solid var(--border);
+}
+
+.tile--title-top-inside .tile__card {
+  flex-direction: column-reverse;
+}
+
+.tile--title-top-inside .tile__title {
+  border-bottom: 1px solid var(--border);
+}
+
+/* Снаружи — под карточкой или над ней */
+.tile--title-top-outside {
+  flex-direction: column-reverse;
+}
+
+.tile--title-bottom-outside .tile__title,
+.tile--title-top-outside .tile__title {
+  padding: 0 4px;
+}
+
+/* На фоновом изображении названия снаружи должны читаться на любой картинке */
+.page--background-image .tile--title-bottom-outside .tile__title,
+.page--background-image .tile--title-top-outside .tile__title {
+  color: #fff;
+  text-shadow: 0 1px 3px rgb(0 0 0 / 0.8);
+}
+
 /* ===== Модификаторы ===== */
-.tile--folder {
+.tile--folder .tile__card {
   background: var(--folder-bg);
   color: var(--folder-text, var(--text));
 }
 
 /* Лёгкий оттенок основного цвета иконки поверх цвета плитки */
-.tile--tinted {
+.tile--tinted .tile__card {
   background: color-mix(in oklab, var(--icon-color) 14%, var(--tile-bg));
 }
 
 /* «Назад» и «Добавить»: служебные плитки без фона */
 .tile--action {
+  color: var(--text-muted);
+}
+
+.tile--action .tile__card {
   border-style: dashed;
   background: transparent;
   box-shadow: none;
   color: var(--text-muted);
 }
 
-.tile--action:hover,
-.tile--action:focus-visible {
+.tile--action:hover .tile__card,
+.tile--action:focus-visible .tile__card {
   background: var(--surface);
   color: var(--text);
 }
 
-.tile--dragging {
-  opacity: 0.4;
+/* Перетаскиваемая плитка: на её месте остаётся «след», сама она — под курсором */
+.tile--dragging .tile__card {
+  border-style: dashed;
+  border-color: var(--accent);
+  box-shadow: none;
+  opacity: 0.35;
+  transform: none;
 }
 
-.tile--drop-into {
+.tile--dragging .tile__title {
+  opacity: 0.35;
+}
+
+/* Папка или «Назад», куда упадёт закладка */
+.tile--drop-into .tile__card {
   outline: 2px dashed var(--accent);
   outline-offset: 2px;
-}
-
-.tile--drop-before::after,
-.tile--drop-after::after {
-  position: absolute;
-  top: 8px;
-  bottom: 8px;
-  width: 4px;
-  border-radius: 2px;
-  background: var(--accent);
-  content: '';
-}
-
-.tile--drop-before::after {
-  left: 0;
-}
-
-.tile--drop-after::after {
-  right: 0;
+  transform: scale(1.04);
 }

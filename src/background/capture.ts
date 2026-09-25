@@ -27,6 +27,16 @@ function waitForLoad(tabId: number): Promise<void> {
   });
 }
 
+// Номер «сеанса» съёмки: отмена увеличивает его, и начатые раньше снимки прекращаются
+let generation = 0;
+let currentWindowId: number | undefined;
+
+/** Останавливает создание миниатюр: текущий снимок и всю очередь */
+export function cancelCapture(): void {
+  generation++;
+  if (currentWindowId !== undefined) chrome.windows.remove(currentWindowId).catch(() => undefined);
+}
+
 async function captureOne(url: string, delaySeconds: number): Promise<Blob> {
   const window = await chrome.windows.create({
     url,
@@ -37,6 +47,7 @@ async function captureOne(url: string, delaySeconds: number): Promise<Blob> {
   });
   const tabId = window?.tabs?.[0]?.id;
   if (!window?.id || tabId === undefined) throw new Error('Не удалось открыть окно для снимка');
+  currentWindowId = window.id;
 
   try {
     await waitForLoad(tabId);
@@ -45,6 +56,7 @@ async function captureOne(url: string, delaySeconds: number): Promise<Blob> {
     const screenshot = await (await fetch(dataUrl)).blob();
     return await resizeImage(screenshot, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT, 'image/jpeg', 0.85);
   } finally {
+    currentWindowId = undefined;
     await chrome.windows.remove(window.id).catch(() => undefined);
   }
 }
@@ -53,18 +65,29 @@ async function captureOne(url: string, delaySeconds: number): Promise<Blob> {
 let queue: Promise<void> = Promise.resolve();
 
 export function captureThumbnails(items: CaptureItem[]): Promise<void> {
+  const batchGeneration = generation;
+  const isCancelled = () => batchGeneration !== generation;
+
   queue = queue.then(async () => {
+    const total = items.length;
     const {captureDelay} = await loadSettings();
     let done = 0;
     for (const {id, url} of items) {
+      if (isCancelled()) break;
       try {
-        await saveThumbnail(id, await captureOne(url, captureDelay), 'capture');
+        const screenshot = await captureOne(url, captureDelay);
+        // Снимок, закончившийся уже после отмены, не сохраняем
+        if (isCancelled()) break;
+        await saveThumbnail(id, screenshot, 'capture');
         await sendMessage({type: 'thumbnails-changed', ids: [id]});
       } catch (error) {
-        console.error('Failed to capture', url, error);
+        if (!isCancelled()) console.error('Failed to capture', url, error);
       }
-      await sendMessage({type: 'capture-progress', done: ++done, total: items.length});
+      if (isCancelled()) break;
+      await sendMessage({type: 'capture-progress', done: ++done, total});
     }
+    // После отмены сообщаем, что всё закончено, — индикатор на страницах исчезнет
+    if (isCancelled()) await sendMessage({type: 'capture-progress', done: total, total});
   });
   return queue;
 }

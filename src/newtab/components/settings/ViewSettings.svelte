@@ -5,7 +5,14 @@
   import {LOGO_SERVICES} from '../../../lib/logoServices';
   import {BING_ACCESS, SITE_ACCESS} from '../../../lib/permissionSets';
   import {permissions} from '../../../lib/permissions.svelte';
-  import {type Background, type IconStyle, type LogoService, RANGES, type Theme} from '../../../lib/settings/schema';
+  import {
+    type Background,
+    type IconStyle,
+    type LogoService,
+    RANGES,
+    type Theme,
+    type TitlePosition,
+  } from '../../../lib/settings/schema';
   import {settings} from '../../../lib/settings/store.svelte';
   import ColorRow from './ColorRow.svelte';
   import RangeRow from './RangeRow.svelte';
@@ -136,6 +143,17 @@
 <SwitchRow key="showBackTile" label="Показывать плитку «Назад» в папках"/>
 <SwitchRow key="showAddTile" label="Показывать плитку добавления закладки"/>
 <SwitchRow key="showTitles" label="Показывать названия закладок"/>
+<SelectRow
+  label="Положение названий"
+  value={current.titlePosition}
+  options={[
+    {value: 'bottom-inside', label: 'Снизу, внутри плитки'},
+    {value: 'top-inside', label: 'Сверху, внутри плитки'},
+    {value: 'bottom-outside', label: 'Под плиткой'},
+    {value: 'top-outside', label: 'Над плиткой'},
+  ]}
+  onchange={(value) => settings.update({titlePosition: value as TitlePosition})}
+/>
 <SwitchRow key="showTitleIcons" label="Показывать иконки сайтов рядом с названием" disabled={!current.showTitles}/>
 
 <ColorRow key="tileColor" label="Цвет плитки"/>

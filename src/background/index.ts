@@ -1,7 +1,7 @@
 import {onMessage, sendMessage} from '../lib/messages';
 import {onSettingsChanged} from '../lib/settings/storage';
 import {deleteThumbnail} from '../lib/thumbnails/storage';
-import {captureThumbnails} from './capture';
+import {cancelCapture, captureThumbnails} from './capture';
 import {setupContextMenu, syncContextMenu} from './contextMenu';
 
 // Клик по значку расширения открывает новую вкладку, то есть SpeedDial
@@ -21,6 +21,8 @@ onSettingsChanged(refreshContextMenu);
 onMessage((message) => {
   if (message.type === 'capture-thumbnails') {
     captureThumbnails(message.items).catch((error) => console.error('Failed to capture thumbnails', error));
+  } else if (message.type === 'cancel-capture') {
+    cancelCapture();
   }
 });
 

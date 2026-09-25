@@ -68,6 +68,34 @@ test('кнопка обновления миниатюр с подпапками
   await expect(thumbnailOf(newtab, 'Inner')).toBeVisible({timeout: 30_000});
 });
 
+test('создание миниатюр останавливается повторным нажатием', async ({newtab}) => {
+  test.setTimeout(60_000);
+  // Большая задержка перед снимком — успеем остановить, пока открыто окно первой страницы
+  const settings = await openSettings(newtab, 'Общие');
+  await settings.getByLabel('Задержка перед снимком').fill('6');
+  await settings.getByLabel('Включая подпапки').check();
+  await settings.getByRole('button', {name: 'Готово'}).click();
+
+  await newtab.getByRole('button', {name: 'Обновить миниатюры'}).click();
+  const stop = newtab.getByRole('button', {name: 'Остановить создание миниатюр'});
+  await expect(stop).toHaveText('0/2');
+
+  // Отказались останавливать — съёмка продолжается
+  await stop.click();
+  await newtab.getByRole('dialog', {name: 'Остановить создание миниатюр?'}).getByRole('button', {name: 'Отмена'}).click();
+  await expect(stop).toBeVisible();
+
+  await stop.click();
+  await newtab.getByRole('dialog', {name: 'Остановить создание миниатюр?'}).getByRole('button', {name: 'Остановить'}).click();
+  await expect(newtab.getByRole('button', {name: 'Обновить миниатюры'})).toBeVisible();
+
+  // Окно для снимка закрыто сразу, и после истечения задержки миниатюры так и не появились
+  await expect.poll(() => newtab.evaluate(async () => (await chrome.windows.getAll()).length)).toBe(1);
+  await newtab.waitForTimeout(8000);
+  await expect(thumbnailOf(newtab, 'Shot')).toHaveCount(0);
+  await expect(newtab.getByRole('button', {name: 'Обновить миниатюры'})).toBeVisible();
+});
+
 test('снимок при создании закладки', async ({newtab}) => {
   const dialog = await openSettings(newtab, 'Общие');
   await dialog.getByLabel('Снимок страницы при создании закладки').check();

@@ -1,6 +1,9 @@
 <script lang="ts">
-  import {bookmarks} from '../../../lib/bookmarks.svelte';
+  import {flip} from 'svelte/animate';
+  import {MediaQuery} from 'svelte/reactivity';
+  import {type BookmarkNode, bookmarks} from '../../../lib/bookmarks.svelte';
   import {ROOT_FOLDER_ID} from '../../../lib/constants';
+  import {dragDrop} from '../../../lib/dragDrop.svelte';
   import {SEARCH_ENGINE_NAMES} from '../../../lib/search';
   import {search} from '../../../lib/search.svelte';
   import {settings} from '../../../lib/settings/store.svelte';
@@ -10,17 +13,36 @@
   import BookmarkTile from './BookmarkTile.svelte';
   import FolderTile from './FolderTile.svelte';
 
-  const items = $derived(search.active
-    ? search.results
-    : sortNodes(bookmarks.items, settings.current.sortOrder, settings.current.typeOrder));
+  const REORDER_DURATION = 200; // Мс; плитки плавно расступаются при перетаскивании
 
-  // «Назад» — только во вложенных папках: из «Панели закладок» и других корневых папок ведут крошки
+  const reducedMotion = new MediaQuery('(prefers-reduced-motion: reduce)');
+
+  const items = $derived.by((): BookmarkNode[] => {
+    if (search.active) return search.results;
+    // Во время перетаскивания — порядок «вживую»
+    const preview = dragDrop.previewIds;
+    if (preview) {
+      const byId = new Map(bookmarks.items.map((item) => [item.id, item]));
+      const ordered = preview.map((id) => byId.get(id)).filter((item) => item !== undefined);
+      if (ordered.length === bookmarks.items.length) return ordered;
+    }
+    return sortNodes(bookmarks.items, settings.current.sortOrder, settings.current.typeOrder);
+  });
+
+  // Пришёл обновлённый список из браузера — временный порядок перетаскивания больше не нужен
+  $effect(() => {
+    void bookmarks.items;
+    dragDrop.settle();
+  });
+
+  // «Назад» — только во вложенных папках: из «Панели избранного» и других корневых папок ведут крошки
   const parentFolderId = $derived.by(() => {
     const parent = bookmarks.parentFolderId;
     if (search.active || !settings.current.showBackTile || parent === ROOT_FOLDER_ID) return null;
     return parent;
   });
   const showAddTile = $derived(!search.active && settings.current.showAddTile && bookmarks.loaded);
+
   const emptyMessage = $derived.by(() => {
     if (items.length > 0) return null;
     if (search.active) {
@@ -36,12 +58,15 @@
     <BackTile folderId={parentFolderId}/>
   {/if}
 
-  {#each items as item (item.id)}
-    {#if item.url}
-      <BookmarkTile bookmark={item}/>
-    {:else}
-      <FolderTile folder={item} preview={bookmarks.previews[item.id] ?? []}/>
-    {/if}
+  {#each items as item, slot (item.id)}
+    <!-- Ячейка сетки: по ячейкам определяется место при перетаскивании, в них же анимируется перестановка -->
+    <div class="bookmark-grid__cell" data-grid-slot={slot} animate:flip={{duration: reducedMotion.current ? 0 : REORDER_DURATION}}>
+      {#if item.url}
+        <BookmarkTile bookmark={item}/>
+      {:else}
+        <FolderTile folder={item} preview={bookmarks.previews[item.id] ?? []}/>
+      {/if}
+    </div>
   {/each}
 
   {#if showAddTile}
@@ -62,6 +87,12 @@
       minmax(max(120px, (100% - (var(--columns) - 1) * var(--gap)) / var(--columns)), 1fr)
     );
     gap: var(--gap);
+  }
+
+  .bookmark-grid__cell {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
   }
 
   .bookmark-grid__empty {

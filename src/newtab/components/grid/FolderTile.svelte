@@ -6,26 +6,23 @@
   import {settings} from '../../../lib/settings/store.svelte';
   import Icon from '../ui/Icon.svelte';
   import SiteIcon from './SiteIcon.svelte';
+  import Tile from './Tile.svelte';
 
   let {folder, preview}: {folder: BookmarkNode; preview: BookmarkNode[]} = $props();
 
   // Пустые ячейки дополняют сетку миниатюр до полного размера
   const emptyCells = $derived(Math.max(0, FOLDER_PREVIEW_SIZE - preview.length));
-  const dropPosition = $derived(dragDrop.target?.id === folder.id ? dragDrop.target.position : null);
+  const dropInto = $derived(dragDrop.target?.id === folder.id);
 </script>
 
-<a
-  class="tile tile--folder"
-  class:tile--dragging={dragDrop.draggedId === folder.id}
-  class:tile--drop-before={dropPosition === 'before'}
-  class:tile--drop-after={dropPosition === 'after'}
-  class:tile--drop-into={dropPosition === 'into'}
+<Tile
   href={folderHref(folder.id)}
+  modifiers={{folder: true, dragging: dragDrop.draggedId === folder.id, 'drop-into': dropInto}}
   title={folder.title}
   data-bookmark-id={folder.id}
   data-folder
 >
-  <span class="tile__visual">
+  {#snippet visual()}
     {#if settings.current.folderPreview}
       <span class="folder-preview" aria-hidden="true">
         {#each preview as item (item.id)}
@@ -44,13 +41,11 @@
     {:else}
       <Icon name="folder" class="folder-tile__icon"/>
     {/if}
-  </span>
-  {#if settings.current.showTitles}
-    <span class="tile__title">
-      <span class="tile__title-text">{folder.title}</span>
-    </span>
-  {/if}
-</a>
+  {/snippet}
+  {#snippet label()}
+    <span class="tile__title-text">{folder.title}</span>
+  {/snippet}
+</Tile>
 
 <style>
   .folder-preview {
@@ -75,12 +70,5 @@
 
   .folder-preview__cell--empty {
     background: none;
-  }
-
-  .tile__visual :global(.folder-tile__icon) {
-    width: auto;
-    height: calc(var(--icon-scale) * 1%);
-    color: var(--accent);
-    stroke-width: 1.5;
   }
 </style>

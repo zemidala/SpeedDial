@@ -53,6 +53,12 @@ class ThumbnailsStore {
     return sendMessage({type: 'capture-thumbnails', items});
   }
 
+  /** Останавливает создание миниатюр; готовые сохраняются */
+  cancelCapture(): Promise<void> {
+    this.progress = null;
+    return sendMessage({type: 'cancel-capture'});
+  }
+
   /** Своя картинка вместо снимка страницы */
   async setCustom(bookmarkId: string, image: Blob): Promise<void> {
     const blob = await resizeImage(image, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);

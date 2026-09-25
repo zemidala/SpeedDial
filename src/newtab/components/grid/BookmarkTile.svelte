@@ -8,13 +8,14 @@
   import {thumbnails} from '../../../lib/thumbnails/store.svelte';
   import {displayHost, isWebUrl} from '../../../lib/url';
   import SiteIcon from './SiteIcon.svelte';
+  import Tile from './Tile.svelte';
 
   let {bookmark}: {bookmark: BookmarkNode} = $props();
 
   const url = $derived(bookmark.url ?? '');
   const icon = $derived(icons.get(url));
   const thumbnail = $derived(thumbnails.get(bookmark.id));
-  const {iconStyle, iconTint, showTitles, showTitleIcons, openInNewTab} = $derived(settings.current);
+  const {iconStyle, iconTint, showTitleIcons, openInNewTab} = $derived(settings.current);
 
   const hasThumbnail = $derived(Boolean(thumbnail.url));
   const tint = $derived(iconTint && !hasThumbnail ? icon.info?.color : null);
@@ -26,8 +27,6 @@
     return icon.loaded ? hashColor(displayHost(url)) : null;
   });
 
-  const dropPosition = $derived(dragDrop.target?.id === bookmark.id ? dragDrop.target.position : null);
-
   // Веб-ссылки браузер открывает сам (включая Ctrl+клик и среднюю кнопку).
   // Адреса вроде edge:// и file:// ссылкой со страницы расширения не открыть — только через chrome.tabs.
   function open(event: MouseEvent, inNewTab: boolean) {
@@ -37,33 +36,28 @@
   }
 </script>
 
-<a
-  class="tile"
-  class:tile--tinted={tint}
-  class:tile--dragging={dragDrop.draggedId === bookmark.id}
-  class:tile--drop-before={dropPosition === 'before'}
-  class:tile--drop-after={dropPosition === 'after'}
-  style:--icon-color={tint}
+<Tile
   href={url}
+  modifiers={{tinted: Boolean(tint), dragging: dragDrop.draggedId === bookmark.id}}
+  visualBackground={fillColor}
+  style={tint ? `--icon-color: ${tint}` : undefined}
   target={openInNewTab && isWebUrl(url) ? '_blank' : undefined}
   title={bookmark.title}
   data-bookmark-id={bookmark.id}
-  onclick={(event) => open(event, openInNewTab || event.ctrlKey || event.metaKey)}
-  onauxclick={(event) => event.button === 1 && open(event, true)}
+  onclick={(event: MouseEvent) => open(event, openInNewTab || event.ctrlKey || event.metaKey)}
+  onauxclick={(event: MouseEvent) => event.button === 1 && open(event, true)}
 >
-  <span class="tile__visual" style:background={fillColor}>
+  {#snippet visual()}
     {#if thumbnail.url}
       <img class="tile__thumbnail" src={thumbnail.url} alt="">
     {:else}
       <SiteIcon entry={icon} appearance={iconStyle}/>
     {/if}
-  </span>
-  {#if showTitles}
-    <span class="tile__title">
-      {#if showTitleIcons}
-        <SiteIcon entry={icon} appearance="mini"/>
-      {/if}
-      <span class="tile__title-text">{bookmark.title || displayHost(url)}</span>
-    </span>
-  {/if}
-</a>
+  {/snippet}
+  {#snippet label()}
+    {#if showTitleIcons}
+      <SiteIcon entry={icon} appearance="mini"/>
+    {/if}
+    <span class="tile__title-text">{bookmark.title || displayHost(url)}</span>
+  {/snippet}
+</Tile>

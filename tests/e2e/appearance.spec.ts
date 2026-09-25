@@ -78,12 +78,32 @@ test('свой цвет плитки с читаемым текстом в тё�
 
   // Подкрашивание отключаем, чтобы проверить чистый цвет
   await dialog.getByLabel('Подкрашивать плитку цветом иконки').uncheck();
-  const example = tile(newtab, 'Example');
-  await expect(example).toHaveCSS('background-color', 'rgb(255, 255, 255)');
-  await expect(example).toHaveCSS('color', 'rgb(31, 35, 40)');
+  const card = tile(newtab, 'Example').locator('.tile__card');
+  await expect(card).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+  await expect(card).toHaveCSS('color', 'rgb(31, 35, 40)');
 
   await reset.click();
-  await expect(example).toHaveCSS('background-color', 'rgb(38, 42, 49)');
+  await expect(card).toHaveCSS('background-color', 'rgb(38, 42, 49)');
+});
+
+test('положение названий: внутри и снаружи, сверху и снизу', async ({newtab}) => {
+  const example = tile(newtab, 'Example');
+  const card = example.locator('.tile__card');
+  const title = example.locator('.tile__title');
+  const place = async () => {
+    const cardBox = (await card.boundingBox())!;
+    const titleBox = (await title.boundingBox())!;
+    const inside = titleBox.y >= cardBox.y && titleBox.y + titleBox.height <= cardBox.y + cardBox.height + 1;
+    const top = titleBox.y < cardBox.y + cardBox.height / 2;
+    return `${top ? 'top' : 'bottom'}-${inside ? 'inside' : 'outside'}`;
+  };
+
+  expect(await place()).toBe('bottom-inside');
+  const dialog = await openSettings(newtab);
+  for (const position of ['top-inside', 'bottom-outside', 'top-outside', 'bottom-inside']) {
+    await dialog.getByLabel('Положение названий').selectOption(position);
+    await expect.poll(place).toBe(position);
+  }
 });
 
 test('ширина панели, центрирование, названия и служебные плитки', async ({newtab}) => {

@@ -15,7 +15,7 @@
     {/if}
     <a
       class="breadcrumbs__link"
-      class:breadcrumbs__link--drop-target={dragDrop.target?.id === crumb.id}
+      class:breadcrumbs__link--drop-target={dragDrop.draggedId !== null && dragDrop.target?.id === crumb.id}
       href={folderHref(crumb.id)}
       aria-current={current ? 'page' : undefined}
       data-drop-folder-id={current ? undefined : crumb.id}

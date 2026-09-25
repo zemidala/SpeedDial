@@ -69,6 +69,37 @@ test('перетаскивание: порядок и перенос в папк
   expect((await getChildren(newtab, '1')).map((node) => node.title)).toContain('Бета');
 });
 
+test('во время перетаскивания плитки расступаются, а на месте плитки остаётся след', async ({newtab}) => {
+  const browserOrder = async () => (await getChildren(newtab, '1')).map((node) => node.title);
+  const center = async (locator: import('@playwright/test').Locator) => {
+    const box = (await locator.boundingBox())!;
+    return {x: box.x + box.width / 2, y: box.y + box.height / 2, box};
+  };
+
+  const alpha = await center(tile(newtab, 'Альфа'));
+  const beta = await center(tile(newtab, 'Бета'));
+  await newtab.mouse.move(alpha.x, alpha.y);
+  await newtab.mouse.down();
+  await newtab.mouse.move(beta.box.x + 10, beta.y, {steps: 8});
+
+  // Кнопка ещё не отпущена: «Бета» уже отъехала, на месте «Альфы» — след, в браузере порядок прежний
+  await expect.poll(() => titles(newtab)).toEqual(['Альфа', 'Бета', 'Папка']);
+  await expect(tile(newtab, 'Альфа')).toHaveClass(/tile--dragging/);
+  expect(await browserOrder()).toEqual(['Бета', 'Альфа', 'Папка']);
+
+  // Над серединой папки она подсвечивается, а плитки не двигаются
+  const folder = await center(tile(newtab, 'Папка'));
+  await newtab.mouse.move(folder.x, folder.y, {steps: 8});
+  await expect(tile(newtab, 'Папка')).toHaveClass(/tile--drop-into/);
+  await newtab.mouse.move(beta.box.x + 10, beta.y, {steps: 8});
+  await expect(tile(newtab, 'Папка')).not.toHaveClass(/tile--drop-into/);
+
+  await newtab.mouse.up();
+  await expect.poll(browserOrder).toEqual(['Альфа', 'Бета', 'Папка']);
+  await expect(tile(newtab, 'Альфа')).not.toHaveClass(/tile--dragging/);
+  expect(await titles(newtab)).toEqual(['Альфа', 'Бета', 'Папка']);
+});
+
 test('плитки «Назад» и «Добавить», новые закладки в начало', async ({newtab}) => {
   await tile(newtab, 'Папка').click();
   await newtab.getByRole('link', {name: 'Назад'}).click();
