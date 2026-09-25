@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest';
-import {analyzePixels, hashColor, meanDifference, parseHex, readableTextColor} from './color';
+import {analyzePixels, effectiveResolution, hashColor, meanDifference, parseHex, readableTextColor} from './color';
 
 type Rgba = [number, number, number, number];
 
@@ -36,6 +36,47 @@ describe('analyzePixels', () => {
 
   it('полностью прозрачная картинка — цвета нет', () => {
     expect(analyzePixels(image(4, () => [0, 0, 0, 0]), 4, 4).color).toBeNull();
+  });
+});
+
+describe('effectiveResolution', () => {
+  // «Шум»: у соседних пикселей разные цвета, как у настоящей детализированной картинки
+  const noise = (x: number, y: number): Rgba => [(x * 73 + y * 151) % 256, (x * 29 + y * 97) % 256, (x * y * 13) % 256, 255];
+
+  /** Картинка small×small, растянутая без сглаживания до size×size */
+  const upscaled = (small: number, size: number) => {
+    const factor = size / small;
+    return image(size, (x, y) => noise(Math.floor(x / factor), Math.floor(y / factor)));
+  };
+
+  it('настоящая картинка — полный размер', () => {
+    expect(effectiveResolution(image(64, noise), 64)).toBe(64);
+  });
+
+  it('favicon 16×16, растянутый до 64×64 — 16', () => {
+    expect(effectiveResolution(upscaled(16, 64), 64)).toBe(16);
+  });
+
+  it('32×32, растянутый до 256×256 — 32', () => {
+    expect(effectiveResolution(upscaled(32, 256), 256)).toBe(32);
+  });
+
+  it('не опускается ниже минимума и не ломается на размерах не степени двойки', () => {
+    expect(effectiveResolution(upscaled(8, 64), 64)).toBe(16);
+    expect(effectiveResolution(image(180, noise), 180)).toBe(180);
+  });
+
+  it('одноцветная картинка и плоский логотип — полный размер', () => {
+    expect(effectiveResolution(image(64, () => [10, 20, 30, 255]), 64)).toBe(64);
+    // Круг на прозрачном фоне: почти всё — заливка, но контур не совпадает с сеткой квадратов
+    const circle = image(128, (x, y) => ((x - 64) ** 2 + (y - 64) ** 2 < 45 ** 2 ? [30, 90, 200, 255] : [0, 0, 0, 0]));
+    expect(effectiveResolution(circle, 128)).toBe(128);
+  });
+
+  it('прозрачные области не мешают', () => {
+    const data = upscaled(16, 64);
+    for (let i = 3; i < data.length; i += 4 * 7) data[i] = 0; // Часть пикселей прозрачна
+    expect(effectiveResolution(data, 64)).toBe(64); // Квадраты больше не одноцветные
   });
 });
 

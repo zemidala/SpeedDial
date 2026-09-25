@@ -2,9 +2,10 @@
   import {background} from '../../../lib/background.svelte';
   import {pickFile} from '../../../lib/files';
   import {icons} from '../../../lib/icons.svelte';
+  import {LOGO_SERVICES} from '../../../lib/logoServices';
   import {BING_ACCESS, SITE_ACCESS} from '../../../lib/permissionSets';
   import {permissions} from '../../../lib/permissions.svelte';
-  import {type Background, type IconStyle, RANGES, type Theme} from '../../../lib/settings/schema';
+  import {type Background, type IconStyle, type LogoService, RANGES, type Theme} from '../../../lib/settings/schema';
   import {settings} from '../../../lib/settings/store.svelte';
   import ColorRow from './ColorRow.svelte';
   import RangeRow from './RangeRow.svelte';
@@ -13,6 +14,12 @@
   import SwitchRow from './SwitchRow.svelte';
 
   const current = $derived(settings.current);
+
+  const logoServiceHint = $derived.by(() => {
+    const base = 'Запасной источник, если на самом сайте крупной иконки нет. Сервис узнает адреса ваших закладок';
+    const service = current.logoService;
+    return service === 'none' || service === 'custom' ? base : `${base}.\n${LOGO_SERVICES[service].hint}`;
+  });
 
   const columnOptions = Array.from({length: RANGES.columns.max}, (_, i) => ({value: String(i + 1), label: String(i + 1)}));
 
@@ -80,13 +87,33 @@
   checked={icons.siteIconsEnabled}
   onchange={(enabled) => toggleSiteIcons(enabled)}
 />
-<SwitchRow
-  key="externalLogos"
-  label="Внешние логотипы"
-  hint="Логотипы со стороннего сервиса. Будьте осторожны: сервис узнает адреса ваших закладок"
+<SelectRow
+  label="Сервис иконок"
+  hint={logoServiceHint}
+  value={current.logoService}
+  options={[
+    {value: 'none', label: 'Не использовать'},
+    ...Object.entries(LOGO_SERVICES).map(([value, service]) => ({value, label: service.name})),
+    {value: 'custom', label: 'Свой адрес'},
+  ]}
+  onchange={(value) => settings.update({logoService: value as LogoService})}
 />
-{#if current.externalLogos}
-  <SettingRow label="Адрес логотипа" hint={'Подстрока {{website}} заменяется доменом сайта.\nПример: https://img.logo.dev/{{website}}?token=…'}>
+{#if current.logoService === 'logodev'}
+  <SettingRow label="Ключ logo.dev" hint="Публичный ключ (pk_…) из личного кабинета logo.dev">
+    {#snippet children(id)}
+      <input
+        {id}
+        class="input"
+        type="text"
+        spellcheck="false"
+        placeholder="pk_…"
+        value={current.logoDevToken}
+        oninput={(event) => settings.update({logoDevToken: event.currentTarget.value})}
+      >
+    {/snippet}
+  </SettingRow>
+{:else if current.logoService === 'custom'}
+  <SettingRow label="Адрес иконки" hint={'Подстрока {{website}} заменяется доменом сайта.\nПример: https://example.com/icons/{{website}}.png'}>
     {#snippet children(id)}
       <input
         {id}

@@ -1,4 +1,4 @@
-import type {BrowserContext} from '@playwright/test';
+import type {BrowserContext, Page} from '@playwright/test';
 import {expect, grantPermissions, makeIco, makePng, openSettings, seed, test, tile} from './fixtures';
 
 // Сайт-заглушка: страница и файлы по адресам. CORS-заголовок нужен, пока доступ к сайтам имитирован
@@ -87,19 +87,114 @@ test('иконка на весь блок: область заливается �
   await expect(fill.locator('.tile__visual')).toHaveCSS('background-color', 'rgb(224, 160, 32)');
 });
 
-test('внешние логотипы по шаблону адреса', async ({context, newtab}) => {
+/** Картинка small×small из цветного шума, растянутая без сглаживания до size×size — как favicon у браузера */
+async function makeUpscaledPng(page: Page, small: number, size: number) {
+  const bytes = await page.evaluate(async ({small, size}) => {
+    const source = new OffscreenCanvas(small, small);
+    const sourceContext = source.getContext('2d')!;
+    for (let y = 0; y < small; y++) {
+      for (let x = 0; x < small; x++) {
+        sourceContext.fillStyle = `rgb(${(x * 73 + y * 151) % 256} ${(x * 29 + y * 97) % 256} ${(x * y * 13) % 256})`;
+        sourceContext.fillRect(x, y, 1, 1);
+      }
+    }
+    const canvas = new OffscreenCanvas(size, size);
+    const context = canvas.getContext('2d')!;
+    context.imageSmoothingEnabled = false;
+    context.drawImage(source, 0, 0, size, size);
+    const blob = await canvas.convertToBlob({type: 'image/png'});
+    return [...new Uint8Array(await blob.arrayBuffer())];
+  }, {small, size});
+  return Buffer.from(bytes);
+}
+
+/** Отвечает на запросы к сервису иконок: у каждого домена своя картинка, у остальных — заглушка */
+async function serveLogoService(
+  context: BrowserContext,
+  pattern: string,
+  icons: Record<string, {type: string; body: Buffer}>,
+  placeholder?: {type: string; body: Buffer},
+) {
   const requested: string[] = [];
-  const logo = await makePng(newtab, 128, '#7030c0');
-  await context.route('https://logos.example/**', async (route) => {
-    requested.push(route.request().url());
-    await route.fulfill({headers: {'Access-Control-Allow-Origin': '*'}, contentType: 'image/png', body: logo});
+  await context.route(pattern, (route) => {
+    const url = route.request().url();
+    requested.push(url);
+    const icon = Object.entries(icons).find(([domain]) => url.includes(domain))?.[1] ?? placeholder;
+    const headers = {'Access-Control-Allow-Origin': '*'};
+    return icon
+      ? route.fulfill({headers, contentType: icon.type, body: icon.body})
+      : route.fulfill({headers, status: 404});
+  });
+  return requested;
+}
+
+test('свой адрес сервиса иконок', async ({context, newtab}) => {
+  const requested = await serveLogoService(context, 'https://logos.example/**', {
+    'github.com': {type: 'image/png', body: await makePng(newtab, 128, '#7030c0')},
   });
   await seed(newtab, [{title: 'GitHub', url: 'https://github.com/zemidala'}]);
 
   const dialog = await openSettings(newtab);
-  await dialog.getByLabel('Внешние логотипы').check();
-  await dialog.getByLabel('Адрес логотипа').fill('https://logos.example/{{website}}.png');
+  await dialog.getByLabel('Сервис иконок').selectOption('custom');
+  await dialog.getByLabel('Адрес иконки').fill('https://logos.example/{{website}}.png');
 
-  await expect(tile(newtab, 'GitHub').locator('.site-icon__image')).toHaveAttribute('src', 'https://logos.example/github.com.png');
+  const image = tile(newtab, 'GitHub').locator('.site-icon__image');
+  await expect(image).toHaveAttribute('src', /^blob:/);
   expect(requested).toContain('https://logos.example/github.com.png');
+  expect(await tile(newtab, 'GitHub').evaluate((el) => el.style.getPropertyValue('--icon-color'))).toBe('#7030c0');
+});
+
+test('Google: растянутая картинка не растягивается ещё больше, заглушка — буква', async ({context, newtab}) => {
+  const placeholder = await makeUpscaledPng(newtab, 16, 256); // Для неизвестных сайтов Google отдаёт свою заглушку
+  await serveLogoService(context, 'https://www.google.com/s2/favicons**', {
+    'small.example': {type: 'image/png', body: await makeUpscaledPng(newtab, 32, 256)},
+  }, {type: 'image/png', body: placeholder});
+  await seed(newtab, [
+    {title: 'Small', url: 'https://small.example/'},
+    {title: 'Unknown', url: 'https://unknown.example/'},
+  ]);
+  await newtab.evaluate(() => chrome.storage.sync.set({settings: {logoService: 'google', iconScale: 100}}));
+  await newtab.reload();
+
+  // Google растянул иконку 32×32 до 256×256: показываем её не больше 32 × 1,5 = 48 px, а не на всю плитку
+  const image = tile(newtab, 'Small').locator('.site-icon__image');
+  await expect(image).toHaveAttribute('src', /^blob:/);
+  expect((await image.boundingBox())!.width).toBeLessThanOrEqual(48);
+
+  await expect(tile(newtab, 'Unknown').locator('.site-icon')).toHaveClass(/site-icon--letter/);
+});
+
+test('DuckDuckGo: крупная картинка из .ico', async ({context, newtab}) => {
+  const png = await makePng(newtab, 128, '#10a0a0');
+  await serveLogoService(context, 'https://icons.duckduckgo.com/**', {
+    'duck.example': {type: 'image/x-icon', body: makeIco(png, 128)},
+  });
+  await seed(newtab, [{title: 'Duck', url: 'https://duck.example/'}]);
+  await newtab.evaluate(() => chrome.storage.sync.set({settings: {logoService: 'duckduckgo'}}));
+  await newtab.reload();
+
+  const image = tile(newtab, 'Duck').locator('.site-icon__image');
+  await expect(image).toHaveAttribute('src', /^blob:/);
+  expect(await image.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(128);
+});
+
+test('иконка с сайта главнее сервиса', async ({context, newtab}) => {
+  await serveSite(context, 'https://both.example', {
+    '/': {type: 'text/html', body: '<link rel="apple-touch-icon" href="/touch.png">'},
+    '/touch.png': {type: 'image/png', body: await makePng(newtab, 180, '#d03030')},
+  });
+  await serveLogoService(context, 'https://logos.example/**', {
+    'both.example': {type: 'image/png', body: await makePng(newtab, 128, '#3030d0')},
+  });
+  await enableSiteIcons(context, newtab, {logoService: 'custom', externalLogoUrl: 'https://logos.example/{{website}}.png'});
+  await seed(newtab, [{title: 'Both', url: 'https://both.example/'}]);
+
+  // Сначала показывается иконка сервиса, потом её заменяет более крупная иконка с сайта
+  const both = tile(newtab, 'Both');
+  await expect.poll(() => both.evaluate((el) => el.style.getPropertyValue('--icon-color'))).toBe('#d03030');
+
+  // После перезагрузки иконка с сайта берётся из кэша сразу, без сервиса
+  await newtab.reload();
+  await expect(tile(newtab, 'Both').locator('.site-icon')).toHaveClass(/site-icon--cover/);
+  expect(await tile(newtab, 'Both').evaluate((el) => el.style.getPropertyValue('--icon-color'))).toBe('#d03030');
 });

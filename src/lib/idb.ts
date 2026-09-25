@@ -52,9 +52,13 @@ async function run<T>(
 ): Promise<T> {
   const db = await openDb();
   return new Promise((resolve, reject) => {
-    const request = action(db.transaction(storeName, mode).objectStore(storeName));
-    request.onsuccess = () => resolve(request.result as T);
-    request.onerror = () => reject(request.error);
+    const transaction = db.transaction(storeName, mode);
+    const request = action(transaction.objectStore(storeName));
+    // Запись завершена, только когда транзакция зафиксирована: успешный запрос ещё можно потерять,
+    // если страницу закроют или перезагрузят раньше фиксации
+    transaction.oncomplete = () => resolve(request.result as T);
+    transaction.onerror = () => reject(transaction.error ?? request.error);
+    transaction.onabort = () => reject(transaction.error ?? new Error('IndexedDB transaction aborted'));
   });
 }
 

@@ -3,6 +3,7 @@
 export const THEMES = ['auto', 'light', 'dark'] as const;
 export const BACKGROUNDS = ['none', 'color', 'image', 'bing'] as const;
 export const ICON_STYLES = ['plate', 'fill'] as const;
+export const LOGO_SERVICE_IDS = ['none', 'google', 'duckduckgo', 'iconhorse', 'logodev', 'custom'] as const;
 export const SEARCH_ENGINES = ['google', 'yandex', 'bing', 'duckduckgo', 'custom'] as const;
 export const SORT_ORDERS = ['none', 'title', 'url', 'dateAdded'] as const;
 export const TYPE_ORDERS = ['none', 'foldersFirst', 'bookmarksFirst'] as const;
@@ -10,6 +11,7 @@ export const TYPE_ORDERS = ['none', 'foldersFirst', 'bookmarksFirst'] as const;
 export type Theme = (typeof THEMES)[number];
 export type Background = (typeof BACKGROUNDS)[number];
 export type IconStyle = (typeof ICON_STYLES)[number];
+export type LogoService = (typeof LOGO_SERVICE_IDS)[number];
 export type SearchEngine = (typeof SEARCH_ENGINES)[number];
 export type SortOrder = (typeof SORT_ORDERS)[number];
 export type TypeOrder = (typeof TYPE_ORDERS)[number];
@@ -32,9 +34,12 @@ export interface Settings {
   iconScale: number;
   /** Подкрашивать плитку основным цветом иконки */
   iconTint: boolean;
-  externalLogos: boolean;
-  /** Шаблон адреса логотипа; {{website}} заменяется доменом сайта */
+  /** Сторонний сервис иконок — запасной источник, если на самом сайте крупной иконки нет */
+  logoService: LogoService;
+  /** Свой шаблон адреса для logoService = custom; {{website}} заменяется доменом сайта */
   externalLogoUrl: string;
+  /** Ключ доступа к logo.dev */
+  logoDevToken: string;
   showToolbar: boolean;
   autofocusSearch: boolean;
   showSettingsButton: boolean;
@@ -112,8 +117,9 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = {
   iconStyle: 'plate',
   iconScale: 50,
   iconTint: true,
-  externalLogos: false,
-  externalLogoUrl: 'https://img.logo.dev/{{website}}?token=',
+  logoService: 'none',
+  externalLogoUrl: '',
+  logoDevToken: '',
   showToolbar: true,
   autofocusSearch: false,
   showSettingsButton: true,
@@ -157,6 +163,7 @@ const ENUMS: Partial<Record<keyof Settings, readonly string[]>> = {
   theme: THEMES,
   background: BACKGROUNDS,
   iconStyle: ICON_STYLES,
+  logoService: LOGO_SERVICE_IDS,
   searchEngine: SEARCH_ENGINES,
   sortOrder: SORT_ORDERS,
   typeOrder: TYPE_ORDERS,
@@ -210,6 +217,8 @@ export function sanitizeSettings(raw: unknown): Settings {
     const value = sanitizeValue(key, source[key]);
     if (value !== undefined) (result as unknown as Record<string, unknown>)[key] = value;
   }
+  // Раньше был только переключатель «Внешние логотипы» со своим адресом
+  if (source.logoService === undefined && source.externalLogos === true) result.logoService = 'custom';
   return result;
 }
 

@@ -95,6 +95,65 @@ function hasOpaqueCorners(data: Uint8ClampedArray, width: number, height: number
   return corners.every(([x, y]) => data[(y * width + x) * 4 + 3] > 245);
 }
 
+const BLOCK_THRESHOLD = 3; // Средний разброс пикселей внутри квадрата, при котором он считается одноцветным
+// Доля неоднородных квадратов, при которой картинка всё ещё считается растянутой (на случай артефактов сжатия).
+// У настоящей картинки контуры не совпадают с сеткой квадратов, и неоднородных квадратов заметно больше
+const IRREGULAR_SHARE = 0.02;
+
+/**
+ * Картинка size×size состоит из одноцветных квадратов factor×factor — то есть растянута без сглаживания.
+ * Проверяется каждый квадрат, а не среднее: у плоского логотипа с большими заливками почти все квадраты
+ * одноцветные, но на контурах — нет
+ */
+function isBlocky(data: Uint8ClampedArray, size: number, factor: number): boolean {
+  let irregular = 0;
+  for (let by = 0; by < size; by += factor) {
+    for (let bx = 0; bx < size; bx += factor) {
+      // Цвета с учётом прозрачности: у прозрачных пикселей цвет не важен
+      const sum = [0, 0, 0, 0];
+      for (let y = by; y < by + factor; y++) {
+        for (let x = bx; x < bx + factor; x++) {
+          const i = (y * size + x) * 4;
+          const alpha = data[i + 3] / 255;
+          sum[0] += data[i] * alpha;
+          sum[1] += data[i + 1] * alpha;
+          sum[2] += data[i + 2] * alpha;
+          sum[3] += data[i + 3];
+        }
+      }
+      const count = factor * factor;
+      const average = sum.map((value) => value / count);
+      let deviation = 0;
+      for (let y = by; y < by + factor; y++) {
+        for (let x = bx; x < bx + factor; x++) {
+          const i = (y * size + x) * 4;
+          const alpha = data[i + 3] / 255;
+          deviation += Math.abs(data[i] * alpha - average[0]) + Math.abs(data[i + 1] * alpha - average[1])
+            + Math.abs(data[i + 2] * alpha - average[2]) + Math.abs(data[i + 3] - average[3]);
+        }
+      }
+      if (deviation / (count * 4) >= BLOCK_THRESHOLD) irregular++;
+    }
+  }
+  return irregular <= (size / factor) ** 2 * IRREGULAR_SHARE;
+}
+
+/**
+ * Настоящее разрешение картинки size×size. Браузер отдаёт favicon 16×16 растянутым до 64×64,
+ * и по размеру файла этого не видно — зато видно по пикселям: они идут одноцветными квадратами.
+ * Одноцветная картинка без деталей одинаково хороша в любом размере — для неё возвращается size
+ */
+export function effectiveResolution(data: Uint8ClampedArray, size: number, minSize = 16): number {
+  if (isBlocky(data, size, size)) return size;
+  let effective = size;
+  while (effective / 2 >= minSize) {
+    const factor = size / (effective / 2);
+    if (!Number.isInteger(factor) || !isBlocky(data, size, factor)) break;
+    effective /= 2;
+  }
+  return effective;
+}
+
 /** Средняя разница между двумя картинками одинакового размера (0–255) */
 export function meanDifference(a: Uint8ClampedArray, b: Uint8ClampedArray): number {
   if (a.length !== b.length || a.length === 0) return 255;

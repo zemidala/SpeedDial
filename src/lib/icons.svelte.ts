@@ -1,19 +1,22 @@
-import {analyzePixels, meanDifference} from './color';
+import {analyzePixels, effectiveResolution, meanDifference} from './color';
+import {extractLargestIcoImage, isIco} from './ico';
 import {VECTOR_SIZE} from './iconCandidates';
 import {idbClear, idbDelete, idbGet, idbSet} from './idb';
+import {buildLogoUrl, logoTemplate, UNKNOWN_SITE_URL} from './logoServices';
 import {permissions} from './permissions.svelte';
 import {settings} from './settings/store.svelte';
 import {fetchSiteIcon, queued} from './siteIcons';
-import {getFaviconUrl, getHostname, isWebUrl} from './url';
+import {getFaviconUrl, isWebUrl} from './url';
 
+/** browser — из кэша браузера; site — с самого сайта; external — со стороннего сервиса */
 export type IconSource = 'browser' | 'site' | 'external';
 
 export interface IconInfo {
   src: string;
-  /** Сторона исходной картинки в пикселях; для SVG — VECTOR_SIZE */
+  /** Настоящее разрешение картинки в пикселях (растянутые картинки — по исходному размеру); SVG — VECTOR_SIZE */
   size: number;
   source: IconSource;
-  /** Основной цвет иконки; null, если определить нельзя (например, внешний логотип без CORS) */
+  /** Основной цвет иконки; null, если прочитать пиксели нельзя */
   color: string | null;
   /** Цвет краёв иконки — для заливки области вокруг неё без шва */
   edgeColor: string | null;
@@ -29,77 +32,132 @@ interface CachedSiteIcon {
 
 const BROWSER_ICON_SIZE = 64;
 const SAMPLE_SIZE = 32; // Иконку уменьшаем до 32×32 для анализа цвета
+const MAX_RESOLUTION_CHECK = 256; // Больше — растянутые картинки не встречаются, а проверка дороже
 const DAY = 24 * 60 * 60 * 1000;
 const SITE_ICON_TTL = 30 * DAY;
 const MISSING_ICON_TTL = 7 * DAY;
-const DEFAULT_ICON_THRESHOLD = 4; // Средняя разница пикселей, при которой иконка = стандартный глобус
+const DEFAULT_ICON_THRESHOLD = 4; // Средняя разница пикселей, при которой иконка = заглушка «нет иконки»
 const SOURCE_CHANGE_DELAY = 800;
 
-async function loadImage(src: string, crossOrigin = false): Promise<HTMLImageElement> {
+async function loadImage(src: string): Promise<HTMLImageElement> {
   const img = new Image();
-  if (crossOrigin) img.crossOrigin = 'anonymous';
   img.src = src;
   await img.decode();
   return img;
 }
 
-function samplePixels(img: HTMLImageElement): Uint8ClampedArray {
-  const canvas = new OffscreenCanvas(SAMPLE_SIZE, SAMPLE_SIZE);
+function readPixels(img: HTMLImageElement, size: number): Uint8ClampedArray {
+  const canvas = new OffscreenCanvas(size, size);
   const context = canvas.getContext('2d', {willReadFrequently: true})!;
-  context.drawImage(img, 0, 0, SAMPLE_SIZE, SAMPLE_SIZE);
-  return context.getImageData(0, 0, SAMPLE_SIZE, SAMPLE_SIZE).data;
+  context.imageSmoothingEnabled = false; // Иначе квадраты растянутой картинки размоются и не распознаются
+  context.drawImage(img, 0, 0, size, size);
+  return context.getImageData(0, 0, size, size).data;
 }
 
-// Стандартный глобус, который браузер отдаёт для сайтов без иконки: запрашиваем его для
-// заведомо несуществующего адреса и сравниваем с ним остальные иконки
-let defaultBrowserIcon: Promise<Uint8ClampedArray | null> | null = null;
+const samplePixels = (img: HTMLImageElement) => readPixels(img, SAMPLE_SIZE);
 
-function getDefaultBrowserIcon(): Promise<Uint8ClampedArray | null> {
-  defaultBrowserIcon ??= loadImage(getFaviconUrl('https://speeddial-default.invalid/', BROWSER_ICON_SIZE))
-    .then(samplePixels)
-    .catch(() => null);
-  return defaultBrowserIcon;
+/** Настоящее разрешение растровой картинки: растянутые favicon узнаются по одноцветным квадратам */
+function measureResolution(img: HTMLImageElement): number {
+  const natural = Math.min(img.naturalWidth, img.naturalHeight);
+  const checked = Math.min(natural, MAX_RESOLUTION_CHECK);
+  if (checked < SAMPLE_SIZE) return natural;
+  return Math.round(effectiveResolution(readPixels(img, checked), checked) * natural / checked);
 }
 
-/** null — картинка не загрузилась или это стандартный глобус браузера */
-async function analyze(src: string, source: IconSource, knownSize?: number): Promise<IconInfo | null> {
+interface AnalyzeOptions {
+  vector?: boolean;
+  /** Заглушка источника для неизвестных сайтов — такую иконку не показываем */
+  placeholder?: Uint8ClampedArray | null;
+}
+
+/** null — картинка не загрузилась или это заглушка «нет иконки» */
+async function analyze(src: string, source: IconSource, {vector = false, placeholder}: AnalyzeOptions = {}): Promise<IconInfo | null> {
   try {
     const img = await loadImage(src);
     const pixels = samplePixels(img);
-    if (source === 'browser') {
-      const defaultPixels = await getDefaultBrowserIcon();
-      if (defaultPixels && meanDifference(pixels, defaultPixels) < DEFAULT_ICON_THRESHOLD) return null;
-    }
-    const size = knownSize ?? Math.min(img.naturalWidth, img.naturalHeight);
+    if (placeholder && meanDifference(pixels, placeholder) < DEFAULT_ICON_THRESHOLD) return null;
+    const size = vector ? VECTOR_SIZE : measureResolution(img);
     return {src, size, source, ...analyzePixels(pixels, SAMPLE_SIZE, SAMPLE_SIZE)};
   } catch {
     return null;
   }
 }
 
-/** Внешний логотип: цвет определяем, только если сервис разрешает CORS, иначе просто показываем */
-async function analyzeExternal(src: string): Promise<IconInfo | null> {
+// ===== Заглушки «нет иконки»: запрашиваем иконку заведомо несуществующего сайта и сравниваем с ней =====
+
+let browserPlaceholder: Promise<Uint8ClampedArray | null> | null = null;
+
+function getBrowserPlaceholder(): Promise<Uint8ClampedArray | null> {
+  browserPlaceholder ??= loadImage(getFaviconUrl(UNKNOWN_SITE_URL, BROWSER_ICON_SIZE))
+    .then(samplePixels)
+    .catch(() => null);
+  return browserPlaceholder;
+}
+
+// Обычный кэш промисов: интерфейс от него не зависит, реактивность не нужна
+// eslint-disable-next-line svelte/prefer-svelte-reactivity
+const externalPlaceholders = new Map<string, Promise<Uint8ClampedArray | null>>();
+
+function getExternalPlaceholder(logoUrl: string): Promise<Uint8ClampedArray | null> {
+  let placeholder = externalPlaceholders.get(logoUrl);
+  if (!placeholder) {
+    placeholder = fetchImageBlob(logoUrl)
+      .then(async (blob) => {
+        if (!blob) return null;
+        const url = URL.createObjectURL(blob);
+        try {
+          return samplePixels(await loadImage(url));
+        } finally {
+          URL.revokeObjectURL(url);
+        }
+      })
+      .catch(() => null);
+    externalPlaceholders.set(logoUrl, placeholder);
+  }
+  return placeholder;
+}
+
+// ===== Сторонние сервисы =====
+
+/**
+ * Картинка сервиса как Blob: так её пиксели можно прочитать (оценить качество, взять цвет),
+ * а из .ico — достать самую крупную версию. Сервис должен разрешать CORS, либо нужен доступ к сайтам
+ */
+async function fetchImageBlob(url: string): Promise<Blob | null> {
+  const response = await fetch(url, {credentials: 'omit'});
+  if (!response.ok) return null;
+  const buffer = await response.arrayBuffer();
+  if (isIco(buffer)) {
+    const image = extractLargestIcoImage(buffer);
+    return image ? new Blob([image.data], {type: image.type}) : null;
+  }
+  const type = response.headers.get('content-type') ?? '';
+  return type.startsWith('image/') ? new Blob([buffer], {type}) : null;
+}
+
+/** Иконка со стороннего сервиса; null — у сервиса её нет */
+async function loadExternalIcon(logoUrl: string, placeholderUrl: string | null): Promise<IconInfo | null> {
+  let blob: Blob | null;
   try {
-    const img = await loadImage(src, true);
-    const size = Math.min(img.naturalWidth, img.naturalHeight);
-    return {src, size, source: 'external', ...analyzePixels(samplePixels(img), SAMPLE_SIZE, SAMPLE_SIZE)};
+    blob = await fetchImageBlob(logoUrl);
   } catch {
+    // Сервис не разрешает читать картинку, а доступа к сайтам нет: показываем как есть, без проверки качества.
+    // Считаем её не крупнее обычного favicon, чтобы не растягивать
     try {
-      const img = await loadImage(src);
-      const size = Math.min(img.naturalWidth, img.naturalHeight);
-      return {src, size, source: 'external', color: null, edgeColor: null, fullBleed: true};
+      const img = await loadImage(logoUrl);
+      const size = Math.min(img.naturalWidth, img.naturalHeight, BROWSER_ICON_SIZE);
+      return {src: logoUrl, size, source: 'external', color: null, edgeColor: null, fullBleed: false};
     } catch {
       return null;
     }
   }
-}
+  if (!blob) return null;
 
-/** Адрес внешнего логотипа по шаблону; null, если шаблон некорректный */
-export function buildExternalLogoUrl(template: string, pageUrl: string): string | null {
-  const host = getHostname(pageUrl);
-  if (!host || !template.includes('{{website}}')) return null;
-  const url = template.replaceAll('{{website}}', encodeURIComponent(host));
-  return isWebUrl(url) ? url : null;
+  const url = URL.createObjectURL(blob);
+  const placeholder = placeholderUrl ? await getExternalPlaceholder(placeholderUrl) : null;
+  const info = await analyze(url, 'external', {vector: blob.type.includes('svg'), placeholder});
+  if (!info) URL.revokeObjectURL(url);
+  return info;
 }
 
 /** Иконка одного сайта; обновляется реактивно по мере загрузки */
@@ -110,43 +168,48 @@ export class IconEntry {
   loaded = $state(false);
 
   #generation = 0; // Отбрасывает результаты загрузки, начатой до reload()
-  #objectUrl: string | null = null;
 
   constructor(readonly pageUrl: string, readonly key: string) {}
 
+  /**
+   * Источники по порядку: иконка с сайта (из кэша), сторонний сервис, кэш браузера.
+   * Потом, если кэш устарел, — свежая иконка с сайта; она заменяет текущую, если не хуже её
+   */
   async load(): Promise<void> {
     const generation = this.#generation;
     const isCurrent = () => generation === this.#generation;
 
     await icons.ready;
     const isWeb = isWebUrl(this.pageUrl);
-    const {externalLogos, externalLogoUrl} = settings.current;
 
-    // 1. Внешний сервис логотипов
-    if (isWeb && externalLogos) {
-      const logoUrl = buildExternalLogoUrl(externalLogoUrl, this.pageUrl);
-      const info = logoUrl ? await analyzeExternal(logoUrl) : null;
-      if (!isCurrent()) return;
-      if (info) {
-        this.#show(info);
-        return;
-      }
-    }
-
-    // 2. Иконка с сайта из кэша
+    // 1. Иконка с сайта из кэша
     const useSiteIcons = isWeb && icons.siteIconsEnabled;
     let cached: CachedSiteIcon | undefined;
     if (useSiteIcons) {
       cached = await idbGet<CachedSiteIcon>('icons', this.key).catch(() => undefined);
-      if (cached?.blob) await this.#showSiteIcon(cached.blob, cached.size, isCurrent);
+      if (cached?.blob) await this.#offerSiteIcon(cached.blob, isCurrent);
     }
 
-    // 3. Иконка из кэша браузера
-    if (!this.info) {
-      const info = await analyze(getFaviconUrl(this.pageUrl, BROWSER_ICON_SIZE), 'browser');
-      if (!isCurrent()) return;
-      this.#show(info);
+    // 2. Сторонний сервис
+    const template = isWeb ? icons.logoTemplate : null;
+    if (!this.info && template) {
+      const {logoDevToken} = settings.current;
+      const logoUrl = buildLogoUrl(template, this.pageUrl, logoDevToken);
+      const placeholderUrl = buildLogoUrl(template, UNKNOWN_SITE_URL, logoDevToken);
+      const info = logoUrl ? await loadExternalIcon(logoUrl, placeholderUrl) : null;
+      if (!isCurrent()) return this.#discard(info);
+      if (info) this.#setInfo(info);
     }
+
+    // 3. Кэш браузера
+    if (!this.info) {
+      const info = await analyze(getFaviconUrl(this.pageUrl, BROWSER_ICON_SIZE), 'browser', {
+        placeholder: await getBrowserPlaceholder(),
+      });
+      if (!isCurrent()) return;
+      this.#setInfo(info);
+    }
+    this.loaded = true;
 
     // 4. Свежая иконка с сайта, если кэш устарел
     if (!useSiteIcons) return;
@@ -157,39 +220,36 @@ export class IconEntry {
     if (!isCurrent()) return;
     const entry: CachedSiteIcon = {blob: icon?.blob ?? null, size: icon?.size ?? 0, fetchedAt: Date.now()};
     await idbSet('icons', this.key, entry).catch((error) => console.error('Failed to cache icon', error));
-    if (icon) await this.#showSiteIcon(icon.blob, icon.size, isCurrent);
+    if (icon) await this.#offerSiteIcon(icon.blob, isCurrent);
   }
 
   reload(): void {
     this.#generation++;
-    this.info = null;
+    this.#setInfo(null);
     this.loaded = false;
-    this.#revoke();
     this.load().catch((error) => console.error('Failed to load icon', error));
   }
 
-  #show(info: IconInfo | null): void {
-    this.info = info;
-    this.loaded = true;
-  }
-
-  async #showSiteIcon(blob: Blob, size: number, isCurrent: () => boolean): Promise<void> {
+  /** Иконка с сайта заменяет текущую, если она не хуже по качеству */
+  async #offerSiteIcon(blob: Blob, isCurrent: () => boolean): Promise<void> {
     const url = URL.createObjectURL(blob);
-    const info = await analyze(url, 'site', blob.type.includes('svg') ? VECTOR_SIZE : size || undefined);
-    // Иконка с сайта нужна, только если она крупнее той, что есть у браузера
-    const worse = !info || (this.info?.source === 'browser' && info.size <= this.info.size);
-    if (!isCurrent() || worse) {
+    const info = await analyze(url, 'site', {vector: blob.type.includes('svg')});
+    if (!isCurrent() || !info || (this.info && info.size < this.info.size)) {
       URL.revokeObjectURL(url);
       return;
     }
-    this.#revoke();
-    this.#objectUrl = url;
-    this.#show(info);
+    this.#setInfo(info);
+    this.loaded = true;
   }
 
-  #revoke(): void {
-    if (this.#objectUrl) URL.revokeObjectURL(this.#objectUrl);
-    this.#objectUrl = null;
+  #setInfo(info: IconInfo | null): void {
+    // Освобождаем память прежней картинки, если она была загружена как Blob
+    if (this.info?.src.startsWith('blob:') && this.info.src !== info?.src) URL.revokeObjectURL(this.info.src);
+    this.info = info;
+  }
+
+  #discard(info: IconInfo | null): void {
+    if (info?.src.startsWith('blob:')) URL.revokeObjectURL(info.src);
   }
 }
 
@@ -211,12 +271,18 @@ class IconsStore {
     return settings.current.siteIcons && permissions.siteAccess;
   }
 
+  /** Шаблон адреса выбранного стороннего сервиса; null — не выбран */
+  get logoTemplate(): string | null {
+    const {logoService, externalLogoUrl, logoDevToken} = settings.current;
+    return logoTemplate(logoService, externalLogoUrl, logoDevToken);
+  }
+
   async start(settingsLoaded: Promise<unknown>): Promise<void> {
     // Источники иконок зависят и от настроек, и от разрешений: без них первая загрузка ушла бы впустую
     await Promise.all([settingsLoaded.catch(() => undefined), permissions.ready]);
     this.#resolveReady();
 
-    // Источники иконок поменялись — загружаем заново. С задержкой: адрес логотипов вводят по букве
+    // Источники иконок поменялись — загружаем заново. С задержкой: адрес и ключ сервиса вводят по букве
     let previous = this.#sourceKey();
     let timer: ReturnType<typeof setTimeout> | undefined;
     $effect.root(() => {
@@ -262,8 +328,7 @@ class IconsStore {
   }
 
   #sourceKey(): string {
-    const {externalLogos, externalLogoUrl} = settings.current;
-    return JSON.stringify([this.siteIconsEnabled, externalLogos, externalLogos && externalLogoUrl]);
+    return JSON.stringify([this.siteIconsEnabled, this.logoTemplate, this.logoTemplate && settings.current.logoDevToken]);
   }
 }
 
