@@ -5,6 +5,8 @@
   import {showNotice} from '../lib/notice.svelte';
   import {permissions} from '../lib/permissions.svelte';
   import {settings} from '../lib/settings/store.svelte';
+  import {PALETTE_CACHE_KEY, PALETTE_STYLE_ID, resolvePreset} from '../lib/themes/current';
+  import {paletteCss} from '../lib/themes/palette';
   import {modals, ui} from '../lib/ui.svelte';
   import BingCaption from './components/BingCaption.svelte';
   import ContextMenu from './components/ContextMenu.svelte';
@@ -47,6 +49,24 @@
     root.style.setProperty('--font-family', fontFamily || 'system-ui');
     setCustomColor(root.style, 'tile', tileColor);
     setCustomColor(root.style, 'folder', folderColor);
+  });
+
+  // Тема оформления: цвета обоих режимов в одном стиле (light-dark), плюс кэш для theme-init.js,
+  // чтобы при следующем открытии вкладки тема применилась до первой отрисовки
+  $effect(() => {
+    const css = paletteCss(resolvePreset(settings.current));
+    let style = document.getElementById(PALETTE_STYLE_ID);
+    if (!style) {
+      style = document.createElement('style');
+      style.id = PALETTE_STYLE_ID;
+      document.head.append(style);
+    }
+    style.textContent = css;
+    try {
+      localStorage.setItem(PALETTE_CACHE_KEY, css);
+    } catch {
+      // Без кэша тема просто применится чуть позже при следующем открытии
+    }
   });
 
   // Картинка дня Bing загружается, только когда выбрана как фон и доступ к Bing выдан

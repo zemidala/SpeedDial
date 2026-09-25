@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest';
-import {getHostname, isWebUrl, normalizeUrl} from './url';
+import {getHostname, isWebUrl, normalizeUrl, siteName} from './url';
 
 describe('normalizeUrl', () => {
   it.each([
@@ -27,6 +27,21 @@ describe('getHostname', () => {
 
   it('возвращает пустую строку для некорректного URL', () => {
     expect(getHostname('not a url')).toBe('');
+  });
+});
+
+describe('siteName', () => {
+  it.each([
+    ['https://ru.wikipedia.org/wiki/X', 'wikipedia'],
+    ['https://www.github.com/', 'github'],
+    ['https://mail.yandex.ru/', 'yandex'],
+    ['https://www.bbc.co.uk/news', 'bbc'],
+    ['https://ya.ru/', 'ya'],
+    ['http://localhost:3000/', 'localhost'],
+    ['edge://settings', 'settings'],
+    ['not a url', ''],
+  ])('%s → %s', (url, name) => {
+    expect(siteName(url)).toBe(name);
   });
 });
 

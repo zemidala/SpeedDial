@@ -35,7 +35,7 @@ test('переключение темы кнопкой и в настройка�
 
   // «Как в системе» убирает явный выбор
   const dialog = await openSettings(newtab);
-  await dialog.getByLabel('Цветовая тема').selectOption('auto');
+  await dialog.getByLabel('Светлая или тёмная').selectOption('auto');
   await expect(newtab.locator('html')).not.toHaveAttribute('data-theme');
 });
 

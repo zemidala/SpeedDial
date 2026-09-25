@@ -1,14 +1,15 @@
 <script lang="ts">
   import {hashColor} from '../../../lib/color';
   import type {IconEntry} from '../../../lib/icons.svelte';
-  import {displayHost} from '../../../lib/url';
+  import {siteName} from '../../../lib/url';
 
   // plate — иконка на подложке; fill — без подложки, крупно (область вокруг заливает плитка);
   // mini — маленькая, рядом с названием и в миниатюрах папки
   let {entry, appearance = 'plate'}: {entry: IconEntry; appearance?: 'plate' | 'fill' | 'mini'} = $props();
 
   const info = $derived(entry.info);
-  const host = $derived(displayHost(entry.pageUrl));
+  // Буква и цвет — по названию сайта: у ru.wikipedia.org это W, а не R
+  const host = $derived(siteName(entry.pageUrl));
   const letter = $derived((host.charAt(0) || '?').toUpperCase());
   const showLetter = $derived(!info && entry.loaded);
 

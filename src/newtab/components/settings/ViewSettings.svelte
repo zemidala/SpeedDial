@@ -19,6 +19,7 @@
   import SelectRow from './SelectRow.svelte';
   import SettingRow from './SettingRow.svelte';
   import SwitchRow from './SwitchRow.svelte';
+  import ThemePicker from './ThemePicker.svelte';
 
   const current = $derived(settings.current);
 
@@ -53,14 +54,7 @@
 </script>
 
 <SelectRow
-  label="Количество колонок"
-  value={current.columns}
-  options={columnOptions}
-  onchange={(value) => settings.update({columns: Number(value)})}
-/>
-<RangeRow key="containerWidth" label="Ширина панели" unit="%"/>
-<SelectRow
-  label="Цветовая тема"
+  label="Светлая или тёмная"
   value={current.theme}
   options={[
     {value: 'auto', label: 'Как в системе'},
@@ -69,6 +63,25 @@
   ]}
   onchange={(value) => settings.update({theme: value as Theme})}
 />
+<SettingRow
+  label="Тема оформления"
+  hint="Показаны цвета для текущего режима — светлого или тёмного. У каждой темы есть оба варианта"
+  stacked
+>
+  <ThemePicker/>
+</SettingRow>
+{#if current.themePreset === 'custom'}
+  <ColorRow key="customAccent" label="Акцент" hint="Ссылки, кнопки, переключатели"/>
+  <ColorRow key="customTint" label="Оттенок фона" hint="Фон, панели и плитки слегка окрашиваются этим цветом"/>
+{/if}
+
+<SelectRow
+  label="Количество колонок"
+  value={current.columns}
+  options={columnOptions}
+  onchange={(value) => settings.update({columns: Number(value)})}
+/>
+<RangeRow key="containerWidth" label="Ширина панели" unit="%"/>
 <SwitchRow key="verticalCenter" label="Вертикальное центрирование"/>
 
 <SelectRow

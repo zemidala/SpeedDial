@@ -32,6 +32,19 @@ export function displayHost(url: string): string {
   return getHostname(url).replace(/^www\./, '');
 }
 
+// Вторые уровни, которые сами по себе не название сайта: bbc.co.uk, gov.com.au и т.п.
+const GENERIC_SECOND_LEVEL = new Set(['co', 'com', 'org', 'net', 'gov', 'ac', 'edu', 'or', 'ne', 'go']);
+
+/** Название сайта из адреса, без поддоменов и зоны: ru.wikipedia.org → wikipedia, bbc.co.uk → bbc */
+export function siteName(url: string): string {
+  const parts = getHostname(url).split('.').filter(Boolean);
+  if (parts.length < 2) return parts[0] ?? '';
+  const tld = parts.at(-1)!;
+  const second = parts.at(-2)!;
+  if (parts.length >= 3 && tld.length === 2 && GENERIC_SECOND_LEVEL.has(second)) return parts.at(-3)!;
+  return second;
+}
+
 /** Обычная веб-ссылка, которую браузер откроет сам по клику на <a> */
 export function isWebUrl(url: string): boolean {
   return /^https?:\/\//i.test(url);

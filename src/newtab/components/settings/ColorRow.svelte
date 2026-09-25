@@ -2,7 +2,8 @@
   import {MediaQuery} from 'svelte/reactivity';
   import {type ColorSettingKey, DEFAULT_SETTINGS} from '../../../lib/settings/schema';
   import {settings} from '../../../lib/settings/store.svelte';
-  import {isDarkTheme, THEME_TILE_COLORS} from '../../../lib/settings/theme';
+  import {isDarkTheme} from '../../../lib/settings/theme';
+  import {resolvePreset} from '../../../lib/themes/current';
   import SettingRow from './SettingRow.svelte';
 
   let {label, hint, key}: {label: string; hint?: string; key: ColorSettingKey} = $props();
@@ -11,11 +12,14 @@
   const value = $derived(settings.current[key]);
   const isDefault = $derived(value === DEFAULT_SETTINGS[key]);
 
-  // Для палитры нужен конкретный цвет, даже когда выбран цвет «по теме»
+  // Для палитры нужен конкретный цвет, даже когда выбран цвет «по теме» — берём его из темы оформления
   const pickerValue = $derived.by(() => {
     if (value) return value;
-    const palette = isDarkTheme(settings.current.theme, systemDark.current) ? THEME_TILE_COLORS.dark : THEME_TILE_COLORS.light;
-    return key === 'backgroundColor' ? DEFAULT_SETTINGS.backgroundColor : palette[key];
+    const preset = resolvePreset(settings.current);
+    const palette = isDarkTheme(settings.current.theme, systemDark.current) ? preset.dark : preset.light;
+    if (key === 'tileColor') return palette.tile;
+    if (key === 'folderColor') return palette.folder;
+    return DEFAULT_SETTINGS[key] || palette.pageFrom;
   });
 </script>
 

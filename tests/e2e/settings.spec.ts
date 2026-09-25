@@ -12,7 +12,7 @@ const storedSettings = (page: import('@playwright/test').Page, area: 'sync' | 'l
 test('вкладки окна настроек', async ({newtab}) => {
   const dialog = await openSettings(newtab);
   await expect(dialog.getByRole('tab', {name: 'Вид'})).toHaveAttribute('aria-selected', 'true');
-  await expect(dialog.getByLabel('Цветовая тема')).toBeVisible();
+  await expect(dialog.getByLabel('Светлая или тёмная')).toBeVisible();
 
   await dialog.getByRole('tab', {name: 'Общие'}).click();
   await expect(dialog.getByLabel('Поисковая система')).toBeVisible();
@@ -47,7 +47,7 @@ test('экспорт и импорт настроек', async ({newtab}) => {
 
   await dialog.getByRole('tab', {name: 'Вид'}).click();
   await expect(dialog.getByLabel('Количество колонок')).toHaveValue('8');
-  await expect(dialog.getByLabel('Цветовая тема')).toHaveValue('auto'); // Некорректное значение отброшено
+  await expect(dialog.getByLabel('Светлая или тёмная')).toHaveValue('auto'); // Некорректное значение отброшено
 
   // Чужой файл
   await dialog.getByRole('tab', {name: 'Расширенные'}).click();

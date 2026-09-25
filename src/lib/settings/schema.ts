@@ -1,4 +1,5 @@
 // Схема настроек: типы, значения по умолчанию и проверка данных из хранилища и импорта
+import {DEFAULT_THEME_PRESET, THEME_PRESET_IDS} from '../themes/presets';
 
 export const THEMES = ['auto', 'light', 'dark'] as const;
 export const BACKGROUNDS = ['none', 'color', 'image', 'bing'] as const;
@@ -28,7 +29,13 @@ export interface Settings {
   columns: number;
   /** Ширина области закладок, % ширины окна */
   containerWidth: number;
+  /** Светлый или тёмный режим */
   theme: Theme;
+  /** Тема оформления (набор цветов); custom — палитра из customAccent и customTint */
+  themePreset: string;
+  customAccent: string;
+  /** Оттенок фона для своей палитры */
+  customTint: string;
   verticalCenter: boolean;
   /** plate — иконка на подложке; fill — иконка заполняет область плитки */
   iconStyle: IconStyle;
@@ -94,7 +101,7 @@ export interface Settings {
 type KeysOfType<T, V> = {[K in keyof T]: T[K] extends V ? K : never}[keyof T];
 
 export type BooleanSettingKey = KeysOfType<Settings, boolean>;
-export type ColorSettingKey = 'tileColor' | 'folderColor' | 'backgroundColor';
+export type ColorSettingKey = 'tileColor' | 'folderColor' | 'backgroundColor' | 'customAccent' | 'customTint';
 
 /** Настройки, которые хранятся только на этом устройстве */
 export const LOCAL_KEYS = ['defaultFolderId', 'syncEnabled'] as const satisfies ReadonlyArray<keyof Settings>;
@@ -117,6 +124,9 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = {
   columns: 6,
   containerWidth: 90,
   theme: 'auto',
+  themePreset: DEFAULT_THEME_PRESET,
+  customAccent: '#6750a4',
+  customTint: '#6750a4',
   verticalCenter: false,
   iconStyle: 'plate',
   iconScale: 50,
@@ -166,6 +176,7 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = {
 // Допустимые значения: перечисления и диапазоны чисел
 const ENUMS: Partial<Record<keyof Settings, readonly string[]>> = {
   theme: THEMES,
+  themePreset: THEME_PRESET_IDS,
   background: BACKGROUNDS,
   iconStyle: ICON_STYLES,
   titlePosition: TITLE_POSITIONS,
@@ -209,7 +220,8 @@ function sanitizeValue<K extends keyof Settings>(key: K, value: unknown): Settin
     const allowed = ENUMS[key];
     if (allowed && !allowed.includes(value)) return undefined;
     if ((key === 'tileColor' || key === 'folderColor') && !isColor(value)) return undefined;
-    if (key === 'backgroundColor' && (value === '' || !isColor(value))) return undefined;
+    const requiredColor = key === 'backgroundColor' || key === 'customAccent' || key === 'customTint';
+    if (requiredColor && (value === '' || !isColor(value))) return undefined;
     if (key === 'customCss') return value.slice(0, MAX_CUSTOM_CSS_LENGTH) as Settings[K];
   }
   return value as Settings[K];

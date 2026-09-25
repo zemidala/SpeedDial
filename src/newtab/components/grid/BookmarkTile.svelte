@@ -6,7 +6,7 @@
   import {openUrl} from '../../../lib/navigation';
   import {settings} from '../../../lib/settings/store.svelte';
   import {thumbnails} from '../../../lib/thumbnails/store.svelte';
-  import {displayHost, isWebUrl} from '../../../lib/url';
+  import {displayHost, isWebUrl, siteName} from '../../../lib/url';
   import SiteIcon from './SiteIcon.svelte';
   import Tile from './Tile.svelte';
 
@@ -24,7 +24,7 @@
   const fillColor = $derived.by(() => {
     if (iconStyle !== 'fill' || hasThumbnail) return null;
     if (icon.info) return icon.info.edgeColor;
-    return icon.loaded ? hashColor(displayHost(url)) : null;
+    return icon.loaded ? hashColor(siteName(url)) : null;
   });
 
   // Веб-ссылки браузер открывает сам (включая Ctrl+клик и среднюю кнопку).

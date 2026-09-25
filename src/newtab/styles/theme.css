@@ -20,7 +20,8 @@
   --icon-scale: 50;
   --font-family: 'Segoe UI', system-ui, sans-serif;
 
-  /* Цвета плиток по умолчанию; должны совпадать с THEME_TILE_COLORS в settings/theme.ts */
+  /* Цвета по умолчанию — тема «Стандартная» (themes/presets.ts). Выбранная тема перекрывает их
+     стилем #theme-palette, который ставит theme-init.js до первой отрисовки */
   --tile-bg: light-dark(#ffffff, #262a31);
   --folder-bg: light-dark(#e6f2ff, #1f2b3b);
 
@@ -38,11 +39,12 @@
   --accent-hover: light-dark(#0052a3, #75b4ff);
   --accent-text: light-dark(#ffffff, #0e1014);
   --danger: light-dark(#cf222e, #f85149);
-  --danger-hover: light-dark(#a40e26, #ff7b72);
+  --danger-text: light-dark(#ffffff, #0e1014);
   --border: light-dark(rgb(0 0 0 / 0.1), rgb(255 255 255 / 0.1));
   --shadow-color: light-dark(rgb(0 0 0 / 0.1), rgb(0 0 0 / 0.4));
+  --shadow-raised-color: light-dark(rgb(0 0 0 / 0.16), rgb(0 0 0 / 0.5));
   --shadow: 0 2px 8px var(--shadow-color);
-  --shadow-raised: 0 8px 24px light-dark(rgb(0 0 0 / 0.16), rgb(0 0 0 / 0.5));
+  --shadow-raised: 0 8px 24px var(--shadow-raised-color);
   --backdrop: rgb(0 0 0 / 0.5);
 
   --radius: 10px;

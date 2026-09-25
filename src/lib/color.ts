@@ -179,6 +179,37 @@ export function readableTextColor(background: string): string {
   return luminance(rgb) > 0.179 ? '#1f2328' : '#f0f2f4';
 }
 
+/** Контраст двух цветов по WCAG: от 1 до 21. Для обычного текста нужно не меньше 4.5 */
+export function contrastRatio(a: string, b: string): number {
+  const rgbA = parseHex(a);
+  const rgbB = parseHex(b);
+  if (!rgbA || !rgbB) return 1;
+  const [light, dark] = [luminance(rgbA), luminance(rgbB)].sort((x, y) => y - x);
+  return (light + 0.05) / (dark + 0.05);
+}
+
+/** Смесь цветов: amount = 0 — цвет a, 1 — цвет b */
+export function mixColors(a: string, b: string, amount: number): string {
+  const rgbA = parseHex(a) ?? [0, 0, 0];
+  const rgbB = parseHex(b) ?? [0, 0, 0];
+  const [r, g, bl] = rgbA.map((value, i) => value + (rgbB[i] - value) * amount);
+  return toHex(r, g, bl);
+}
+
+/**
+ * Цвет, читаемый на фоне: если контраста не хватает, понемногу сдвигаем цвет к чёрному или белому
+ * (в ту сторону, где контраст больше), сохраняя оттенок, насколько возможно
+ */
+export function ensureContrast(color: string, background: string, minRatio: number): string {
+  if (contrastRatio(color, background) >= minRatio) return color;
+  const target = contrastRatio('#000000', background) > contrastRatio('#ffffff', background) ? '#000000' : '#ffffff';
+  for (let step = 1; step <= 20; step++) {
+    const candidate = mixColors(color, target, step / 20);
+    if (contrastRatio(candidate, background) >= minRatio) return candidate;
+  }
+  return target;
+}
+
 /** Стабильный приятный цвет по строке — для заглушки с буквой */
 export function hashColor(text: string): string {
   let hash = 0;
