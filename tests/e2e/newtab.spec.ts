@@ -1,4 +1,4 @@
-import {expect, getChildren, seed, test, tile} from './fixtures';
+import {expect, getChildren, openSettings, seed, test, tile} from './fixtures';
 
 test.beforeEach(async ({newtab}) => {
   await seed(newtab, [
@@ -19,8 +19,8 @@ test('показывает закладки и папки без перезаг�
 
   // Миниатюры папки: закладка и значок вложенной папки
   const folder = tile(newtab, 'Работа');
-  await expect(folder.locator('.folder-grid [title="Docs"]')).toBeVisible();
-  await expect(folder.locator('.folder-grid [title="Архив"]')).toHaveText('📁');
+  await expect(folder.locator('.folder-preview [title="Docs"]')).toBeVisible();
+  await expect(folder.locator('.folder-preview [title="Архив"] svg')).toBeVisible();
 });
 
 test('навигация по папкам и хлебным крошкам', async ({newtab}) => {
@@ -52,12 +52,12 @@ test('добавляет закладку в открытую папку чер�
   await expect(tile(newtab, 'Docs')).toBeVisible();
 
   await newtab.locator('main').click({button: 'right', position: {x: 5, y: 5}});
-  await newtab.getByRole('menuitem', {name: 'Добавить закладку'}).click();
+  await newtab.getByRole('menuitem', {name: 'Новая закладка…'}).click();
 
-  const dialog = newtab.getByRole('dialog', {name: 'Добавить закладку'});
+  const dialog = newtab.getByRole('dialog', {name: 'Новая закладка'});
   await expect(dialog.getByLabel('Название')).toBeFocused();
   await dialog.getByLabel('Адрес').fill('github.com');
-  await dialog.getByRole('button', {name: 'Сохранить'}).click();
+  await dialog.getByRole('button', {name: 'Создать'}).click();
 
   await expect(dialog).toBeHidden();
   await expect(tile(newtab, 'github.com')).toHaveAttribute('href', 'https://github.com/');
@@ -69,11 +69,11 @@ test('добавляет закладку в открытую папку чер�
 
 test('показывает ошибку при неверном адресе', async ({newtab}) => {
   await newtab.locator('main').click({button: 'right', position: {x: 5, y: 5}});
-  await newtab.getByRole('menuitem', {name: 'Добавить закладку'}).click();
+  await newtab.getByRole('menuitem', {name: 'Новая закладка…'}).click();
 
   const dialog = newtab.getByRole('dialog');
   await dialog.getByLabel('Адрес').fill('exa mple');
-  await dialog.getByRole('button', {name: 'Сохранить'}).click();
+  await dialog.getByRole('button', {name: 'Создать'}).click();
   await expect(dialog.getByRole('alert')).toHaveText('Неверный формат URL');
 
   await newtab.keyboard.press('Escape');
@@ -82,7 +82,7 @@ test('показывает ошибку при неверном адресе', a
 
 test('изменяет закладку', async ({newtab}) => {
   await tile(newtab, 'Example').click({button: 'right'});
-  await newtab.getByRole('menuitem', {name: 'Изменить'}).click();
+  await newtab.getByRole('menuitem', {name: 'Редактировать…'}).click();
 
   const dialog = newtab.getByRole('dialog', {name: 'Изменить закладку'});
   await expect(dialog.getByLabel('Адрес')).toHaveValue('https://example.com/');
@@ -96,7 +96,7 @@ test('изменяет закладку', async ({newtab}) => {
 
 test('переименовывает папку без поля адреса', async ({newtab}) => {
   await tile(newtab, 'Работа').click({button: 'right'});
-  await newtab.getByRole('menuitem', {name: 'Изменить'}).click();
+  await newtab.getByRole('menuitem', {name: 'Редактировать…'}).click();
 
   const dialog = newtab.getByRole('dialog', {name: 'Изменить папку'});
   await expect(dialog.getByLabel('Адрес')).toHaveCount(0);
@@ -108,14 +108,14 @@ test('переименовывает папку без поля адреса', a
 
 test('удаляет папку после подтверждения', async ({newtab}) => {
   await tile(newtab, 'Работа').click({button: 'right'});
-  await newtab.getByRole('menuitem', {name: 'Удалить'}).click();
+  await newtab.getByRole('menuitem', {name: 'Удалить…'}).click();
 
   const dialog = newtab.getByRole('dialog', {name: 'Удалить папку?'});
   await dialog.getByRole('button', {name: 'Отмена'}).click();
   await expect(tile(newtab, 'Работа')).toBeVisible();
 
   await tile(newtab, 'Работа').click({button: 'right'});
-  await newtab.getByRole('menuitem', {name: 'Удалить'}).click();
+  await newtab.getByRole('menuitem', {name: 'Удалить…'}).click();
   await newtab.getByRole('dialog').getByRole('button', {name: 'Удалить'}).click();
 
   await expect(tile(newtab, 'Работа')).toHaveCount(0);
@@ -124,7 +124,7 @@ test('удаляет папку после подтверждения', async ({
 });
 
 test('в полях настроек остаётся стандартное меню браузера', async ({newtab}) => {
-  await newtab.getByRole('button', {name: 'Настройки'}).click();
+  await openSettings(newtab);
   await newtab.getByLabel('Шрифт').click({button: 'right'});
   await expect(newtab.getByRole('menu')).toHaveCount(0);
 });
@@ -134,16 +134,15 @@ test('настройки применяются сразу и сохраняют
   const grid = newtab.getByRole('region', {name: 'Закладки'});
   const columnCount = () => grid.evaluate((el) => getComputedStyle(el).gridTemplateColumns.split(' ').length);
 
-  await newtab.getByRole('button', {name: 'Настройки'}).click();
-  await newtab.getByLabel('Количество колонок').selectOption('3');
-  await newtab.getByLabel('Шрифт').fill('Georgia');
+  const dialog = await openSettings(newtab);
+  await dialog.getByLabel('Количество колонок').selectOption('3');
+  await dialog.getByLabel('Шрифт').fill('Georgia');
 
   expect(await columnCount()).toBe(3);
   await expect(grid).toHaveCSS('font-family', /^Georgia/);
 
-  // Клик мимо закрывает панель
-  await newtab.locator('main').click({position: {x: 5, y: 5}});
-  await expect(newtab.getByLabel('Шрифт')).toHaveCount(0);
+  await dialog.getByRole('button', {name: 'Готово'}).click();
+  await expect(dialog).toBeHidden();
 
   // Ждём отложенную запись в chrome.storage.sync и проверяем после перезагрузки
   await expect.poll(() => newtab.evaluate(async () => (await chrome.storage.sync.get('settings')).settings))

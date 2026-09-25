@@ -15,18 +15,18 @@ function image(size: number, pixel: (x: number, y: number) => Rgba): Uint8Clampe
 describe('analyzePixels', () => {
   it('находит цвет сплошной иконки и считает её полноразмерной', () => {
     const result = analyzePixels(image(8, () => [220, 30, 40, 255]), 8, 8);
-    expect(result).toEqual({color: '#dc1e28', fullBleed: true});
+    expect(result).toEqual({color: '#dc1e28', edgeColor: '#dc1e28', fullBleed: true});
   });
 
-  it('берёт цвет логотипа, а не белого фона', () => {
+  it('берёт цвет логотипа, а не белого фона; цвет краёв — фон', () => {
     // Белый фон, синий квадрат в центре занимает четверть площади
     const data = image(8, (x, y) => (x >= 2 && x < 6 && y >= 2 && y < 6 ? [20, 90, 200, 255] : [255, 255, 255, 255]));
-    expect(analyzePixels(data, 8, 8).color).toBe('#145ac8');
+    expect(analyzePixels(data, 8, 8)).toMatchObject({color: '#145ac8', edgeColor: '#ffffff'});
   });
 
   it('прозрачные углы — иконка без своего фона', () => {
     const data = image(8, (x, y) => (x >= 2 && x < 6 && y >= 2 && y < 6 ? [0, 150, 0, 255] : [0, 0, 0, 0]));
-    expect(analyzePixels(data, 8, 8)).toEqual({color: '#009600', fullBleed: false});
+    expect(analyzePixels(data, 8, 8)).toEqual({color: '#009600', edgeColor: null, fullBleed: false});
   });
 
   it('монохромная чёрная иконка — чёрный цвет', () => {

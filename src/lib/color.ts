@@ -3,6 +3,8 @@
 export interface PixelAnalysis {
   /** Основной цвет картинки (#rrggbb) или null, если непрозрачных пикселей нет */
   color: string | null;
+  /** Средний цвет по краям; null, если края прозрачные. Им заливают область вокруг иконки без шва */
+  edgeColor: string | null;
   /** Углы непрозрачные — у иконки свой фон, её можно растянуть на всю подложку */
   fullBleed: boolean;
 }
@@ -62,7 +64,29 @@ export function analyzePixels(data: Uint8ClampedArray, width: number, height: nu
   best ??= neutral.count > 0 ? neutral : null;
 
   const color = best ? toHex(best.r / best.count, best.g / best.count, best.b / best.count) : null;
-  return {color, fullBleed: hasOpaqueCorners(data, width, height)};
+  return {color, edgeColor: averageEdgeColor(data, width, height), fullBleed: hasOpaqueCorners(data, width, height)};
+}
+
+function averageEdgeColor(data: Uint8ClampedArray, width: number, height: number): string | null {
+  let r = 0;
+  let g = 0;
+  let b = 0;
+  let opaque = 0;
+  let total = 0;
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      if (x !== 0 && y !== 0 && x !== width - 1 && y !== height - 1) continue;
+      const i = (y * width + x) * 4;
+      total++;
+      if (data[i + 3] < 200) continue;
+      r += data[i];
+      g += data[i + 1];
+      b += data[i + 2];
+      opaque++;
+    }
+  }
+  // Если больше половины края прозрачно, единого фона у иконки нет
+  return opaque > total / 2 ? toHex(r / opaque, g / opaque, b / opaque) : null;
 }
 
 function hasOpaqueCorners(data: Uint8ClampedArray, width: number, height: number): boolean {

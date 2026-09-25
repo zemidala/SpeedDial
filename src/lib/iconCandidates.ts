@@ -6,9 +6,21 @@ export const MIN_USEFUL_SIZE = 48; // Меньше — встроенная ик
 export interface IconCandidate {
   url: string;
   size: number;
-  /** Подходит хуже при том же размере (maskable, догадка без объявления) */
+  /** Чем больше, тем позже пробуем: maskable, .ico неизвестного размера, догадка без объявления */
   penalty?: number;
 }
+
+// Настоящий размер .ico станет известен только после разбора файла — пробуем после объявленных
+const ICO_PENALTY = 0.8;
+
+/** Адреса, по которым сайты часто кладут иконки, не объявляя их в разметке */
+export const WELL_KNOWN_ICONS: ReadonlyArray<{path: string; size: number; penalty: number}> = [
+  {path: '/favicon.svg', size: VECTOR_SIZE, penalty: 0.5},
+  {path: '/android-chrome-512x512.png', size: 512, penalty: 0.5},
+  {path: '/apple-touch-icon.png', size: 180, penalty: 0.5},
+  {path: '/apple-touch-icon-precomposed.png', size: 180, penalty: 0.6},
+  {path: '/favicon.ico', size: MIN_USEFUL_SIZE, penalty: 0.9},
+];
 
 export interface LinkIcon {
   rel: string;
@@ -19,6 +31,10 @@ export interface LinkIcon {
 
 function isSvg(href: string, type?: string | null): boolean {
   return type === 'image/svg+xml' || /\.svg(\?|#|$)/i.test(href);
+}
+
+function isIcoFile(href: string, type?: string | null): boolean {
+  return type === 'image/x-icon' || type === 'image/vnd.microsoft.icon' || /\.ico(\?|#|$)/i.test(href);
 }
 
 /** Наибольший размер из атрибута sizes ("16x16 32x32", "any"); 0, если не указан */
@@ -48,13 +64,18 @@ export function candidatesFromLinks(links: LinkIcon[], baseUrl: string): IconCan
       continue;
     }
 
-    let size = parseSizes(sizes);
-    if (!size) {
-      if (isSvg(href, type)) size = VECTOR_SIZE;
-      else if (isTouch) size = 180; // Размер apple-touch-icon по умолчанию
-      else size = 16;
+    const declared = parseSizes(sizes);
+    if (declared) {
+      result.push({url, size: declared});
+    } else if (isSvg(href, type)) {
+      result.push({url, size: VECTOR_SIZE});
+    } else if (isTouch) {
+      result.push({url, size: 180}); // Размер apple-touch-icon по умолчанию
+    } else if (isIcoFile(href, type)) {
+      result.push({url, size: MIN_USEFUL_SIZE, penalty: ICO_PENALTY});
+    } else {
+      result.push({url, size: 16});
     }
-    result.push({url, size});
   }
   return result;
 }

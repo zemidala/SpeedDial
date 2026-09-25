@@ -1,0 +1,38 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* Шрифт задаём на body: Chrome ставит страницам расширений свой font-family и font-size именно на body */
+body {
+  min-height: 100vh;
+  margin: 0;
+  padding: 20px;
+  background: linear-gradient(135deg, var(--page-bg-from) 0%, var(--page-bg-to) 100%) fixed;
+  color: var(--text);
+  font-family: var(--font-family), system-ui, sans-serif;
+  font-size: 14px;
+}
+
+/* Фон из настроек: цвет или изображение */
+body.page--background-color {
+  background: var(--page-background-color);
+}
+
+body.page--background-image {
+  background: var(--page-background-color) var(--page-background-image) center / cover no-repeat fixed;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+h2 {
+  margin: 0 0 16px;
+  font-size: 18px;
+}

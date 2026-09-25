@@ -1,14 +1,23 @@
 <script lang="ts">
+  import {background} from '../lib/background.svelte';
   import {readableTextColor} from '../lib/color';
-  import {settings} from '../lib/settings.svelte';
-  import {ui} from '../lib/ui.svelte';
-  import BookmarkDialog from './components/BookmarkDialog.svelte';
-  import BookmarkGrid from './components/BookmarkGrid.svelte';
-  import Breadcrumbs from './components/Breadcrumbs.svelte';
+  import {dragDrop} from '../lib/dragDrop.svelte';
+  import {showNotice} from '../lib/notice.svelte';
+  import {permissions} from '../lib/permissions.svelte';
+  import {settings} from '../lib/settings/store.svelte';
+  import {modals, ui} from '../lib/ui.svelte';
+  import BingCaption from './components/BingCaption.svelte';
   import ContextMenu from './components/ContextMenu.svelte';
-  import DeleteDialog from './components/DeleteDialog.svelte';
-  import SettingsPanel from './components/SettingsPanel.svelte';
-  import ThemeToggle from './components/ThemeToggle.svelte';
+  import BookmarkDialog from './components/dialogs/BookmarkDialog.svelte';
+  import IconDialog from './components/dialogs/IconDialog.svelte';
+  import SortDialog from './components/dialogs/SortDialog.svelte';
+  import BookmarkGrid from './components/grid/BookmarkGrid.svelte';
+  import AppHeader from './components/header/AppHeader.svelte';
+  import SettingsDialog from './components/settings/SettingsDialog.svelte';
+  import ConfirmDialog from './components/ui/ConfirmDialog.svelte';
+  import Notice from './components/ui/Notice.svelte';
+
+  const CUSTOM_CSS_ID = 'custom-css'; // Тот же id использует theme-init.js
 
   // Свой цвет фона вместо цвета темы; текст на нём подбирается по контрасту
   function setCustomColor(style: CSSStyleDeclaration, name: 'tile' | 'folder', color: string) {
@@ -21,9 +30,9 @@
     }
   }
 
-  // Настройки оформления — через data-theme и CSS-переменные на <html>
+  // Оформление из настроек — через data-theme и CSS-переменные на корневом элементе
   $effect(() => {
-    const {theme, columns, tileColor, folderColor, fontFamily} = settings.current;
+    const {theme, columns, containerWidth, iconScale, tileColor, folderColor, fontFamily} = settings.current;
     const root = document.documentElement;
 
     if (theme === 'auto') {
@@ -33,48 +42,115 @@
     }
 
     root.style.setProperty('--columns', String(columns));
+    root.style.setProperty('--container-width', `${containerWidth}%`);
+    root.style.setProperty('--icon-scale', String(iconScale));
     root.style.setProperty('--font-family', fontFamily || 'system-ui');
     setCustomColor(root.style, 'tile', tileColor);
     setCustomColor(root.style, 'folder', folderColor);
   });
 
+  // Картинка дня Bing загружается, только когда выбрана как фон и доступ к Bing выдан
+  $effect(() => {
+    if (settings.current.background !== 'bing' || !permissions.bing) return;
+    background.loadBing().catch((error) => {
+      console.error('Failed to load Bing image', error);
+      showNotice(`Не удалось загрузить картинку дня Bing: ${error instanceof Error ? error.message : error}`);
+    });
+  });
+
+  // Фон страницы: цвет, своё изображение или картинка дня Bing
+  $effect(() => {
+    const {background: type, backgroundColor} = settings.current;
+    const body = document.body;
+    const image = type === 'image' ? background.imageUrl : type === 'bing' ? background.bing?.url ?? null : null;
+
+    body.classList.toggle('page--background-color', type === 'color');
+    body.classList.toggle('page--background-image', image !== null);
+    body.style.setProperty('--page-background-color', backgroundColor);
+    if (image) body.style.setProperty('--page-background-image', `url("${image}")`);
+    else body.style.removeProperty('--page-background-image');
+  });
+
+  // Пользовательский CSS — отдельным элементом style после всех стилей страницы, чтобы перекрывать их.
+  // theme-init.js создаёт его раньше подключения основных стилей, поэтому переносим в конец head
+  $effect(() => {
+    let style = document.getElementById(CUSTOM_CSS_ID);
+    if (!style) {
+      style = document.createElement('style');
+      style.id = CUSTOM_CSS_ID;
+    }
+    document.head.append(style);
+    style.textContent = settings.current.customCss;
+  });
+
   const closeDialog = () => {
     ui.dialog = null;
   };
+
+  // Изменения из окна настроек сохраняем сразу при его закрытии
+  const closeSettings = () => {
+    settings.flush();
+    closeDialog();
+  };
 </script>
 
-<main class="container">
-  <header class="topbar">
-    <Breadcrumbs/>
-    <ThemeToggle/>
-    <SettingsPanel/>
-  </header>
-  <BookmarkGrid/>
+<svelte:window
+  ondragstart={dragDrop.onDragStart}
+  ondragover={dragDrop.onDragOver}
+  ondrop={dragDrop.onDrop}
+  ondragend={dragDrop.onDragEnd}
+/>
+
+<main class="app" class:app--centered={settings.current.verticalCenter}>
+  <AppHeader/>
+  <div class="app__content">
+    <BookmarkGrid/>
+  </div>
 </main>
 
 <ContextMenu/>
 
+{#if settings.current.background === 'bing' && background.bing}
+  <BingCaption image={background.bing}/>
+{/if}
+
 {#if ui.dialog}
   {@const dialog = ui.dialog}
-  {#if dialog.kind === 'delete'}
-    <DeleteDialog node={dialog.node} onclose={closeDialog}/>
+  {#if dialog.kind === 'settings'}
+    <SettingsDialog onclose={closeSettings}/>
+  {:else if dialog.kind === 'confirm'}
+    <ConfirmDialog options={dialog} onclose={closeDialog}/>
+  {:else if dialog.kind === 'icon'}
+    <IconDialog node={dialog.node} onclose={closeDialog}/>
+  {:else if dialog.kind === 'sort'}
+    <SortDialog folder={dialog.folder} onclose={closeDialog}/>
   {:else}
-    <BookmarkDialog node={dialog.kind === 'edit' ? dialog.node : null} onclose={closeDialog}/>
+    <BookmarkDialog {dialog} onclose={closeDialog}/>
   {/if}
 {/if}
 
+{#if modals.depth === 0}
+  <Notice/>
+{/if}
+
 <style>
-  .container {
+  .app {
     display: flex;
     flex-direction: column;
     gap: var(--gap);
-    max-width: 1200px;
+    width: min(100%, var(--container-width));
+    min-height: calc(100vh - 40px);
     margin: 0 auto;
   }
 
-  .topbar {
+  .app__content {
     display: flex;
-    align-items: center;
-    gap: 12px;
+    flex: 1;
+    flex-direction: column;
+  }
+
+  /* Сетка по центру свободного места под панелью */
+  .app--centered .app__content {
+    justify-content: center;
   }
 </style>

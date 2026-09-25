@@ -27,6 +27,11 @@ export function getHostname(url: string): string {
   }
 }
 
+/** Домен для показа пользователю: без «www.» */
+export function displayHost(url: string): string {
+  return getHostname(url).replace(/^www\./, '');
+}
+
 /** Обычная веб-ссылка, которую браузер откроет сам по клику на <a> */
 export function isWebUrl(url: string): boolean {
   return /^https?:\/\//i.test(url);

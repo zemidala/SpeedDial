@@ -1,10 +1,13 @@
-import {expect, seed, test, tile} from './fixtures';
+import {expect, openSettings, seed, test, tile} from './fixtures';
 
 const LIGHT_SURFACE = 'rgb(255, 255, 255)';
 const DARK_SURFACE = 'rgb(35, 38, 45)'; // #23262d
 
 test.beforeEach(async ({newtab}) => {
-  await seed(newtab, [{title: 'Example', url: 'https://example.com/'}]);
+  await seed(newtab, [
+    {title: 'Example', url: 'https://example.com/'},
+    {title: 'Папка', children: [{title: 'Внутри', url: 'https://inside.example/'}]},
+  ]);
   await expect(tile(newtab, 'Example')).toBeVisible();
 });
 
@@ -30,40 +33,51 @@ test('переключение темы кнопкой и в настройка�
   await newtab.getByRole('button', {name: 'Включить светлую тему'}).click();
   await expect(newtab.locator('html')).toHaveAttribute('data-theme', 'light');
 
-  // «Системная» убирает явный выбор
-  await newtab.getByRole('button', {name: 'Настройки'}).click();
-  await newtab.getByText('Системная').click();
+  // «Как в системе» убирает явный выбор
+  const dialog = await openSettings(newtab);
+  await dialog.getByLabel('Цветовая тема').selectOption('auto');
   await expect(newtab.locator('html')).not.toHaveAttribute('data-theme');
-  await expect(newtab.getByRole('radio', {name: 'Системная'})).toBeChecked();
 });
 
-test('тема применяется до первой отрисовки, без вспышки', async ({context, newtab}) => {
+test('тема и свой CSS применяются до первой отрисовки, без вспышки', async ({context, newtab}) => {
   await newtab.getByRole('button', {name: 'Включить тёмную тему'}).click();
-  await expect(newtab.locator('html')).toHaveAttribute('data-theme', 'dark');
+  const dialog = await openSettings(newtab, 'Расширенные');
+  await dialog.getByLabel('Пользовательский CSS').fill('.tile__title { letter-spacing: 3px; }');
+  await expect(tile(newtab, 'Example').locator('.tile__title')).toHaveCSS('letter-spacing', '3px');
 
-  // Запоминаем тему в момент, когда парсер только дошёл до <body>, — до запуска приложения
+  // Запоминаем состояние в момент, когда парсер только дошёл до body, — до запуска приложения
   await context.addInitScript(() => {
     new MutationObserver((_, observer) => {
       if (!document.body) return;
-      (window as unknown as {themeAtBody: string | null}).themeAtBody = document.documentElement.dataset.theme ?? null;
+      Object.assign(window, {
+        atBody: {
+          theme: document.documentElement.dataset.theme ?? null,
+          css: document.getElementById('custom-css')?.textContent ?? null,
+        },
+      });
       observer.disconnect();
     }).observe(document, {childList: true, subtree: true});
   });
   await newtab.reload();
 
-  expect(await newtab.evaluate(() => (window as unknown as {themeAtBody: string | null}).themeAtBody)).toBe('dark');
+  expect(await newtab.evaluate(() => (window as unknown as {atBody: unknown}).atBody)).toEqual({
+    theme: 'dark',
+    css: '.tile__title { letter-spacing: 3px; }',
+  });
+  // Свой CSS перекрывает стили страницы
+  await expect(tile(newtab, 'Example').locator('.tile__title')).toHaveCSS('letter-spacing', '3px');
 });
 
 test('свой цвет плитки с читаемым текстом в тёмной теме', async ({newtab}) => {
   await newtab.emulateMedia({colorScheme: 'dark'});
-  await newtab.getByRole('button', {name: 'Настройки'}).click();
+  const dialog = await openSettings(newtab);
 
-  const reset = newtab.getByRole('button', {name: 'Сбросить'}).first();
+  const reset = dialog.getByRole('button', {name: 'Сбросить'}).first();
   await expect(reset).toBeDisabled();
-  await newtab.getByLabel('Цвет плитки').fill('#ffffff');
+  await dialog.getByLabel('Цвет плитки').fill('#ffffff');
 
   // Подкрашивание отключаем, чтобы проверить чистый цвет
-  await newtab.getByLabel('Подкрашивать плитку цветом иконки').uncheck();
+  await dialog.getByLabel('Подкрашивать плитку цветом иконки').uncheck();
   const example = tile(newtab, 'Example');
   await expect(example).toHaveCSS('background-color', 'rgb(255, 255, 255)');
   await expect(example).toHaveCSS('color', 'rgb(31, 35, 40)');
@@ -72,53 +86,50 @@ test('свой цвет плитки с читаемым текстом в тё�
   await expect(example).toHaveCSS('background-color', 'rgb(38, 42, 49)');
 });
 
-test('вместо стандартного глобуса — цветная буква сайта', async ({newtab}) => {
-  // В чистом профиле браузер не знает иконок сайтов и отдаёт глобус
-  const plate = tile(newtab, 'Example').locator('.plate');
-  await expect(plate).toHaveClass(/letter/);
-  await expect(plate).toHaveText('E');
+test('ширина панели, центрирование, названия и служебные плитки', async ({newtab}) => {
+  await newtab.setViewportSize({width: 1000, height: 800});
+  const app = newtab.locator('.app');
+  const dialog = await openSettings(newtab);
+
+  await dialog.getByLabel('Ширина панели').fill('50');
+  await expect.poll(() => app.evaluate((el) => el.getBoundingClientRect().width)).toBeCloseTo(480, 0);
+
+  await dialog.getByLabel('Вертикальное центрирование').check();
+  await expect(app).toHaveClass(/app--centered/);
+
+  await dialog.getByLabel('Показывать названия закладок').uncheck();
+  await expect(newtab.locator('.tile__title')).toHaveCount(0);
+  await dialog.getByLabel('Показывать названия закладок').check();
+
+  await dialog.getByLabel('Показывать иконки сайтов рядом с названием').check();
+  await expect(tile(newtab, 'Example').locator('.tile__title .site-icon--mini')).toBeVisible();
+
+  await dialog.getByLabel('Показывать плитку добавления закладки').uncheck();
+  await expect(newtab.getByRole('button', {name: 'Добавить закладку'})).toHaveCount(0);
+
+  await dialog.getByLabel('Показывать кнопку настроек').uncheck();
+  await dialog.getByRole('button', {name: 'Готово'}).click();
+  await expect(newtab.getByRole('button', {name: 'Настройки'})).toHaveCount(0);
+
+  // Настройки остаются доступны из контекстного меню
+  await newtab.locator('main').click({button: 'right', position: {x: 5, y: 5}});
+  await newtab.getByRole('menuitem', {name: 'Настройки'}).click();
+  await expect(newtab.getByRole('dialog', {name: 'Настройки'})).toBeVisible();
 });
 
-test('иконка высокого качества с сайта', async ({context, newtab}) => {
-  // Иконка 180×180 со сплошным фоном
-  const png = await newtab.evaluate(async () => {
-    const canvas = new OffscreenCanvas(180, 180);
-    const context = canvas.getContext('2d')!;
-    context.fillStyle = '#d03030';
-    context.fillRect(0, 0, 180, 180);
-    const blob = await canvas.convertToBlob({type: 'image/png'});
-    return [...new Uint8Array(await blob.arrayBuffer())];
-  });
+test('фон страницы: цвет', async ({newtab}) => {
+  const dialog = await openSettings(newtab);
+  await dialog.getByLabel('Фон', {exact: true}).selectOption('color');
+  await dialog.getByLabel('Цвет фона').fill('#336699');
+  await expect(newtab.locator('body')).toHaveCSS('background-color', 'rgb(51, 102, 153)');
+});
 
-  // Сайт: страница объявляет apple-touch-icon. CORS-заголовок заменяет разрешение на доступ к сайту
-  const headers = {'Access-Control-Allow-Origin': '*'};
-  await context.route('https://hq.example/**', (route) => {
-    const {pathname} = new URL(route.request().url());
-    if (pathname === '/') {
-      return route.fulfill({headers, contentType: 'text/html', body: '<link rel="apple-touch-icon" href="/touch.png">'});
-    }
-    if (pathname === '/touch.png') {
-      return route.fulfill({headers, contentType: 'image/png', body: Buffer.from(png)});
-    }
-    return route.fulfill({headers, status: 404});
-  });
+test('плитка папки без миниатюр показывает значок папки', async ({newtab}) => {
+  const folder = tile(newtab, 'Папка');
+  await expect(folder.locator('.folder-preview')).toBeVisible();
 
-  // Окно запроса разрешения — это интерфейс браузера, в тесте его не нажать; имитируем выданное
-  await context.addInitScript(() => {
-    Object.defineProperty(chrome.permissions, 'contains', {value: async () => true});
-  });
-  await newtab.evaluate(() => chrome.storage.sync.set({settings: {hqIcons: true}}));
-  await newtab.reload();
-  await seed(newtab, [{title: 'HQ', url: 'https://hq.example/'}]);
-
-  const hq = tile(newtab, 'HQ');
-  await expect(hq.locator('.plate img')).toHaveAttribute('src', /^blob:/);
-  await expect(hq.locator('.plate')).toHaveClass(/fill/);
-  expect(await hq.evaluate((el) => el.style.getPropertyValue('--icon-color'))).toBe('#d03030');
-
-  // Иконка сохранена и после перезагрузки берётся из кэша, без запросов к сайту
-  await context.unroute('https://hq.example/**');
-  await context.route('https://hq.example/**', (route) => route.abort());
-  await newtab.reload();
-  await expect(tile(newtab, 'HQ').locator('.plate img')).toHaveAttribute('src', /^blob:/);
+  const dialog = await openSettings(newtab, 'Общие');
+  await dialog.getByLabel('Миниатюры сайтов на папке').uncheck();
+  await expect(folder.locator('.folder-preview')).toHaveCount(0);
+  await expect(folder.locator('.folder-tile__icon')).toBeVisible();
 });

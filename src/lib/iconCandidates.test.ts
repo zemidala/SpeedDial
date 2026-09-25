@@ -31,7 +31,7 @@ describe('candidatesFromLinks', () => {
     ], BASE);
 
     expect(result).toEqual([
-      {url: 'https://example.com/favicon.ico', size: 16},
+      {url: 'https://example.com/favicon.ico', size: 48, penalty: 0.8},
       {url: 'https://example.com/app/icon-32.png', size: 32},
       {url: 'https://example.com/touch.png', size: 180},
       {url: 'https://example.com/touch-152.png', size: 152},
