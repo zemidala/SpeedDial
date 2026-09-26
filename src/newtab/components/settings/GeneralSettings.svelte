@@ -1,7 +1,9 @@
 <script lang="ts">
   import {onMount} from 'svelte';
+  import {enabledVirtualFolders} from '../../../lib/bookmarks.svelte';
   import {type FolderOption, getFolderOptions} from '../../../lib/folders';
   import {t} from '../../../lib/i18n/index.svelte';
+  import {permissions} from '../../../lib/permissions.svelte';
   import {searchEngineName} from '../../../lib/search';
   import {formatServices, parseServices} from '../../../lib/services';
   import {
@@ -13,6 +15,12 @@
     type TypeOrder,
   } from '../../../lib/settings/schema';
   import {settings} from '../../../lib/settings/store.svelte';
+  import {
+    MOST_VISITED_ID,
+    RECENTLY_CLOSED_ID,
+    VIRTUAL_FOLDER_PERMISSIONS,
+    type VirtualFolderId,
+  } from '../../../lib/virtualFolders';
   import RangeRow from './RangeRow.svelte';
   import SelectRow from './SelectRow.svelte';
   import SettingRow from './SettingRow.svelte';
@@ -25,10 +33,21 @@
   onMount(() => {
     getFolderOptions().then((result) => (folders = result)).catch(() => undefined);
   });
-  const folderOptions = $derived(folders.map((folder) => ({
-    value: folder.id,
-    label: `${' '.repeat(folder.depth)}${folder.title} (${folder.bookmarkCount})`,
-  })));
+  const folderOptions = $derived([
+    ...folders.map((folder) => ({
+      value: folder.id,
+      label: `${' '.repeat(folder.depth)}${folder.title} (${folder.bookmarkCount})`,
+    })),
+    ...enabledVirtualFolders().map((folder) => ({value: folder.id, label: folder.title})),
+  ]);
+
+  /** Turning a virtual folder on asks for its permission first, while the click still counts as a gesture */
+  async function toggleVirtualFolder(id: VirtualFolderId, enabled: boolean) {
+    const key = id === MOST_VISITED_ID ? 'showMostVisited' : 'showRecentlyClosed';
+    if (enabled && !(await permissions.request(VIRTUAL_FOLDER_PERMISSIONS[id]))) return;
+    if (!enabled) await permissions.remove(VIRTUAL_FOLDER_PERMISSIONS[id]);
+    settings.update({[key]: enabled});
+  }
 
   // Services are edited as text and saved when the field loses focus
   let servicesText = $state(formatServices(settings.current.services));
@@ -50,6 +69,18 @@
   />
   <SwitchRow key="rememberLastFolder" label={t.general.rememberLastFolder}/>
   <SwitchRow key="folderPreview" label={t.general.folderPreview} hint={t.general.folderPreviewHint}/>
+  <SwitchRow
+    label={t.general.showMostVisited}
+    hint={t.general.showMostVisitedHint}
+    checked={current.showMostVisited && permissions.topSites}
+    onchange={(enabled) => toggleVirtualFolder(MOST_VISITED_ID, enabled)}
+  />
+  <SwitchRow
+    label={t.general.showRecentlyClosed}
+    hint={t.general.showRecentlyClosedHint}
+    checked={current.showRecentlyClosed && permissions.sessions}
+    onchange={(enabled) => toggleVirtualFolder(RECENTLY_CLOSED_ID, enabled)}
+  />
 </SettingsGroup>
 
 <SettingsGroup title={t.settings.groups.search}>

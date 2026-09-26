@@ -1,13 +1,15 @@
 <script lang="ts">
   import {type BookmarkNode, bookmarks} from '../../lib/bookmarks.svelte';
-  import {ROOT_FOLDER_ID} from '../../lib/constants';
+  import {BOOKMARKS_BAR_ID, ROOT_FOLDER_ID} from '../../lib/constants';
   import {t} from '../../lib/i18n/index.svelte';
   import {folderPageUrl, type OpenMode, openUrl} from '../../lib/navigation';
   import {showNotice} from '../../lib/notice.svelte';
   import {search} from '../../lib/search.svelte';
   import {settings} from '../../lib/settings/store.svelte';
+  import {shelves} from '../../lib/shelves.svelte';
   import {openSettings, requestDelete, ui} from '../../lib/ui.svelte';
   import {isWebUrl} from '../../lib/url';
+  import {isVirtualFolder, isVirtualNode} from '../../lib/virtualFolders';
   import Icon, {type IconName} from './ui/Icon.svelte';
 
   interface MenuItem {
@@ -89,8 +91,8 @@
     return {
       label: t.menu.sort,
       icon: 'sort',
-      // System folders at the root can't be reordered
-      disabled: folder.id === ROOT_FOLDER_ID,
+      // System folders at the root can't be reordered, virtual folders are ordered by the browser
+      disabled: folder.id === ROOT_FOLDER_ID || isVirtualFolder(folder.id),
       action: () => (ui.dialog = {kind: 'sort', folder}),
     };
   }
@@ -100,22 +102,44 @@
   const refreshEntry = (): MenuItem => ({label: t.menu.refresh, icon: 'refresh', action: () => location.reload()});
 
   /** Menu of a bookmark or folder tile */
+  function copyLinkEntry(url: string): MenuItem {
+    return {
+      label: t.menu.copyLink,
+      icon: 'copy',
+      action: async () => {
+        await navigator.clipboard.writeText(url);
+        showNotice(t.notice.linkCopied, 'info');
+      },
+    };
+  }
+
+  /** Saves a page from a virtual folder as a bookmark in the default folder (or the bookmarks bar) */
+  function addToBookmarksEntry(node: BookmarkNode & {url: string}): MenuItem {
+    return {
+      label: t.virtual.addToBookmarks,
+      icon: 'bookmarkPlus',
+      action: async () => {
+        const preferred = settings.current.defaultFolderId;
+        const [folder] = await chrome.bookmarks.get(isVirtualFolder(preferred) ? BOOKMARKS_BAR_ID : preferred)
+          .catch(() => chrome.bookmarks.get(BOOKMARKS_BAR_ID));
+        await chrome.bookmarks.create({parentId: folder.id, title: node.title, url: node.url});
+        showNotice(t.virtual.added(folder.title), 'info');
+      },
+    };
+  }
+
+  /** Menu of a virtual folder or an item in one: open, copy, add to bookmarks — nothing to edit */
+  function virtualEntries(node: BookmarkNode): MenuEntry[] {
+    const entries: MenuEntry[] = [...openEntries(node), 'separator', ...historyEntries()];
+    if (node.url) entries.push('separator', copyLinkEntry(node.url), addToBookmarksEntry(node as BookmarkNode & {url: string}));
+    entries.push('separator', refreshEntry());
+    return entries;
+  }
+
   function tileEntries(node: BookmarkNode): MenuEntry[] {
+    if (isVirtualNode(node)) return virtualEntries(node);
     const entries: MenuEntry[] = [...openEntries(node), 'separator', ...historyEntries(), 'separator'];
-    if (node.url) {
-      const url = node.url;
-      entries.push(
-        {
-          label: t.menu.copyLink,
-          icon: 'copy',
-          action: async () => {
-            await navigator.clipboard.writeText(url);
-            showNotice(t.notice.linkCopied, 'info');
-          },
-        },
-        'separator',
-      );
-    }
+    if (node.url) entries.push(copyLinkEntry(node.url), 'separator');
     entries.push(...createEntries(node), 'separator');
     entries.push({label: t.menu.edit, icon: 'pencil', action: () => (ui.dialog = {kind: 'edit', node})});
     if (node.url) {
@@ -175,7 +199,8 @@
       : null;
 
     const id = target.closest<HTMLElement>('[data-bookmark-id]')?.dataset.bookmarkId;
-    const node = [...bookmarks.items, ...search.results].find((item) => item.id === id);
+    // Tiles, search results and items on the shelves below the tiles
+    const node = [...bookmarks.items, ...search.results, ...Object.values(shelves.lists).flat()].find((item) => item.id === id);
     menu = {x, y, entries: node ? tileEntries(node) : pageEntries()};
   }
 

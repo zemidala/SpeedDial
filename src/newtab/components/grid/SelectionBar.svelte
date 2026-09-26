@@ -43,7 +43,8 @@
 <style>
   .selection-bar {
     position: fixed;
-    bottom: 16px;
+    /* Above the shelves pinned to the bottom (VirtualShelves sets their height) */
+    bottom: calc(16px + var(--shelves-height, 0px));
     left: 50%;
     z-index: 900;
     display: flex;

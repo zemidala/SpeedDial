@@ -22,7 +22,10 @@
     "storage"
   ],
   "optional_permissions": [
-    "clipboardRead"
+    "clipboardRead",
+    "sessions",
+    "tabs",
+    "topSites"
   ],
   "optional_host_permissions": [
     "<all_urls>",

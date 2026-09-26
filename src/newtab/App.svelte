@@ -13,6 +13,7 @@
   import {modals, ui} from '../lib/ui.svelte';
   import BingCaption from './components/BingCaption.svelte';
   import ContextMenu from './components/ContextMenu.svelte';
+  import VirtualShelves from './components/VirtualShelves.svelte';
   import BookmarkDialog from './components/dialogs/BookmarkDialog.svelte';
   import IconDialog from './components/dialogs/IconDialog.svelte';
   import MoveDialog from './components/dialogs/MoveDialog.svelte';
@@ -151,6 +152,7 @@
   <div class="app__content">
     <BookmarkGrid/>
   </div>
+  <VirtualShelves/>
 </main>
 
 <ContextMenu/>
@@ -181,23 +183,33 @@
 {/if}
 
 <style>
+  /* An app-like layout: exactly the window height. The header stays at the top, the shelves at the bottom,
+     and only the tiles scroll in between */
   .app {
     display: flex;
     flex-direction: column;
     gap: var(--gap);
     width: min(100%, var(--container-width));
-    min-height: calc(100vh - 40px);
+    height: calc(100vh - 40px);
     margin: 0 auto;
   }
 
+  /* The scrolling area. The padding (offset by the negative margin) keeps hover lifts, focus rings
+     and selection outlines of the edge tiles from being clipped */
   .app__content {
     display: flex;
     flex: 1;
     flex-direction: column;
+    min-height: 0;
+    margin: -8px;
+    padding: 8px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklab, var(--text) 30%, transparent) transparent;
   }
 
-  /* The grid is centred in the free space below the panel */
+  /* The grid is centred in the free space below the panel; "safe" keeps a tall grid from being cut at the top */
   .app--centered .app__content {
-    justify-content: center;
+    justify-content: safe center;
   }
 </style>

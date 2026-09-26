@@ -1,5 +1,5 @@
 <script lang="ts">
-  import {bookmarks} from '../../../lib/bookmarks.svelte';
+  import {bookmarks, enabledVirtualFolders} from '../../../lib/bookmarks.svelte';
   import {ROOT_FOLDER_ID} from '../../../lib/constants';
   import {type FolderOption, getFolderOptions} from '../../../lib/folders';
   import {t} from '../../../lib/i18n/index.svelte';
@@ -30,6 +30,9 @@
   <option value={ROOT_FOLDER_ID}>{t.common.home}</option>
   {#each options as option (option.id)}
     <option value={option.id}>{' '.repeat(option.depth)}{option.title} ({option.bookmarkCount})</option>
+  {/each}
+  {#each enabledVirtualFolders() as folder (folder.id)}
+    <option value={folder.id}>{folder.title}</option>
   {/each}
 </select>
 

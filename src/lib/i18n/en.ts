@@ -101,6 +101,19 @@ export const en = {
     deleteBookmarkMessage: (title: string) => `“${title}” will be deleted. This can’t be undone.`,
   },
 
+  virtual: {
+    mostVisited: 'Most visited',
+    recentlyClosed: 'Recently closed',
+    empty: 'Nothing here yet — this list is filled by the browser.',
+    addToBookmarks: 'Add to bookmarks',
+    added: (folder: string) => `Added to “${folder}”`,
+    showAll: 'All',
+    inviteTitle: 'Most visited and recently closed',
+    inviteText: 'Show the sites you open most often and the tabs you closed recently here, below your bookmarks?',
+    inviteEnable: 'Show',
+    inviteLater: 'Not now',
+  },
+
   selection: {
     toolbar: 'Selected bookmarks',
     count: (count: number) => `${count} selected`,
@@ -280,6 +293,10 @@ export const en = {
     defaultFolder: 'Default folder',
     defaultFolderHint: 'Opens in a new tab. Not synced',
     rememberLastFolder: 'Open the last opened folder',
+    showMostVisited: 'Most visited sites',
+    showMostVisitedHint: 'A shelf below the tiles of Home, the bookmarks bar and the default folder; the full list is a folder of its own. The browser will ask for permission',
+    showRecentlyClosed: 'Recently closed tabs',
+    showRecentlyClosedHint: 'A shelf below the tiles to get closed tabs back quickly; the full list is a folder of its own. The browser will ask for permission',
     searchEngine: 'Search engine',
     searchEngineYandex: 'Yandex',
     searchEngineCustom: 'Custom URL',

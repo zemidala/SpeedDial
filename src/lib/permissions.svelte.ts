@@ -2,6 +2,7 @@
 import {t} from './i18n/index.svelte';
 import {hideNotice, showNotice} from './notice.svelte';
 import {BING_ACCESS, CLIPBOARD_ACCESS, SITE_ACCESS} from './permissionSets';
+import {MOST_VISITED_ID, RECENTLY_CLOSED_ID, VIRTUAL_FOLDER_PERMISSIONS} from './virtualFolders';
 
 /** A clear explanation of a permission request error */
 function describeError(error: unknown): string {
@@ -16,6 +17,10 @@ function describeError(error: unknown): string {
 class PermissionsStore {
   siteAccess = $state(false);
   clipboard = $state(false);
+  /** Most visited sites — for the virtual folder */
+  topSites = $state(false);
+  /** Recently closed tabs — for the virtual folder */
+  sessions = $state(false);
   /** Access to Bing — on its own or as part of access to all sites */
   bing = $state(false);
   /** Permission state has been checked */
@@ -67,10 +72,12 @@ class PermissionsStore {
   }
 
   async #refresh(): Promise<void> {
-    [this.siteAccess, this.clipboard, this.bing] = await Promise.all([
+    [this.siteAccess, this.clipboard, this.bing, this.topSites, this.sessions] = await Promise.all([
       chrome.permissions.contains(SITE_ACCESS),
       chrome.permissions.contains(CLIPBOARD_ACCESS),
       chrome.permissions.contains(BING_ACCESS),
+      chrome.permissions.contains(VIRTUAL_FOLDER_PERMISSIONS[MOST_VISITED_ID]),
+      chrome.permissions.contains(VIRTUAL_FOLDER_PERMISSIONS[RECENTLY_CLOSED_ID]),
     ]);
   }
 }

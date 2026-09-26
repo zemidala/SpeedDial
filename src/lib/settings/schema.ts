@@ -95,6 +95,11 @@ export interface Settings {
   /** Folder opened in a new tab. Not synced: folders have different ids on different devices */
   defaultFolderId: string;
   rememberLastFolder: boolean;
+  /** Virtual folders; each also needs its permission on this device */
+  showMostVisited: boolean;
+  showRecentlyClosed: boolean;
+  /** "Not now" was pressed on the invitation to show these shelves */
+  shelfInviteDismissed: boolean;
   searchEngine: SearchEngine;
   /** Search URL for searchEngine = custom; %s is replaced with the query */
   customSearchUrl: string;
@@ -180,6 +185,9 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = {
 
   defaultFolderId: '1',
   rememberLastFolder: false,
+  showMostVisited: false,
+  showRecentlyClosed: false,
+  shelfInviteDismissed: false,
   searchEngine: 'google',
   customSearchUrl: '',
   showServices: true,

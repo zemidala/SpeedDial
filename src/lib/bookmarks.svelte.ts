@@ -1,5 +1,15 @@
+import {untrack} from 'svelte';
 import {BOOKMARKS_BAR_ID, FOLDER_PREVIEW_SIZE, ROOT_FOLDER_ID} from './constants';
+import {t} from './i18n/index.svelte';
+import {permissions} from './permissions.svelte';
 import {settings} from './settings/store.svelte';
+import {
+  isVirtualFolder,
+  MOST_VISITED_ID,
+  RECENTLY_CLOSED_ID,
+  type VirtualFolderId,
+  virtualFolderItems,
+} from './virtualFolders';
 
 export type BookmarkNode = chrome.bookmarks.BookmarkTreeNode;
 
@@ -17,7 +27,7 @@ export function folderHref(folderId: string): string {
 }
 
 function folderFromHash(): string | null {
-  return /^#folder=(\w+)$/.exec(location.hash)?.[1] ?? null;
+  return /^#folder=([\w-]+)$/.exec(location.hash)?.[1] ?? null;
 }
 
 /** Folder shown in a new tab: the last opened one or the default folder */
@@ -29,7 +39,19 @@ function startFolder(): string {
   return settings.current.defaultFolderId;
 }
 
+/** Virtual folders turned on in the settings and allowed on this device, with their localized names */
+export function enabledVirtualFolders(): Array<{id: VirtualFolderId; title: string}> {
+  const folders: Array<{id: VirtualFolderId; title: string}> = [];
+  if (settings.current.showMostVisited && permissions.topSites) folders.push({id: MOST_VISITED_ID, title: t.virtual.mostVisited});
+  if (settings.current.showRecentlyClosed && permissions.sessions) {
+    folders.push({id: RECENTLY_CLOSED_ID, title: t.virtual.recentlyClosed});
+  }
+  return folders;
+}
+
 async function getFolderPath(folderId: string): Promise<Crumb[]> {
+  const virtual = enabledVirtualFolders().find((folder) => folder.id === folderId);
+  if (virtual) return [virtual];
   const path: Crumb[] = [];
   let id: string | undefined = folderId;
   while (id && id !== ROOT_FOLDER_ID) {
@@ -38,6 +60,19 @@ async function getFolderPath(folderId: string): Promise<Crumb[]> {
     id = node.parentId;
   }
   return path;
+}
+
+/** Folder contents: bookmark children or a virtual folder's list (virtual folders are shown as shelves, see shelves.svelte.ts) */
+async function getItems(folderId: string): Promise<BookmarkNode[]> {
+  if (isVirtualFolder(folderId)) {
+    if (!enabledVirtualFolders().some((folder) => folder.id === folderId)) throw new Error(`${folderId} is off`);
+    return virtualFolderItems(folderId);
+  }
+  return chrome.bookmarks.getChildren(folderId);
+}
+
+async function getPreview(folder: BookmarkNode): Promise<BookmarkNode[]> {
+  return (await chrome.bookmarks.getChildren(folder.id)).slice(0, FOLDER_PREVIEW_SIZE);
 }
 
 class BookmarksStore {
@@ -51,10 +86,16 @@ class BookmarksStore {
 
   #loadId = 0; // Number of the latest load, to drop stale ones
   #reloadTimer: ReturnType<typeof setTimeout> | undefined;
+  #watchingSessions = false;
 
-  /** Folder for new bookmarks: the current one, but not the root — the API doesn't allow adding there */
+  /** Folder for new bookmarks: the current one, but not the root or a virtual folder — bookmarks can't go there */
   get targetFolderId(): string {
-    return this.folderId === ROOT_FOLDER_ID ? BOOKMARKS_BAR_ID : this.folderId;
+    return this.folderId === ROOT_FOLDER_ID || isVirtualFolder(this.folderId) ? BOOKMARKS_BAR_ID : this.folderId;
+  }
+
+  /** The open folder is a read-only list from the browser (most visited, recently closed) */
+  get virtual(): boolean {
+    return isVirtualFolder(this.folderId);
   }
 
   /** Parent of the open folder; null at the root */
@@ -68,10 +109,6 @@ class BookmarksStore {
     window.addEventListener('hashchange', () => this.#load(folderFromHash() ?? startFolder()));
 
     // Reload on any bookmark change, including ones made in the browser itself
-    const scheduleReload = () => {
-      clearTimeout(this.#reloadTimer);
-      this.#reloadTimer = setTimeout(() => this.#load(this.folderId), RELOAD_DELAY);
-    };
     [
       chrome.bookmarks.onCreated,
       chrome.bookmarks.onRemoved,
@@ -79,14 +116,44 @@ class BookmarksStore {
       chrome.bookmarks.onMoved,
       chrome.bookmarks.onChildrenReordered,
       chrome.bookmarks.onImportEnded,
-    ].forEach((event) => event.addListener(scheduleReload));
+    ].forEach((event) => event.addListener(this.#scheduleReload));
 
-    await settingsLoaded.catch(() => undefined);
+    // Virtual folders appear, disappear and change with their settings, permissions and the interface language.
+    // The effect also re-runs on unrelated settings changes, so reload only when the set of folders really changed
+    let previousKey = '';
+    $effect.root(() => {
+      $effect(() => {
+        const folders = enabledVirtualFolders();
+        const key = folders.map(({id, title}) => `${id}:${title}`).join('|');
+        untrack(() => {
+          if (key === previousKey) return;
+          previousKey = key;
+          if (folders.some((folder) => folder.id === RECENTLY_CLOSED_ID)) this.#watchSessions();
+          if (this.loaded) this.#scheduleReload();
+        });
+      });
+    });
+
+    await Promise.all([settingsLoaded.catch(() => undefined), permissions.ready]);
     await this.#load(folderFromHash() ?? startFolder());
   }
 
   navigate(folderId: string): void {
     location.hash = folderHref(folderId);
+  }
+
+  #scheduleReload = (): void => {
+    clearTimeout(this.#reloadTimer);
+    this.#reloadTimer = setTimeout(() => this.#load(this.folderId), RELOAD_DELAY);
+  };
+
+  /** Recently closed tabs change whenever a tab is closed; the API exists only once the permission is granted */
+  #watchSessions(): void {
+    if (this.#watchingSessions || !chrome.sessions?.onChanged) return;
+    this.#watchingSessions = true;
+    chrome.sessions.onChanged.addListener(() => {
+      if (this.folderId === RECENTLY_CLOSED_ID) this.#scheduleReload();
+    });
   }
 
   async #load(folderId: string): Promise<void> {
@@ -96,19 +163,13 @@ class BookmarksStore {
     let path: Crumb[];
     let previews: Record<string, BookmarkNode[]>;
     try {
-      [items, path] = await Promise.all([
-        chrome.bookmarks.getChildren(folderId),
-        getFolderPath(folderId),
-      ]);
+      [items, path] = await Promise.all([getItems(folderId), getFolderPath(folderId)]);
       const folders = items.filter((item) => !item.url);
-      const children = await Promise.all(folders.map((folder) => chrome.bookmarks.getChildren(folder.id)));
-      previews = Object.fromEntries(folders.map((folder, i) => [
-        folder.id,
-        children[i].slice(0, FOLDER_PREVIEW_SIZE),
-      ]));
+      const children = await Promise.all(folders.map(getPreview));
+      previews = Object.fromEntries(folders.map((folder, i) => [folder.id, children[i]]));
     } catch (error) {
       if (loadId !== this.#loadId) return;
-      // The folder may have been removed — go back to the bookmarks bar
+      // The folder may have been removed (or a virtual folder turned off) — go back to the bookmarks bar
       console.error('Failed to load folder', folderId, error);
       if (folderId !== BOOKMARKS_BAR_ID) {
         history.replaceState(null, '', location.pathname);
@@ -120,12 +181,15 @@ class BookmarksStore {
     // A newer load started while we were waiting for data
     if (loadId !== this.#loadId) return;
 
+    // Remember the folder only when the user opened it: a background reload of an old tab
+    // must not overwrite the folder just opened in another tab
+    const opened = !this.loaded || folderId !== this.folderId;
     this.folderId = folderId;
     this.items = items;
     this.path = path;
     this.previews = previews;
     this.loaded = true;
-    localStorage.setItem(LAST_FOLDER_KEY, folderId);
+    if (opened) localStorage.setItem(LAST_FOLDER_KEY, folderId);
   }
 }
 

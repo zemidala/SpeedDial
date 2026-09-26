@@ -111,6 +111,19 @@ export const ru: Messages = {
     deleteBookmarkMessage: (title: string) => `«${title}» будет удалена. Отменить это действие нельзя.`,
   },
 
+  virtual: {
+    mostVisited: 'Часто посещаемые',
+    recentlyClosed: 'Недавно закрытые',
+    empty: 'Здесь пока пусто — этот список заполняет браузер.',
+    addToBookmarks: 'Добавить в закладки',
+    added: (folder: string) => `Добавлено в «${folder}»`,
+    showAll: 'Все',
+    inviteTitle: 'Часто посещаемые и недавно закрытые',
+    inviteText: 'Показывать здесь, под закладками, сайты, которые вы открываете чаще всего, и недавно закрытые вкладки?',
+    inviteEnable: 'Показать',
+    inviteLater: 'Не сейчас',
+  },
+
   selection: {
     toolbar: 'Выделенные закладки',
     count: (count: number) => `Выбрано: ${count}`,
@@ -290,6 +303,10 @@ export const ru: Messages = {
     defaultFolder: 'Папка по умолчанию',
     defaultFolderHint: 'Открывается в новой вкладке. Не синхронизируется',
     rememberLastFolder: 'Открывать последнюю открытую папку',
+    showMostVisited: 'Часто посещаемые сайты',
+    showMostVisitedHint: 'Полкой под плитками «Главной», панели закладок и папки по умолчанию; весь список — отдельной папкой. Браузер спросит разрешение',
+    showRecentlyClosed: 'Недавно закрытые вкладки',
+    showRecentlyClosedHint: 'Полкой под плитками — чтобы быстро вернуть закрытую вкладку; весь список — отдельной папкой. Браузер спросит разрешение',
     searchEngine: 'Поисковая система',
     searchEngineYandex: 'Яндекс',
     searchEngineCustom: 'Свой адрес',

@@ -23,7 +23,7 @@
   .notice {
     position: fixed;
     right: 16px;
-    bottom: 16px;
+    bottom: calc(16px + var(--shelves-height, 0px));
     z-index: 2000;
     display: flex;
     align-items: flex-start;

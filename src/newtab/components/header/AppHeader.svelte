@@ -1,4 +1,5 @@
 <script lang="ts">
+  import {bookmarks} from '../../../lib/bookmarks.svelte';
   import {t} from '../../../lib/i18n/index.svelte';
   import {settings} from '../../../lib/settings/store.svelte';
   import {openSettings} from '../../../lib/ui.svelte';
@@ -17,7 +18,8 @@
     {#if settings.current.showServices}
       <ServicesMenu/>
     {/if}
-    {#if settings.current.showThumbnailRefresh}
+    <!-- Virtual folders (most visited, recently closed) have no bookmarks to take screenshots of -->
+    {#if settings.current.showThumbnailRefresh && !bookmarks.virtual}
       <ThumbnailRefreshButton/>
     {/if}
     <ThemeToggle/>

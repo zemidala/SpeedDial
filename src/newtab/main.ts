@@ -8,6 +8,7 @@ import {isManifestOutdated} from '../lib/manifestCheck';
 import {showNotice} from '../lib/notice.svelte';
 import {permissions} from '../lib/permissions.svelte';
 import {settings} from '../lib/settings/store.svelte';
+import {shelves} from '../lib/shelves.svelte';
 import {thumbnails} from '../lib/thumbnails/store.svelte';
 import App from './App.svelte';
 import './styles/index.css';
@@ -23,6 +24,7 @@ permissions.start().catch(logError('Failed to check permissions'));
 bookmarks.start(settingsLoaded).catch(logError('Failed to load bookmarks'));
 icons.start(settingsLoaded).catch(logError('Failed to start icons'));
 thumbnails.start();
+shelves.start();
 background.load().catch(logError('Failed to load background'));
 
 isManifestOutdated()

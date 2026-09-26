@@ -129,7 +129,7 @@ class DragDropStore {
   get enabled(): boolean {
     const {dragAndDrop, sortOrder, typeOrder} = settings.current;
     return dragAndDrop && sortOrder === 'none' && typeOrder === 'none'
-      && !search.active && bookmarks.folderId !== ROOT_FOLDER_ID;
+      && !search.active && bookmarks.folderId !== ROOT_FOLDER_ID && !bookmarks.virtual;
   }
 
   onDragStart = (event: DragEvent): void => {

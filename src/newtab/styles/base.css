@@ -5,8 +5,10 @@
 }
 
 /* The font is set on body: Chrome sets its own font-family and font-size for extension pages exactly on body */
+/* The page itself never scrolls: only the tile area inside it does (see .app__content in App.svelte) */
 body {
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
   margin: 0;
   padding: 20px;
   background: linear-gradient(135deg, var(--page-bg-from) 0%, var(--page-bg-to) 100%) fixed;

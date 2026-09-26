@@ -48,6 +48,8 @@ interface Fixtures {
   isolatedBuild: boolean;
   /** Browser language; the tests are written for the Russian interface */
   browserLocale: string;
+  /** Optional permissions granted up front: moved to "permissions" in a copy of the manifest */
+  grantedPermissions: string[];
   extensionPath: string;
   context: BrowserContext;
   extensionId: string;
@@ -59,8 +61,17 @@ export const test = base.extend<Fixtures>({
   hostAccess: [false, {option: true}],
   isolatedBuild: [false, {option: true}],
   browserLocale: ['ru-RU', {option: true}],
+  grantedPermissions: [[], {option: true}],
 
-  extensionPath: async ({hostAccess, isolatedBuild}, use) => {
+  extensionPath: async ({hostAccess, isolatedBuild, grantedPermissions}, use) => {
+    if (grantedPermissions.length > 0) {
+      const path = copyBuild();
+      patchManifest(path, (manifest) => {
+        manifest.permissions = [...(manifest.permissions as string[]), ...grantedPermissions];
+      });
+      await use(path);
+      return;
+    }
     await use(isolatedBuild ? copyBuild() : hostAccess ? getHostAccessBuild() : EXTENSION_PATH);
   },
 

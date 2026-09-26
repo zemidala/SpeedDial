@@ -205,6 +205,24 @@ test('settings apply immediately and are saved', async ({newtab}) => {
   await expect.poll(columnCount).toBe(3);
 });
 
+test('only the tiles scroll: the header stays in place', async ({newtab}) => {
+  await newtab.setViewportSize({width: 1000, height: 600});
+  await seed(newtab, Array.from({length: 40}, (_, i) => ({title: `Tile ${i}`, url: `https://t${i}.example/`})));
+  await expect(tile(newtab, 'Tile 39')).toBeAttached();
+
+  const content = newtab.locator('.app__content');
+  const header = newtab.getByRole('searchbox', {name: 'Поиск'});
+  const headerTop = (await header.boundingBox())!.y;
+  await newtab.mouse.move(500, 400);
+  await newtab.mouse.wheel(0, 2000);
+  await expect.poll(() => content.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+
+  // The page itself didn't scroll and the header didn't move
+  expect(await newtab.evaluate(() => scrollY)).toBe(0);
+  expect((await header.boundingBox())!.y).toBe(headerTop);
+  await expect(tile(newtab, 'Tile 39')).toBeInViewport();
+});
+
 test('a web bookmark opens in the current tab', async ({context, newtab}) => {
   await context.route('https://example.com/**', (route) => route.fulfill({body: '<title>Example page</title>'}));
   await tile(newtab, 'Example').click();

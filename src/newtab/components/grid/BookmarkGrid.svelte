@@ -14,6 +14,7 @@
   import {settings} from '../../../lib/settings/store.svelte';
   import {sortNodes} from '../../../lib/sorting';
   import {modals, requestDelete, requestDeleteMany, ui} from '../../../lib/ui.svelte';
+  import {isVirtualNode} from '../../../lib/virtualFolders';
   import Icon from '../ui/Icon.svelte';
   import AddTile from './AddTile.svelte';
   import BackTile from './BackTile.svelte';
@@ -49,19 +50,23 @@
     if (search.active || !settings.current.showBackTile || parent === ROOT_FOLDER_ID) return null;
     return parent;
   });
-  const showAddTile = $derived(!search.active && settings.current.showAddTile && bookmarks.loaded);
+  // Virtual folders (most visited, recently closed) are filled by the browser: nothing to add there
+  const showAddTile = $derived(!search.active && settings.current.showAddTile && bookmarks.loaded && !bookmarks.virtual);
 
   const emptyMessage = $derived.by(() => {
     if (items.length > 0) return null;
     if (search.active) {
       return t.grid.nothingFound(searchEngineName(settings.current.searchEngine));
     }
+    if (bookmarks.loaded && bookmarks.virtual) return t.virtual.empty;
     if (bookmarks.loaded && !showAddTile) return t.grid.empty;
     return null;
   });
 
   // ===== Selection =====
-  const itemIds = $derived(items.map((item) => item.id));
+  // Items of virtual folders and the virtual folders themselves can't be selected, edited or deleted
+  const selectable = (id: string | undefined) => items.some((item) => item.id === id && !isVirtualNode(item));
+  const itemIds = $derived(items.filter((item) => !isVirtualNode(item)).map((item) => item.id));
   const selectedNodes = $derived(items.filter((item) => selection.has(item.id)));
 
   // Another folder or another search — the selection resets
@@ -86,7 +91,7 @@
     if (event.ctrlKey || event.metaKey || event.altKey || event.button !== 0) return;
     const tile = (event.target as Element).closest<HTMLElement>('.tile[data-bookmark-id]');
     const id = tile?.dataset.bookmarkId;
-    if (!id) return;
+    if (!id || !selectable(id)) return;
     if (event.shiftKey) selection.range(id, itemIds);
     else if (selection.active) selection.toggle(id);
     else return;
@@ -143,7 +148,8 @@
     }
 
     const node = items.find((item) => item.id === tile.dataset.bookmarkId);
-    if (!node) return;
+    // Virtual items open with Enter like any link, but can't be selected, deleted or edited
+    if (!node || isVirtualNode(node)) return;
     if (event.key === ' ') {
       // Space marks the focused tile
       event.preventDefault();
@@ -224,17 +230,19 @@
         <FolderTile folder={item} preview={bookmarks.previews[item.id] ?? []}/>
       {/if}
       <!-- Selection check mark: visible on hover and while something is selected. Keyboard — Space on the tile -->
-      <button
-        type="button"
-        class="bookmark-grid__check"
-        role="checkbox"
-        aria-checked={selected}
-        aria-label={t.selection.select(item.title)}
-        tabindex="-1"
-        onclick={(event) => onCheckClick(event, item.id)}
-      >
-        <Icon name="check" size={14}/>
-      </button>
+      {#if !isVirtualNode(item)}
+        <button
+          type="button"
+          class="bookmark-grid__check"
+          role="checkbox"
+          aria-checked={selected}
+          aria-label={t.selection.select(item.title)}
+          tabindex="-1"
+          onclick={(event) => onCheckClick(event, item.id)}
+        >
+          <Icon name="check" size={14}/>
+        </button>
+      {/if}
     </div>
   {/each}
 
