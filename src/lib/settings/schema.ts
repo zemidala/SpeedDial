@@ -8,6 +8,10 @@ export const LANGUAGE_SETTINGS = ['auto', 'en', 'ru'] as const;
 export const THEMES = ['auto', 'light', 'dark'] as const;
 /** auto — повышенная, если в системе включена высокая контрастность (prefers-contrast: more) */
 export const CONTRASTS = ['auto', 'normal', 'high'] as const;
+/** Размер текста всей страницы — как «Размер шрифта» в настройках браузера */
+export const FONT_SIZES = ['xs', 's', 'm', 'l', 'xl'] as const;
+/** Размер названий плиток */
+export const TITLE_SIZES = ['s', 'm', 'l'] as const;
 export const BACKGROUNDS = ['none', 'color', 'image', 'bing'] as const;
 export const ICON_STYLES = ['plate', 'fill'] as const;
 export const TITLE_POSITIONS = ['bottom-inside', 'top-inside', 'bottom-outside', 'top-outside'] as const;
@@ -19,6 +23,8 @@ export const TYPE_ORDERS = ['none', 'foldersFirst', 'bookmarksFirst'] as const;
 export type LanguageSetting = (typeof LANGUAGE_SETTINGS)[number];
 export type Theme = (typeof THEMES)[number];
 export type Contrast = (typeof CONTRASTS)[number];
+export type FontSize = (typeof FONT_SIZES)[number];
+export type TitleSize = (typeof TITLE_SIZES)[number];
 export type Background = (typeof BACKGROUNDS)[number];
 export type IconStyle = (typeof ICON_STYLES)[number];
 export type TitlePosition = (typeof TITLE_POSITIONS)[number];
@@ -81,6 +87,9 @@ export interface Settings {
   tileColor: string;
   folderColor: string;
   fontFamily: string;
+  fontSize: FontSize;
+  titleSize: TitleSize;
+  boldTitles: boolean;
 
   // ===== Общие =====
   /** Папка, которая открывается в новой вкладке. Не синхронизируется: у папок разные id на разных устройствах */
@@ -165,6 +174,9 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = {
   tileColor: '',
   folderColor: '',
   fontFamily: 'Segoe UI, system-ui, sans-serif',
+  fontSize: 'm',
+  titleSize: 'm',
+  boldTitles: false,
 
   defaultFolderId: '1',
   rememberLastFolder: false,
@@ -197,6 +209,8 @@ const ENUMS: Partial<Record<keyof Settings, readonly string[]>> = {
   language: LANGUAGE_SETTINGS,
   theme: THEMES,
   contrast: CONTRASTS,
+  fontSize: FONT_SIZES,
+  titleSize: TITLE_SIZES,
   themePreset: THEME_PRESET_IDS,
   background: BACKGROUNDS,
   iconStyle: ICON_STYLES,

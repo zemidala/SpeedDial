@@ -1,7 +1,7 @@
 import {expect, openSettings, seed, test, tile} from './fixtures';
 
 const LIGHT_SURFACE = 'rgb(255, 255, 255)';
-const DARK_SURFACE = 'rgb(35, 38, 45)'; // #23262d
+const DARK_SURFACE = 'rgb(44, 48, 57)'; // #2c3039
 
 test.beforeEach(async ({newtab}) => {
   // Точные цвета проверяем без приглушения светлой темы
@@ -86,7 +86,7 @@ test('свой цвет плитки с читаемым текстом в тё�
   await expect(card).toHaveCSS('color', 'rgb(31, 35, 40)');
 
   await reset.click();
-  await expect(card).toHaveCSS('background-color', 'rgb(38, 42, 49)');
+  await expect(card).toHaveCSS('background-color', 'rgb(44, 48, 57)');
 });
 
 test('положение названий: внутри и снаружи, сверху и снизу', async ({newtab}) => {
@@ -167,6 +167,37 @@ test('контрастность: как в системе, повышенная
   await dialog.getByRole('button', {name: 'Готово'}).click();
   await newtab.reload();
   await expect(html).toHaveAttribute('data-contrast', 'high');
+});
+
+test('шрифты: размер текста, пример шрифта, свой шрифт, названия плиток', async ({newtab}) => {
+  const html = newtab.locator('html');
+  const title = tile(newtab, 'Example').locator('.tile__title');
+  const dialog = await openSettings(newtab);
+
+  await expect(html).toHaveCSS('font-size', '16px');
+  await dialog.getByLabel('Размер шрифта').selectOption({label: 'Крупный'});
+  await expect(html).toHaveCSS('font-size', '18px');
+  await expect(title).toHaveCSS('font-size', '14.625px'); // 0.8125rem при 18px
+
+  // Пример текста набран выбранным шрифтом
+  await dialog.getByLabel('Шрифт', {exact: true}).selectOption('Georgia');
+  await expect(dialog.getByText('Съешь же ещё этих мягких французских булок, да выпей чаю'))
+    .toHaveCSS('font-family', /Georgia/);
+
+  // «Другой…» — любое название вручную
+  await dialog.getByLabel('Шрифт', {exact: true}).selectOption({label: 'Другой…'});
+  await dialog.getByLabel('Название шрифта').fill('Comic Sans MS');
+  await expect(newtab.locator('body')).toHaveCSS('font-family', /^"?Comic Sans MS/);
+
+  await dialog.getByLabel('Размер названий плиток').selectOption({label: 'Мелкий'});
+  await dialog.getByLabel('Жирные названия плиток').check();
+  await expect(title).toHaveCSS('font-size', '13.5px'); // 0.75rem при 18px
+  await expect(title).toHaveCSS('font-weight', '600');
+
+  // Размер текста применяется до первой отрисовки — без скачка
+  await dialog.getByRole('button', {name: 'Готово'}).click();
+  await newtab.reload();
+  expect(await newtab.evaluate(() => document.documentElement.style.fontSize)).toBe('112.5%');
 });
 
 test('фон страницы: цвет', async ({newtab}) => {

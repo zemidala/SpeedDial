@@ -28,7 +28,7 @@
     border-radius: var(--radius-small);
     background: rgb(0 0 0 / 0.45);
     color: #fff;
-    font-size: 12px;
+    font-size: 0.75rem;
     line-height: 1.4;
     opacity: 0.7;
     transition: opacity 0.15s;

@@ -129,13 +129,13 @@
   .icon-dialog__status {
     margin: 12px 0 0;
     color: var(--text-muted);
-    font-size: 13px;
+    font-size: 0.8125rem;
     line-height: 1.4;
   }
 
   .icon-dialog__error {
     margin: 12px 0 0;
     color: var(--danger);
-    font-size: 13px;
+    font-size: 0.8125rem;
   }
 </style>

@@ -131,7 +131,7 @@
 
   .bookmark-form__label {
     color: var(--text-muted);
-    font-size: 14px;
+    font-size: 0.875rem;
   }
 
   .bookmark-form__field {
@@ -141,6 +141,6 @@
   .bookmark-form__error {
     margin: 0;
     color: var(--danger);
-    font-size: 13px;
+    font-size: 0.8125rem;
   }
 </style>

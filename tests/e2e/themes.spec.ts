@@ -59,7 +59,7 @@ test('приглушение светлой темы: фоны мягче, те�
 
   // Тёмная тема не меняется
   await newtab.emulateMedia({colorScheme: 'dark'});
-  await expect.poll(luminance).toBe('rgb(35, 38, 45)');
+  await expect.poll(luminance).toBe('rgb(44, 48, 57)');
 });
 
 test('превью тем показывают вариант для текущего режима', async ({newtab}) => {

@@ -50,6 +50,6 @@
   .confirm-dialog__error {
     margin: 12px 0 0;
     color: var(--danger);
-    font-size: 13px;
+    font-size: 0.8125rem;
   }
 </style>

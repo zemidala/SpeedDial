@@ -10,7 +10,11 @@ function addStyle(id, css) {
 }
 
 try {
-  const {theme, contrast, customCss} = JSON.parse(localStorage.getItem('settings-cache') ?? '{}').settings ?? {};
+  const {theme, contrast, customCss, fontSize, fontFamily} = JSON.parse(localStorage.getItem('settings-cache') ?? '{}').settings ?? {};
+  // Размер и шрифт текста — те же значения, что ставит App.svelte (FONT_SCALES в lib/fonts.ts)
+  const fontScales = {xs: 0.875, s: 0.9375, m: 1, l: 1.125, xl: 1.25};
+  if (fontScales[fontSize]) document.documentElement.style.fontSize = `${fontScales[fontSize] * 100}%`;
+  if (typeof fontFamily === 'string' && fontFamily) document.documentElement.style.setProperty('--font-family', fontFamily);
   if (theme === 'light' || theme === 'dark') {
     document.documentElement.dataset.theme = theme;
   }

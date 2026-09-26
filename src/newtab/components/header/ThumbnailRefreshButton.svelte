@@ -116,7 +116,7 @@
     border-radius: 8px;
     background: var(--accent);
     color: var(--accent-text);
-    font-size: 10px;
+    font-size: 0.625rem;
     font-weight: 600;
     line-height: 15px;
     white-space: nowrap;

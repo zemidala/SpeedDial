@@ -22,25 +22,25 @@
 
   /* Цвета по умолчанию — тема «Стандартная» (themes/presets.ts). Выбранная тема перекрывает их
      стилем #theme-palette, который ставит theme-init.js до первой отрисовки */
-  --tile-bg: light-dark(#ffffff, #262a31);
-  --folder-bg: light-dark(#e6f2ff, #1f2b3b);
+  --tile-bg: light-dark(#ffffff, #2c3039);
+  --folder-bg: light-dark(#e3eefc, #27354a);
 
-  --page-bg-from: light-dark(#f5f7fa, #16181d);
-  --page-bg-to: light-dark(#e4e8eb, #0e1014);
-  --surface: light-dark(#ffffff, #23262d);
-  --surface-muted: light-dark(#f3f5f8, #2a2e36);
-  --surface-hover: light-dark(#eef1f4, #30343c);
-  --cell-bg: light-dark(rgb(255 255 255 / 0.6), rgb(255 255 255 / 0.06));
+  --page-bg-from: light-dark(#f3f4f6, #20232b);
+  --page-bg-to: light-dark(#e6e9ed, #17191f);
+  --surface: light-dark(#ffffff, #2c3039);
+  --surface-muted: light-dark(#f5f6f8, #262a32);
+  --surface-hover: light-dark(#eceef2, #363b46);
+  --cell-bg: light-dark(rgb(255 255 255 / 0.6), rgb(255 255 255 / 0.08));
   /* Подложка иконок светлая и в тёмной теме: тёмные логотипы (GitHub, X) иначе теряются */
   --plate-bg: light-dark(#ffffff, #eceef1);
-  --text: light-dark(#1f2328, #e6e8eb);
-  --text-muted: light-dark(#59636e, #9aa3ad);
-  --accent: light-dark(#0066cc, #4d9fff);
-  --accent-hover: light-dark(#0052a3, #75b4ff);
+  --text: light-dark(#1a1c1f, #f0f2f5);
+  --text-muted: light-dark(#4b535d, #b4bbc5);
+  --accent: light-dark(#0066cc, #5aa7ff);
+  --accent-hover: light-dark(#0052a3, #80bbff);
   --accent-text: light-dark(#ffffff, #0e1014);
-  --danger: light-dark(#cf222e, #f85149);
+  --danger: light-dark(#cf222e, #ff6a63);
   --danger-text: light-dark(#ffffff, #0e1014);
-  --border: light-dark(rgb(0 0 0 / 0.1), rgb(255 255 255 / 0.1));
+  --border: light-dark(rgb(0 0 0 / 0.14), rgb(255 255 255 / 0.16));
   --shadow-color: light-dark(rgb(0 0 0 / 0.1), rgb(0 0 0 / 0.4));
   --shadow-raised-color: light-dark(rgb(0 0 0 / 0.16), rgb(0 0 0 / 0.5));
   --shadow: 0 2px 8px var(--shadow-color);
@@ -50,6 +50,14 @@
   --radius: 10px;
   --radius-small: 6px;
   --gap: 20px;
+}
+
+/* Поля, списки и кнопки — своим тоном и с заметной рамкой, как в настройках Edge и Оперы:
+   не сливаются с панелью ни в одной теме. Считаются от цветов темы, поэтому подходят ко всем */
+:root {
+  --field-bg: light-dark(var(--surface), color-mix(in oklab, var(--surface), #fff 7%));
+  --field-hover: light-dark(var(--surface-hover), color-mix(in oklab, var(--surface), #fff 12%));
+  --field-border: light-dark(rgb(0 0 0 / 0.22), rgb(255 255 255 / 0.24));
 }
 
 /* ===== Повышенная контрастность =====

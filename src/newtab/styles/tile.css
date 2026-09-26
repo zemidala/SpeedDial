@@ -89,7 +89,9 @@
   gap: 6px;
   min-width: 0;
   padding: 4px 8px;
-  font-size: 13px;
+  /* Размер и насыщенность — из настроек (App.svelte) */
+  font-size: var(--title-font-size, 0.8125rem);
+  font-weight: var(--title-font-weight, 400);
 }
 
 .tile__title-text {

@@ -280,7 +280,7 @@
     border: none;
     border-radius: 4px;
     background: none;
-    font-size: 14px;
+    font-size: 0.875rem;
     text-align: left;
     cursor: pointer;
   }

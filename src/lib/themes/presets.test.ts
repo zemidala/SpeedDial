@@ -93,8 +93,8 @@ describe('paletteCss', () => {
   it('переменные с light-dark() для каждого цвета', () => {
     const css = paletteCss(THEME_PRESETS[0]);
     expect(css).toMatch(/^:root:root \{/);
-    expect(css).toContain('--surface: light-dark(#ffffff, #23262d);');
-    expect(css).toContain('--tile-bg: light-dark(#ffffff, #262a31);');
+    expect(css).toContain('--surface: light-dark(#ffffff, #2c3039);');
+    expect(css).toContain('--tile-bg: light-dark(#ffffff, #2c3039);');
     expect(css.match(/light-dark/g)).toHaveLength(19);
   });
 });

@@ -9,15 +9,20 @@
   import {
     type Background,
     type Contrast,
+    FONT_SIZES,
+    type FontSize,
     type IconStyle,
     type LanguageSetting,
     type LogoService,
     RANGES,
     type Theme,
+    TITLE_SIZES,
     type TitlePosition,
+    type TitleSize,
   } from '../../../lib/settings/schema';
   import {settings} from '../../../lib/settings/store.svelte';
   import ColorRow from './ColorRow.svelte';
+  import FontRow from './FontRow.svelte';
   import RangeRow from './RangeRow.svelte';
   import SelectRow from './SelectRow.svelte';
   import SettingRow from './SettingRow.svelte';
@@ -200,18 +205,21 @@
 
 <ColorRow key="tileColor" label={t.view.tileColor}/>
 <ColorRow key="folderColor" label={t.view.folderColor}/>
-<SettingRow label={t.view.font}>
-  {#snippet children(id)}
-    <input
-      {id}
-      class="input"
-      type="text"
-      placeholder="Segoe UI, system-ui, sans-serif"
-      value={current.fontFamily}
-      oninput={(event) => settings.update({fontFamily: event.currentTarget.value})}
-    >
-  {/snippet}
-</SettingRow>
+<SelectRow
+  label={t.view.fontSize}
+  hint={t.view.fontSizeHint}
+  value={current.fontSize}
+  options={FONT_SIZES.map((size) => ({value: size, label: t.view.fontSizes[size]}))}
+  onchange={(value) => settings.update({fontSize: value as FontSize})}
+/>
+<FontRow/>
+<SelectRow
+  label={t.view.titleSize}
+  value={current.titleSize}
+  options={TITLE_SIZES.map((size) => ({value: size, label: t.view.titleSizes[size]}))}
+  onchange={(value) => settings.update({titleSize: value as TitleSize})}
+/>
+<SwitchRow key="boldTitles" label={t.view.boldTitles}/>
 
 <SelectRow
   label={t.view.background}

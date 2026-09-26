@@ -3,6 +3,7 @@
   import {background} from '../lib/background.svelte';
   import {readableTextColor} from '../lib/color';
   import {dragDrop} from '../lib/dragDrop.svelte';
+  import {FONT_SCALES, TITLE_FONT_SIZES} from '../lib/fonts';
   import {currentLanguage, setLanguage, t} from '../lib/i18n/index.svelte';
   import {showNotice} from '../lib/notice.svelte';
   import {permissions} from '../lib/permissions.svelte';
@@ -58,6 +59,10 @@
     root.style.setProperty('--container-width', `${containerWidth}%`);
     root.style.setProperty('--icon-scale', String(iconScale));
     root.style.setProperty('--font-family', fontFamily || 'system-ui');
+    // Размер текста всей страницы — на html: размеры шрифтов в стилях заданы в rem
+    root.style.fontSize = `${FONT_SCALES[settings.current.fontSize] * 100}%`;
+    root.style.setProperty('--title-font-size', TITLE_FONT_SIZES[settings.current.titleSize]);
+    root.style.setProperty('--title-font-weight', settings.current.boldTitles ? '600' : '400');
     setCustomColor(root.style, 'tile', tileColor);
     setCustomColor(root.style, 'folder', folderColor);
   });

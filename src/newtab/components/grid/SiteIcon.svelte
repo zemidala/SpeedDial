@@ -149,6 +149,6 @@
   }
 
   .site-icon--mini .site-icon__letter {
-    font-size: 10px;
+    font-size: 0.625rem;
   }
 </style>

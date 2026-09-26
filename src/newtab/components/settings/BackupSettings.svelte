@@ -259,13 +259,13 @@
 <style>
   .backup-settings__heading {
     margin: 24px 0 4px;
-    font-size: 15px;
+    font-size: 0.9375rem;
   }
 
   .backup-settings__note {
     margin: 8px 0;
     color: var(--text-muted);
-    font-size: 13px;
+    font-size: 0.8125rem;
     line-height: 1.45;
   }
 
@@ -279,7 +279,7 @@
     padding: 1px 4px;
     border-radius: 4px;
     background: var(--surface-hover);
-    font-size: 12px;
+    font-size: 0.75rem;
     user-select: all;
   }
 
@@ -303,18 +303,18 @@
 
   .backup-settings__file-size {
     color: var(--text-muted);
-    font-size: 13px;
+    font-size: 0.8125rem;
   }
 
   .backup-settings__status {
     margin: 12px 0 0;
     color: var(--text-muted);
-    font-size: 13px;
+    font-size: 0.8125rem;
   }
 
   .backup-settings__error {
     margin: 12px 0 0;
     color: var(--danger);
-    font-size: 13px;
+    font-size: 0.8125rem;
   }
 </style>

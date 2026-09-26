@@ -81,7 +81,7 @@
     padding: 10px 4px;
     border-radius: var(--radius-small);
     color: var(--text);
-    font-size: 12px;
+    font-size: 0.75rem;
     text-align: center;
     text-decoration: none;
   }

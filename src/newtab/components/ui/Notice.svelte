@@ -48,7 +48,7 @@
 
   .notice__message {
     margin: 0;
-    font-size: 14px;
+    font-size: 0.875rem;
     font-weight: normal;
     line-height: 1.45;
   }
@@ -62,7 +62,7 @@
     background: none;
     color: var(--accent);
     font: inherit;
-    font-size: 14px;
+    font-size: 0.875rem;
     font-weight: 600;
     cursor: pointer;
   }

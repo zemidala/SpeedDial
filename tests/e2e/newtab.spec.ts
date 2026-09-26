@@ -177,7 +177,7 @@ test('удаление без вопроса и отмена из уведомл
 
 test('в полях настроек остаётся стандартное меню браузера', async ({newtab}) => {
   await openSettings(newtab);
-  await newtab.getByLabel('Шрифт').click({button: 'right'});
+  await newtab.getByLabel('Шрифт', {exact: true}).click({button: 'right'});
   await expect(newtab.getByRole('menu')).toHaveCount(0);
 });
 
@@ -188,17 +188,17 @@ test('настройки применяются сразу и сохраняют
 
   const dialog = await openSettings(newtab);
   await dialog.getByLabel('Количество колонок').selectOption('3');
-  await dialog.getByLabel('Шрифт').fill('Georgia');
+  await dialog.getByLabel('Шрифт', {exact: true}).selectOption('Georgia');
 
   expect(await columnCount()).toBe(3);
-  await expect(grid).toHaveCSS('font-family', /^Georgia/);
+  await expect(grid).toHaveCSS('font-family', /^"?Georgia/);
 
   await dialog.getByRole('button', {name: 'Готово'}).click();
   await expect(dialog).toBeHidden();
 
   // Ждём отложенную запись в chrome.storage.sync и проверяем после перезагрузки
   await expect.poll(() => newtab.evaluate(async () => (await chrome.storage.sync.get('settings')).settings))
-    .toMatchObject({columns: 3, fontFamily: 'Georgia'});
+    .toMatchObject({columns: 3, fontFamily: '"Georgia", system-ui, sans-serif'});
   await newtab.evaluate(() => localStorage.clear());
   await newtab.reload();
   await expect(tile(newtab, 'Example')).toBeVisible();

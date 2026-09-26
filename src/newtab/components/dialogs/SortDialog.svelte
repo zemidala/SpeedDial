@@ -69,19 +69,19 @@
   .sort-form__label {
     margin-top: 6px;
     color: var(--text-muted);
-    font-size: 14px;
+    font-size: 0.875rem;
   }
 
   .sort-form__hint {
     margin: 10px 0 0;
     color: var(--text-muted);
-    font-size: 13px;
+    font-size: 0.8125rem;
     line-height: 1.4;
   }
 
   .sort-form__error {
     margin: 0;
     color: var(--danger);
-    font-size: 13px;
+    font-size: 0.8125rem;
   }
 </style>

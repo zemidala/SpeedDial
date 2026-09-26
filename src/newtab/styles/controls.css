@@ -1,14 +1,14 @@
 /* ===== Кнопки ===== */
 .button {
   padding: 8px 14px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--field-border);
   border-radius: var(--radius-small);
-  background: var(--surface);
+  background: var(--field-bg);
   cursor: pointer;
 }
 
 .button:hover {
-  background: var(--surface-hover);
+  background: var(--field-hover);
 }
 
 .button:disabled {
@@ -50,7 +50,7 @@
   background: var(--surface);
   box-shadow: var(--shadow);
   color: var(--text-muted);
-  font-size: 11px;
+  font-size: 0.6875rem;
   cursor: pointer;
 }
 
@@ -65,16 +65,21 @@
 .textarea {
   width: 100%;
   padding: 8px 10px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--field-border);
   border-radius: var(--radius-small);
-  background: var(--surface);
+  background: var(--field-bg);
+}
+
+.input:hover,
+.textarea:hover {
+  border-color: color-mix(in oklab, var(--field-border), var(--text) 25%);
 }
 
 .textarea {
   min-height: 96px;
   resize: vertical;
   font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 
 .range {
@@ -120,8 +125,12 @@
   width: 36px;
   height: 20px;
   border-radius: 10px;
-  background: var(--surface-hover);
-  box-shadow: inset 0 0 0 1px var(--border);
+  /* Выключенный — заметно серый в любой теме, а не цвета панели */
+  background: light-dark(
+    color-mix(in oklab, var(--text) 18%, var(--surface)),
+    color-mix(in oklab, var(--text) 30%, var(--surface))
+  );
+  box-shadow: inset 0 0 0 1px var(--field-border);
   transition: background-color 0.15s;
 }
 

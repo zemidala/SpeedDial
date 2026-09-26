@@ -55,7 +55,7 @@
   .setting-row__hint {
     margin: 4px 0 0;
     color: var(--text-muted);
-    font-size: 12px;
+    font-size: 0.75rem;
     line-height: 1.4;
     white-space: pre-line;
   }
