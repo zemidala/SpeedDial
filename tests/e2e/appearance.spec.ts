@@ -140,6 +140,35 @@ test('ширина панели, центрирование, названия и
   await expect(newtab.getByRole('dialog', {name: 'Настройки'})).toBeVisible();
 });
 
+test('контрастность: как в системе, повышенная, обычная', async ({newtab}) => {
+  const html = newtab.locator('html');
+  const cardBorder = tile(newtab, 'Example').locator('.tile__card');
+
+  // «Как в системе» следует за prefers-contrast
+  await expect(html).not.toHaveAttribute('data-contrast');
+  await newtab.emulateMedia({contrast: 'more'});
+  await expect(html).toHaveAttribute('data-contrast', 'high');
+  await expect(cardBorder).toHaveCSS('border-top-width', '2px');
+
+  // «Обычная» — даже при системной высокой контрастности
+  const dialog = await openSettings(newtab);
+  await dialog.getByLabel('Контрастность').selectOption('normal');
+  await expect(html).not.toHaveAttribute('data-contrast');
+  await expect(cardBorder).toHaveCSS('border-top-width', '1px');
+
+  await newtab.emulateMedia({contrast: 'no-preference'});
+  await dialog.getByLabel('Контрастность').selectOption('high');
+  await expect(html).toHaveAttribute('data-contrast', 'high');
+  // Папка — рамкой в цвет акцента, названия жирные
+  await expect(tile(newtab, 'Папка').locator('.tile__card')).toHaveCSS('border-top-color', 'rgb(0, 102, 204)');
+  await expect(tile(newtab, 'Example').locator('.tile__title')).toHaveCSS('font-weight', '600');
+
+  // Применяется до первой отрисовки
+  await dialog.getByRole('button', {name: 'Готово'}).click();
+  await newtab.reload();
+  await expect(html).toHaveAttribute('data-contrast', 'high');
+});
+
 test('фон страницы: цвет', async ({newtab}) => {
   const dialog = await openSettings(newtab);
   await dialog.getByLabel('Фон', {exact: true}).selectOption('color');

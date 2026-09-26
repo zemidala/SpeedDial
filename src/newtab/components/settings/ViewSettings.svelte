@@ -8,6 +8,7 @@
   import {permissions} from '../../../lib/permissions.svelte';
   import {
     type Background,
+    type Contrast,
     type IconStyle,
     type LanguageSetting,
     type LogoService,
@@ -73,6 +74,17 @@
     {value: 'dark', label: t.view.themeDark},
   ]}
   onchange={(value) => settings.update({theme: value as Theme})}
+/>
+<SelectRow
+  label={t.view.contrast}
+  hint={t.view.contrastHint}
+  value={current.contrast}
+  options={[
+    {value: 'auto', label: t.view.contrastAuto},
+    {value: 'normal', label: t.view.contrastNormal},
+    {value: 'high', label: t.view.contrastHigh},
+  ]}
+  onchange={(value) => settings.update({contrast: value as Contrast})}
 />
 <SettingRow
   label={t.view.preset}

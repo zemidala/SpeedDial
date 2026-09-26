@@ -1,6 +1,7 @@
 import type {BookmarkNode} from './bookmarks.svelte';
-import {removeNode, restoreNode} from './bookmarkActions';
+import {removeNode, removeNodes, restoreNode, restoreNodes} from './bookmarkActions';
 import {t} from './i18n/index.svelte';
+import {openUrl} from './navigation';
 import {showNotice} from './notice.svelte';
 import {settings} from './settings/store.svelte';
 import {thumbnails} from './thumbnails/store.svelte';
@@ -29,6 +30,8 @@ export type Dialog =
   | {kind: 'icon'; node: BookmarkNode & {url: string}}
   /** Упорядочить содержимое папки в браузере */
   | {kind: 'sort'; folder: FolderRef}
+  /** Перенести выделенные закладки и папки в другую папку */
+  | {kind: 'move'; nodes: BookmarkNode[]}
   | {kind: 'settings'}
   | ({kind: 'confirm'} & ConfirmOptions);
 
@@ -66,5 +69,48 @@ export function requestDelete(node: BookmarkNode): Promise<void> | void {
     confirmLabel: t.common.delete,
     danger: true,
     onConfirm: () => deleteWithUndo(node),
+  };
+}
+
+/** Удаляет выделенные закладки и папки и предлагает отменить удаление */
+async function deleteManyWithUndo(nodes: BookmarkNode[]): Promise<void> {
+  const removed = await removeNodes(nodes);
+  const saved = new Map(removed.flatMap((item) => [...item.thumbnails]));
+  showNotice(t.selection.deletedMany(removed.length), 'info', {
+    label: t.common.undo,
+    run: async () => thumbnails.restore(saved, await restoreNodes(removed)),
+  });
+}
+
+/** Удаление нескольких; с подтверждением, если оно включено в настройках */
+export function requestDeleteMany(nodes: BookmarkNode[]): Promise<void> | void {
+  if (nodes.length === 1) return requestDelete(nodes[0]);
+  if (!settings.current.confirmDelete) return deleteManyWithUndo(nodes);
+  ui.dialog = {
+    kind: 'confirm',
+    title: t.selection.deleteManyTitle(nodes.length),
+    message: t.selection.deleteManyMessage,
+    confirmLabel: t.common.delete,
+    danger: true,
+    onConfirm: () => deleteManyWithUndo(nodes),
+  };
+}
+
+/** Больше стольких вкладок открываем только после подтверждения */
+const OPEN_ALL_CONFIRM = 10;
+
+/** Открывает закладки (папки пропускаются) в фоновых вкладках */
+export function requestOpenAll(nodes: BookmarkNode[]): Promise<void> | void {
+  const urls = nodes.flatMap((node) => (node.url ? [node.url] : []));
+  const open = async () => {
+    for (const url of urls) await openUrl(url, 'background');
+  };
+  if (urls.length <= OPEN_ALL_CONFIRM) return open();
+  ui.dialog = {
+    kind: 'confirm',
+    title: t.selection.openManyTitle(urls.length),
+    message: t.selection.openManyMessage,
+    confirmLabel: t.selection.openConfirm,
+    onConfirm: open,
   };
 }

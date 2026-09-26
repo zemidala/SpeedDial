@@ -75,15 +75,26 @@
     background: none;
   }
 
+  /* Подпапка — плотная заливка акцентом и рамка: сразу видно, что это не сайт */
   .folder-preview__cell--folder {
-    background: color-mix(in oklab, var(--accent) 14%, var(--cell-bg));
+    background: color-mix(in oklab, var(--accent) 28%, var(--cell-bg));
     color: var(--accent);
+    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--accent) 50%, transparent);
   }
 
   .folder-preview__cell :global(.folder-preview__folder-icon) {
     width: 72%;
     height: 72%;
-    fill: color-mix(in oklab, var(--accent) 25%, transparent);
-    stroke-width: 1.75;
+    fill: color-mix(in oklab, var(--accent) 45%, transparent);
+    stroke-width: 2;
+  }
+
+  /* Повышенная контрастность: у каждой ячейки рамка, подпапка — в полный цвет акцента */
+  :global(:root[data-contrast='high']) .folder-preview__cell:not(.folder-preview__cell--empty) {
+    box-shadow: inset 0 0 0 1px var(--border);
+  }
+
+  :global(:root[data-contrast='high']) .folder-preview__cell--folder {
+    box-shadow: inset 0 0 0 2px var(--accent);
   }
 </style>

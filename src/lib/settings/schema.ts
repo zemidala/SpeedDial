@@ -6,6 +6,8 @@ import {DEFAULT_THEME_PRESET, THEME_PRESET_IDS} from '../themes/presets';
 /** auto — язык браузера, если на него есть перевод, иначе английский */
 export const LANGUAGE_SETTINGS = ['auto', 'en', 'ru'] as const;
 export const THEMES = ['auto', 'light', 'dark'] as const;
+/** auto — повышенная, если в системе включена высокая контрастность (prefers-contrast: more) */
+export const CONTRASTS = ['auto', 'normal', 'high'] as const;
 export const BACKGROUNDS = ['none', 'color', 'image', 'bing'] as const;
 export const ICON_STYLES = ['plate', 'fill'] as const;
 export const TITLE_POSITIONS = ['bottom-inside', 'top-inside', 'bottom-outside', 'top-outside'] as const;
@@ -16,6 +18,7 @@ export const TYPE_ORDERS = ['none', 'foldersFirst', 'bookmarksFirst'] as const;
 
 export type LanguageSetting = (typeof LANGUAGE_SETTINGS)[number];
 export type Theme = (typeof THEMES)[number];
+export type Contrast = (typeof CONTRASTS)[number];
 export type Background = (typeof BACKGROUNDS)[number];
 export type IconStyle = (typeof ICON_STYLES)[number];
 export type TitlePosition = (typeof TITLE_POSITIONS)[number];
@@ -37,6 +40,8 @@ export interface Settings {
   containerWidth: number;
   /** Светлый или тёмный режим */
   theme: Theme;
+  /** Контрастность рамок, ячеек и второстепенного текста */
+  contrast: Contrast;
   /** Тема оформления (набор цветов); custom — палитра из customAccent и customTint */
   themePreset: string;
   customAccent: string;
@@ -133,6 +138,7 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = {
   columns: 6,
   containerWidth: 90,
   theme: 'auto',
+  contrast: 'auto',
   themePreset: DEFAULT_THEME_PRESET,
   customAccent: '#6750a4',
   customTint: '#6750a4',
@@ -190,6 +196,7 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = {
 const ENUMS: Partial<Record<keyof Settings, readonly string[]>> = {
   language: LANGUAGE_SETTINGS,
   theme: THEMES,
+  contrast: CONTRASTS,
   themePreset: THEME_PRESET_IDS,
   background: BACKGROUNDS,
   iconStyle: ICON_STYLES,

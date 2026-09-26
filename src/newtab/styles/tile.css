@@ -129,9 +129,24 @@
 }
 
 /* ===== Модификаторы ===== */
+/* Папка отличается от закладки не только фоном, но и рамкой в цвете акцента */
 .tile--folder .tile__card {
+  border-color: color-mix(in oklab, var(--accent) 45%, var(--border));
   background: var(--folder-bg);
   color: var(--folder-text, var(--text));
+}
+
+/* Повышенная контрастность: толстые рамки, жирные названия, папка — рамкой в полный цвет акцента */
+:root[data-contrast='high'] .tile__card {
+  border-width: 2px;
+}
+
+:root[data-contrast='high'] .tile--folder .tile__card {
+  border-color: var(--accent);
+}
+
+:root[data-contrast='high'] .tile__title {
+  font-weight: 600;
 }
 
 /* Лёгкий оттенок основного цвета иконки поверх цвета плитки */

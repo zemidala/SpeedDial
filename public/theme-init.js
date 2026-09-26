@@ -10,9 +10,14 @@ function addStyle(id, css) {
 }
 
 try {
-  const {theme, customCss} = JSON.parse(localStorage.getItem('settings-cache') ?? '{}').settings ?? {};
+  const {theme, contrast, customCss} = JSON.parse(localStorage.getItem('settings-cache') ?? '{}').settings ?? {};
   if (theme === 'light' || theme === 'dark') {
     document.documentElement.dataset.theme = theme;
+  }
+  // Повышенная контрастность — как в App.svelte: выбрана явно или включена в системе
+  const systemHighContrast = matchMedia('(prefers-contrast: more)').matches;
+  if (contrast === 'high' || ((contrast ?? 'auto') === 'auto' && systemHighContrast)) {
+    document.documentElement.dataset.contrast = 'high';
   }
 
   const palette = localStorage.getItem('theme-palette-css');

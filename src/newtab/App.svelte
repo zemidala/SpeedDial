@@ -1,4 +1,5 @@
 <script lang="ts">
+  import {MediaQuery} from 'svelte/reactivity';
   import {background} from '../lib/background.svelte';
   import {readableTextColor} from '../lib/color';
   import {dragDrop} from '../lib/dragDrop.svelte';
@@ -13,6 +14,7 @@
   import ContextMenu from './components/ContextMenu.svelte';
   import BookmarkDialog from './components/dialogs/BookmarkDialog.svelte';
   import IconDialog from './components/dialogs/IconDialog.svelte';
+  import MoveDialog from './components/dialogs/MoveDialog.svelte';
   import SortDialog from './components/dialogs/SortDialog.svelte';
   import BookmarkGrid from './components/grid/BookmarkGrid.svelte';
   import AppHeader from './components/header/AppHeader.svelte';
@@ -21,6 +23,8 @@
   import Notice from './components/ui/Notice.svelte';
 
   const CUSTOM_CSS_ID = 'custom-css'; // Тот же id использует theme-init.js
+
+  const systemHighContrast = new MediaQuery('(prefers-contrast: more)');
 
   // Свой цвет фона вместо цвета темы; текст на нём подбирается по контрасту
   function setCustomColor(style: CSSStyleDeclaration, name: 'tile' | 'folder', color: string) {
@@ -43,6 +47,12 @@
     } else {
       root.dataset.theme = theme;
     }
+
+    // Повышенная контрастность — выбрана явно или включена в системе
+    const {contrast} = settings.current;
+    const high = contrast === 'high' || (contrast === 'auto' && systemHighContrast.current);
+    if (high) root.dataset.contrast = 'high';
+    else delete root.dataset.contrast;
 
     root.style.setProperty('--columns', String(columns));
     root.style.setProperty('--container-width', `${containerWidth}%`);
@@ -154,6 +164,8 @@
     <IconDialog node={dialog.node} onclose={closeDialog}/>
   {:else if dialog.kind === 'sort'}
     <SortDialog folder={dialog.folder} onclose={closeDialog}/>
+  {:else if dialog.kind === 'move'}
+    <MoveDialog nodes={dialog.nodes} onclose={closeDialog}/>
   {:else}
     <BookmarkDialog {dialog} onclose={closeDialog}/>
   {/if}

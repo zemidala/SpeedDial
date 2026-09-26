@@ -1,9 +1,11 @@
 // Перетаскивание плиток. Пока плитку тянут, остальные расступаются — порядок меняется «вживую»,
 // а при отпускании сохраняется в браузере. Над центром папки, на плитке «Назад» и в хлебных крошках
 // закладка кладётся внутрь папки
+import {groupOrder, moveNodes, moveSteps} from './bookmarkActions';
 import {bookmarks} from './bookmarks.svelte';
 import {ROOT_FOLDER_ID} from './constants';
 import {search} from './search.svelte';
+import {selection} from './selection.svelte';
 import {settings} from './settings/store.svelte';
 
 export interface DropTarget {
@@ -110,6 +112,8 @@ class DragDropStore {
   previewIds = $state.raw<string[] | null>(null);
   /** Линия-вставка; null — её нет (например, закладка ляжет в папку) */
   indicator = $state.raw<InsertIndicator | null>(null);
+  /** Тянут выделенную плитку — переносится вся группа выделенных (в порядке папки); null — одна плитка */
+  group = $state.raw<string[] | null>(null);
 
   #dragging: string | null = null;
   #originalIds: string[] = [];
@@ -136,6 +140,7 @@ class DragDropStore {
     this.#dragging = id;
     this.#originalIds = bookmarks.items.map((item) => item.id);
     this.#slots = measureSlots();
+    this.group = selection.has(id) && selection.ids.size > 1 ? selection.ordered(this.#originalIds) : null;
 
     event.dataTransfer.setData(DRAG_TYPE, id);
     event.dataTransfer.effectAllowed = 'copyMove'; // Ссылку по-прежнему можно перетащить в другое приложение
@@ -166,7 +171,7 @@ class DragDropStore {
     if (folderLink) {
       const folderId = folderLink.dataset.dropFolderId!;
       this.#cancelPendingMove();
-      this.target = folderId === id || folderId === bookmarks.folderId ? null : {id: folderId};
+      this.target = this.#isDragged(folderId) || folderId === bookmarks.folderId ? null : {id: folderId};
       this.previewIds = this.#originalIds;
       this.#setIndicator(null);
       return;
@@ -186,7 +191,8 @@ class DragDropStore {
     }
 
     const occupant = ids[slot];
-    const isFolder = occupant !== id && bookmarks.items.some((item) => item.id === occupant && !item.url);
+    // В папку из перетаскиваемой группы положить нельзя — она сама переносится
+    const isFolder = !this.#isDragged(occupant) && bookmarks.items.some((item) => item.id === occupant && !item.url);
     if (isFolder) {
       const rect = this.#slots[slot];
       const x = (event.clientX - rect.left) / rect.width;
@@ -231,11 +237,17 @@ class DragDropStore {
     this.draggedId = null;
     this.target = null;
     this.indicator = null;
+    const group = this.group;
+    this.group = null;
 
     if (target) {
       this.previewIds = null;
-      chrome.bookmarks.move(id, {parentId: target.id})
-        .catch((error) => console.error('Failed to move bookmark', error));
+      moveNodes(group ?? [id], target.id).catch((error) => console.error('Failed to move bookmark', error));
+      return;
+    }
+
+    if (group) {
+      this.#dropGroup(group, id, preview ?? this.#originalIds);
       return;
     }
 
@@ -263,7 +275,32 @@ class DragDropStore {
     this.target = null;
     this.previewIds = null;
     this.indicator = null;
+    this.group = null;
   };
+
+  /** Перетаскиваемая плитка или одна из перетаскиваемой группы */
+  #isDragged(id: string): boolean {
+    return id === this.#dragging || (this.group?.includes(id) ?? false);
+  }
+
+  /** Группа встаёт блоком на место перетаскиваемой плитки; порядок показывается сразу, до ответа браузера */
+  #dropGroup(group: string[], dragged: string, preview: string[]): void {
+    const current = bookmarks.items.map((item) => item.id);
+    const final = groupOrder(preview.filter((id) => current.includes(id)), dragged, group);
+    const steps = moveSteps(current, final, new Set(group));
+    if (steps.length === 0) {
+      this.previewIds = null;
+      return;
+    }
+    this.previewIds = final;
+    const parentId = bookmarks.items.find((item) => item.id === dragged)?.parentId ?? bookmarks.folderId;
+    (async () => {
+      for (const {id, index} of steps) await chrome.bookmarks.move(id, {parentId, index});
+    })().catch((error) => {
+      console.error('Failed to move bookmarks', error);
+      this.previewIds = null;
+    });
+  }
 
   /** Браузер прислал новый список закладок — временный порядок больше не нужен */
   settle(): void {
