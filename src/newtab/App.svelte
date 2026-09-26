@@ -15,7 +15,9 @@
   import ContextMenu from './components/ContextMenu.svelte';
   import VirtualShelves from './components/VirtualShelves.svelte';
   import BookmarkDialog from './components/dialogs/BookmarkDialog.svelte';
+  import DuplicatesDialog from './components/dialogs/DuplicatesDialog.svelte';
   import IconDialog from './components/dialogs/IconDialog.svelte';
+  import LinkCheckDialog from './components/dialogs/LinkCheckDialog.svelte';
   import MoveDialog from './components/dialogs/MoveDialog.svelte';
   import SortDialog from './components/dialogs/SortDialog.svelte';
   import BookmarkGrid from './components/grid/BookmarkGrid.svelte';
@@ -173,6 +175,10 @@
     <SortDialog folder={dialog.folder} onclose={closeDialog}/>
   {:else if dialog.kind === 'move'}
     <MoveDialog nodes={dialog.nodes} onclose={closeDialog}/>
+  {:else if dialog.kind === 'duplicates'}
+    <DuplicatesDialog onclose={closeDialog}/>
+  {:else if dialog.kind === 'linkCheck'}
+    <LinkCheckDialog onclose={closeDialog}/>
   {:else}
     <BookmarkDialog {dialog} onclose={closeDialog}/>
   {/if}

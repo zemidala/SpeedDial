@@ -1,6 +1,7 @@
 import {mount} from 'svelte';
 import {background} from '../lib/background.svelte';
 import {bookmarks} from '../lib/bookmarks.svelte';
+import {brokenLinks} from '../lib/brokenLinks.svelte';
 import {setLanguage, t} from '../lib/i18n/index.svelte';
 import {icons} from '../lib/icons.svelte';
 import {onDatabaseOutdated} from '../lib/idb';
@@ -25,6 +26,7 @@ bookmarks.start(settingsLoaded).catch(logError('Failed to load bookmarks'));
 icons.start(settingsLoaded).catch(logError('Failed to start icons'));
 thumbnails.start();
 shelves.start();
+brokenLinks.start();
 background.load().catch(logError('Failed to load background'));
 
 isManifestOutdated()

@@ -33,6 +33,10 @@ export type Dialog =
   /** Move the selected bookmarks and folders to another folder */
   | {kind: 'move'; nodes: BookmarkNode[]}
   | {kind: 'settings'}
+  /** Bookmarks of the same page in different folders */
+  | {kind: 'duplicates'}
+  /** Bookmarks whose site doesn't respond or whose page is gone */
+  | {kind: 'linkCheck'}
   | ({kind: 'confirm'} & ConfirmOptions);
 
 // The open dialog; at most one is shown at a time
@@ -44,6 +48,18 @@ export const modals = $state({depth: 0});
 
 export function openSettings(): void {
   ui.dialog = {kind: 'settings'};
+}
+
+/** Also from the settings: they're replaced by this dialog, so their changes are saved first */
+export function openDuplicates(): void {
+  settings.flush();
+  ui.dialog = {kind: 'duplicates'};
+}
+
+/** Also from the settings — like openDuplicates */
+export function openLinkCheck(): void {
+  settings.flush();
+  ui.dialog = {kind: 'linkCheck'};
 }
 
 /** Deletes a bookmark or folder and offers to undo */

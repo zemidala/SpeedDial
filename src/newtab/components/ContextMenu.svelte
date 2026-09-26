@@ -1,5 +1,6 @@
 <script lang="ts">
   import {type BookmarkNode, bookmarks} from '../../lib/bookmarks.svelte';
+  import {brokenLinks} from '../../lib/brokenLinks.svelte';
   import {BOOKMARKS_BAR_ID, ROOT_FOLDER_ID} from '../../lib/constants';
   import {t} from '../../lib/i18n/index.svelte';
   import {folderPageUrl, type OpenMode, openUrl} from '../../lib/navigation';
@@ -7,7 +8,7 @@
   import {search} from '../../lib/search.svelte';
   import {settings} from '../../lib/settings/store.svelte';
   import {shelves} from '../../lib/shelves.svelte';
-  import {openSettings, requestDelete, ui} from '../../lib/ui.svelte';
+  import {openDuplicates, openLinkCheck, openSettings, requestDelete, ui} from '../../lib/ui.svelte';
   import {isWebUrl} from '../../lib/url';
   import {isVirtualFolder, isVirtualNode} from '../../lib/virtualFolders';
   import Icon, {type IconName} from './ui/Icon.svelte';
@@ -145,6 +146,9 @@
     if (node.url) {
       const bookmark = node as BookmarkNode & {url: string};
       entries.push({label: t.menu.icon, icon: 'image', action: () => (ui.dialog = {kind: 'icon', node: bookmark})});
+      if (brokenLinks.get(node.id)) {
+        entries.push({label: t.linkCheck.unmark, icon: 'check', action: () => brokenLinks.unmark([node.id])});
+      }
     }
     // On a folder "Sort" sorts that folder, on a bookmark — the open folder
     entries.push(
@@ -165,6 +169,8 @@
       ...createEntries(null),
       'separator',
       sortEntry(currentFolder()),
+      {label: t.duplicates.menu, icon: 'copy', action: openDuplicates},
+      {label: t.linkCheck.menu, icon: 'linkOff', action: openLinkCheck},
       'separator',
       refreshEntry(),
     ];

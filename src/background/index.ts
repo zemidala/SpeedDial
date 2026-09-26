@@ -1,4 +1,5 @@
 import {AUTO_BACKUP_ALARM, runCloudBackup, scheduleAutoBackup} from '../lib/backup/cloud';
+import {removeBrokenMarks} from '../lib/brokenLinks';
 import {setLanguage} from '../lib/i18n/index.svelte';
 import {WELCOME_PAGE} from '../lib/links';
 import {onMessage, type RuntimeMessage, sendMessage} from '../lib/messages';
@@ -65,9 +66,16 @@ chrome.bookmarks.onRemoved.addListener((_id, {node}) => {
     item.children?.forEach(collect);
   };
   collect(node);
+  removeBrokenMarks(ids).catch((error) => console.error('Failed to remove link marks', error));
   Promise.all(ids.map((id) => deleteThumbnail(id).catch(() => undefined)))
     .then(() => sendMessage({type: 'thumbnails-changed', ids}))
     .catch((error) => console.error('Failed to delete thumbnails', error));
+});
+
+// A new address may well work: the "doesn't work" mark from the link check goes away
+chrome.bookmarks.onChanged.addListener((id, change) => {
+  if (change.url === undefined) return;
+  removeBrokenMarks([id]).catch((error) => console.error('Failed to remove link mark', error));
 });
 
 // Automatic cloud backup: a minute after changes to bookmarks, settings or thumbnails

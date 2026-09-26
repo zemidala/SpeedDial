@@ -4,6 +4,7 @@
 export const en = {
   common: {
     cancel: 'Cancel',
+    close: 'Close',
     done: 'Done',
     save: 'Save',
     create: 'Create',
@@ -383,6 +384,55 @@ export const en = {
     siteAccessHint: 'Needed for high-quality icons and page screenshots. The browser will ask for permission',
     fileNotJson: 'The file is corrupted: it isn’t JSON',
     notSettingsFile: 'This isn’t a SpeedDial settings file',
+  },
+
+  duplicates: {
+    title: 'Duplicate bookmarks',
+    menu: 'Find duplicates…',
+    settingsRow: 'Duplicate bookmarks',
+    settingsHint: 'Bookmarks of the same page in different folders',
+    find: 'Find…',
+    none: 'No duplicates — every page is bookmarked once',
+    summary: (groups: number, extra: number) =>
+      `${groups} ${groups === 1 ? 'page is' : 'pages are'} bookmarked more than once — ${extra} extra ${extra === 1 ? 'copy' : 'copies'}. `
+      + 'The extra copies are marked; the first one stays',
+    mark: (title: string, folder: string) => `Delete “${title}” from “${folder}”`,
+    allMarked: 'All copies will be deleted',
+    openFolder: 'Open the folder',
+    removeMarked: (count: number) => `Delete marked (${count})`,
+    removed: (count: number) => `Deleted duplicates: ${count}`,
+  },
+
+  linkCheck: {
+    title: 'Check links',
+    menu: 'Check links…',
+    settingsRow: 'Broken links',
+    settingsHint: 'Finds bookmarks whose site doesn’t respond or whose page is gone. Needs access to sites',
+    intro: (count: number) =>
+      `Each of your ${count} ${count === 1 ? 'bookmark' : 'bookmarks'} will be requested in the background to see whether the site `
+      + 'responds and the page is still there. Pages aren’t opened. With many bookmarks this takes a few minutes',
+    start: 'Check',
+    again: 'Check again',
+    stop: 'Stop',
+    offline: 'No internet connection — links can’t be checked now',
+    progress: (done: number, total: number, found: number) => `Checked ${done} of ${total}. Not working: ${found}`,
+    allWork: (count: number) => `All ${count} links work`,
+    found: (count: number, found: number) => `Checked ${count} links. Not working: ${found}`,
+    stopped: (done: number, total: number, found: number) => `Stopped: checked ${done} of ${total}. Not working: ${found}`,
+    stoppedClean: (done: number, total: number) => `Stopped: checked ${done} of ${total}, all of them work`,
+    notFound: (status: number) => `Page not found (${status})`,
+    serverError: (status: number) => `Server error (${status})`,
+    unreachable: 'The site doesn’t respond',
+    alreadyMarked: 'marked',
+    select: (title: string) => `Select “${title}”`,
+    actionsHint: 'Server errors are often temporary, so they aren’t selected. A marked bookmark stays, but its tile shows '
+      + 'a “doesn’t work” icon; the mark goes away when a later check finds the link working',
+    mark: (count: number) => `Mark (${count})`,
+    delete: (count: number) => `Delete (${count})`,
+    marked: (count: number) => `Marked as not working: ${count}`,
+    deleted: (count: number) => `Deleted: ${count}`,
+    tileHint: (reason: string) => `Doesn’t work: ${reason}`,
+    unmark: 'Remove the “doesn’t work” mark',
   },
 
   importHtml: {

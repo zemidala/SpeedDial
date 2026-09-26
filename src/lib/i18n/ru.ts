@@ -13,6 +13,7 @@ function plural(count: number, one: string, few: string, many: string): string {
 export const ru: Messages = {
   common: {
     cancel: 'Отмена',
+    close: 'Закрыть',
     done: 'Готово',
     save: 'Сохранить',
     create: 'Создать',
@@ -393,6 +394,55 @@ export const ru: Messages = {
     siteAccessHint: 'Нужен для иконок высокого качества и снимков страниц. Браузер спросит разрешение при включении',
     fileNotJson: 'Файл повреждён: это не JSON',
     notSettingsFile: 'Это не файл настроек SpeedDial',
+  },
+
+  duplicates: {
+    title: 'Дубли закладок',
+    menu: 'Найти дубли…',
+    settingsRow: 'Дубли закладок',
+    settingsHint: 'Закладки одной и той же страницы в разных папках',
+    find: 'Найти…',
+    none: 'Дублей нет — каждая страница в закладках один раз',
+    summary: (groups: number, extra: number) =>
+      `${groups} ${plural(groups, 'страница', 'страницы', 'страниц')} в закладках больше одного раза — `
+      + `${extra} ${plural(extra, 'лишняя копия', 'лишние копии', 'лишних копий')}. Лишние отмечены, первая закладка остаётся`,
+    mark: (title: string, folder: string) => `Удалить «${title}» из «${folder}»`,
+    allMarked: 'Будут удалены все копии',
+    openFolder: 'Открыть папку',
+    removeMarked: (count: number) => `Удалить отмеченные (${count})`,
+    removed: (count: number) => `Удалено дублей: ${count}`,
+  },
+
+  linkCheck: {
+    title: 'Проверка ссылок',
+    menu: 'Проверить ссылки…',
+    settingsRow: 'Нерабочие ссылки',
+    settingsHint: 'Находит закладки, чей сайт не отвечает или страница удалена. Понадобится доступ к сайтам',
+    intro: (count: number) =>
+      `Для каждой из ${count} ${plural(count, 'закладки', 'закладок', 'закладок')} в фоне запросим сайт и проверим, отвечает ли он `
+      + 'и есть ли ещё страница. Страницы не открываются. Если закладок много, это займёт несколько минут',
+    start: 'Проверить',
+    again: 'Проверить снова',
+    stop: 'Остановить',
+    offline: 'Нет подключения к интернету — сейчас проверить ссылки нельзя',
+    progress: (done: number, total: number, found: number) => `Проверено ${done} из ${total}. Не работают: ${found}`,
+    allWork: (count: number) => `Все ссылки работают — проверено ${count}`,
+    found: (count: number, found: number) => `Проверено ссылок: ${count}. Не работают: ${found}`,
+    stopped: (done: number, total: number, found: number) => `Остановлено: проверено ${done} из ${total}. Не работают: ${found}`,
+    stoppedClean: (done: number, total: number) => `Остановлено: проверено ${done} из ${total}, все работают`,
+    notFound: (status: number) => `Страница не найдена (${status})`,
+    serverError: (status: number) => `Ошибка сервера (${status})`,
+    unreachable: 'Сайт не отвечает',
+    alreadyMarked: 'помечена',
+    select: (title: string) => `Выбрать «${title}»`,
+    actionsHint: 'Ошибки сервера часто временные, поэтому они не выбраны. Помеченная закладка остаётся, но на плитке '
+      + 'вместо иконки сайта будет значок «не работает»; отметка снимется, если следующая проверка найдёт ссылку рабочей',
+    mark: (count: number) => `Пометить (${count})`,
+    delete: (count: number) => `Удалить (${count})`,
+    marked: (count: number) => `Помечено как нерабочие: ${count}`,
+    deleted: (count: number) => `Удалено: ${count}`,
+    tileHint: (reason: string) => `Не работает: ${reason}`,
+    unmark: 'Снять отметку «не работает»',
   },
 
   importHtml: {

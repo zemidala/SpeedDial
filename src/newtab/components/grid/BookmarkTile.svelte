@@ -1,12 +1,15 @@
 <script lang="ts">
   import type {BookmarkNode} from '../../../lib/bookmarks.svelte';
+  import {brokenLinks, describeProblem} from '../../../lib/brokenLinks.svelte';
   import {hashColor} from '../../../lib/color';
   import {dragDrop} from '../../../lib/dragDrop.svelte';
+  import {t} from '../../../lib/i18n/index.svelte';
   import {icons} from '../../../lib/icons.svelte';
   import {openUrl} from '../../../lib/navigation';
   import {settings} from '../../../lib/settings/store.svelte';
   import {thumbnails} from '../../../lib/thumbnails/store.svelte';
   import {displayHost, isWebUrl, siteName} from '../../../lib/url';
+  import Icon from '../ui/Icon.svelte';
   import SiteIcon from './SiteIcon.svelte';
   import Tile from './Tile.svelte';
 
@@ -17,7 +20,8 @@
   const thumbnail = $derived(thumbnails.get(bookmark.id));
   const {iconStyle, iconTint, showTitleIcons, openInNewTab} = $derived(settings.current);
 
-  const hasThumbnail = $derived(Boolean(thumbnail.url));
+  const broken = $derived(brokenLinks.get(bookmark.id));
+  const hasThumbnail = $derived(Boolean(thumbnail.url) && !broken);
   const tint = $derived(iconTint && !hasThumbnail ? icon.info?.color : null);
 
   // In "fill" mode the area is filled with the icon's edge colour — the icon blends into the tile
@@ -38,17 +42,20 @@
 
 <Tile
   href={url}
-  modifiers={{tinted: Boolean(tint), dragging: dragDrop.draggedId === bookmark.id}}
-  visualBackground={fillColor}
+  modifiers={{tinted: Boolean(tint), dragging: dragDrop.draggedId === bookmark.id, broken: Boolean(broken)}}
+  visualBackground={broken ? null : fillColor}
   style={tint ? `--icon-color: ${tint}` : undefined}
   target={openInNewTab && isWebUrl(url) ? '_blank' : undefined}
-  title={bookmark.title}
+  title={broken ? `${bookmark.title}\n${t.linkCheck.tileHint(describeProblem(broken.problem, broken.status))}` : bookmark.title}
   data-bookmark-id={bookmark.id}
   onclick={(event: MouseEvent) => open(event, openInNewTab || event.ctrlKey || event.metaKey)}
   onauxclick={(event: MouseEvent) => event.button === 1 && open(event, true)}
 >
   {#snippet visual()}
-    {#if thumbnail.url}
+    {#if broken}
+      <!-- Marked by the link check: a placeholder instead of the site icon and the thumbnail -->
+      <span class="tile__broken" aria-hidden="true"><Icon name="linkOff" size={24}/></span>
+    {:else if thumbnail.url}
       <img class="tile__thumbnail" src={thumbnail.url} alt="">
     {:else}
       <SiteIcon entry={icon} appearance={iconStyle}/>

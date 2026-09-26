@@ -45,7 +45,7 @@ export async function removeNode(node: chrome.bookmarks.BookmarkTreeNode): Promi
  * Removes several bookmarks and folders. Remembers all of them first: after removing the first one the indexes
  * of the rest would shift. A selected item inside a selected folder (possible in search results) goes with the folder
  */
-export async function removeNodes(nodes: chrome.bookmarks.BookmarkTreeNode[]): Promise<RemovedNode[]> {
+export async function removeNodes(nodes: Pick<chrome.bookmarks.BookmarkTreeNode, 'id'>[]): Promise<RemovedNode[]> {
   const snapshots = await Promise.all(nodes.map((node) => snapshot(node.id)));
   const nested = new Set(snapshots.flatMap(({tree}) => collectIds(tree).slice(1)));
   const removed = snapshots.filter(({tree}) => !nested.has(tree.id));

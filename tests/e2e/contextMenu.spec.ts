@@ -55,7 +55,7 @@ test('menu of a bookmark tile, a folder tile and an empty area', async ({newtab}
   await newtab.keyboard.press('Escape');
 
   await openPageMenu(newtab);
-  await expect(menuItems(newtab)).toHaveText(['Назад', 'Вперед', 'Новая закладка…', 'Новая папка…', 'Сортировать…', 'Обновить']);
+  await expect(menuItems(newtab)).toHaveText(['Назад', 'Вперед', 'Новая закладка…', 'Новая папка…', 'Сортировать…', 'Найти дубли…', 'Проверить ссылки…', 'Обновить']);
 });
 
 test.describe(() => {

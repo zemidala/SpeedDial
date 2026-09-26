@@ -18,6 +18,7 @@
     type TypeOrder,
   } from '../../../lib/settings/schema';
   import {settings} from '../../../lib/settings/store.svelte';
+  import {openDuplicates, openLinkCheck} from '../../../lib/ui.svelte';
   import {
     MOST_VISITED_ID,
     RECENTLY_CLOSED_ID,
@@ -133,6 +134,12 @@
     onchange={(confirmDelete) => settings.update({confirmDelete})}
   />
   <SwitchRow key="dragAndDrop" label={t.general.dragAndDrop}/>
+  <SettingRow label={t.duplicates.settingsRow} hint={t.duplicates.settingsHint}>
+    <button type="button" class="button" onclick={openDuplicates}>{t.duplicates.find}</button>
+  </SettingRow>
+  <SettingRow label={t.linkCheck.settingsRow} hint={t.linkCheck.settingsHint}>
+    <button type="button" class="button" onclick={openLinkCheck}>{t.linkCheck.menu}</button>
+  </SettingRow>
   <SelectRow
     label={t.general.sortOrder}
     hint={t.general.sortHint}
