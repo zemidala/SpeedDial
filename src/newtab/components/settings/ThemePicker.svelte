@@ -2,6 +2,7 @@
   import {MediaQuery} from 'svelte/reactivity';
   import {settings} from '../../../lib/settings/store.svelte';
   import {isDarkTheme} from '../../../lib/settings/theme';
+  import {withDimming} from '../../../lib/themes/current';
   import {customPreset, type ThemePalette} from '../../../lib/themes/palette';
   import {THEME_PRESETS} from '../../../lib/themes/presets';
 
@@ -9,10 +10,11 @@
   const systemDark = new MediaQuery('(prefers-color-scheme: dark)');
   const dark = $derived(isDarkTheme(settings.current.theme, systemDark.current));
 
+  // Превью с тем же приглушением светлой темы, что и на странице
   const presets = $derived([
     ...THEME_PRESETS,
     customPreset(settings.current.customAccent, settings.current.customTint),
-  ]);
+  ].map((preset) => withDimming(preset, settings.current.lightDimming)));
 
   const paletteOf = (preset: {light: ThemePalette; dark: ThemePalette}) => (dark ? preset.dark : preset.light);
 </script>

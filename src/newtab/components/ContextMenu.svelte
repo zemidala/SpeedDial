@@ -55,8 +55,25 @@
   }
 
   function createEntries(anchor: BookmarkNode | null): MenuEntry[] {
+    // Правый клик по папке — новое создаётся внутри неё, в конце
+    if (anchor && !anchor.url) {
+      const parent = {parentId: anchor.id, parentTitle: anchor.title};
+      return [
+        {
+          label: 'Новая закладка в этой папке…',
+          icon: 'bookmarkPlus',
+          action: () => (ui.dialog = {kind: 'create', type: 'bookmark', ...parent}),
+        },
+        {
+          label: 'Новая папка в этой папке…',
+          icon: 'folderPlus',
+          action: () => (ui.dialog = {kind: 'create', type: 'folder', ...parent}),
+        },
+      ];
+    }
+
     const parentId = bookmarks.targetFolderId;
-    // Правый клик по плитке — новый элемент встаёт сразу после неё (если порядок не переопределён сортировкой)
+    // Правый клик по закладке — новый элемент встаёт сразу после неё (если порядок не переопределён сортировкой)
     const {sortOrder, typeOrder} = settings.current;
     const index = anchor && !search.active && sortOrder === 'none' && typeOrder === 'none' && anchor.parentId === parentId
       ? (anchor.index ?? 0) + 1

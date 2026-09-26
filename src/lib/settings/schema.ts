@@ -36,6 +36,8 @@ export interface Settings {
   customAccent: string;
   /** Оттенок фона для своей палитры */
   customTint: string;
+  /** Насколько приглушить светлые фоны, % (0 — как в теме) */
+  lightDimming: number;
   verticalCenter: boolean;
   /** plate — иконка на подложке; fill — иконка заполняет область плитки */
   iconStyle: IconStyle;
@@ -127,6 +129,7 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = {
   themePreset: DEFAULT_THEME_PRESET,
   customAccent: '#6750a4',
   customTint: '#6750a4',
+  lightDimming: 10,
   verticalCenter: false,
   iconStyle: 'plate',
   iconScale: 50,
@@ -189,6 +192,7 @@ const ENUMS: Partial<Record<keyof Settings, readonly string[]>> = {
 export const RANGES = {
   columns: {min: 1, max: 12, step: 1},
   containerWidth: {min: 40, max: 100, step: 1},
+  lightDimming: {min: 0, max: 30, step: 5},
   iconScale: {min: 20, max: 100, step: 5},
   captureDelay: {min: 0, max: 10, step: 0.5},
 } as const satisfies Partial<Record<keyof Settings, {min: number; max: number; step: number}>>;

@@ -70,6 +70,12 @@
 >
   <ThemePicker/>
 </SettingRow>
+<RangeRow
+  key="lightDimming"
+  label="Приглушить светлую тему"
+  hint="Светлые фоны становятся мягче и не слепят; текст остаётся читаемым. На тёмную тему не влияет"
+  unit="%"
+/>
 {#if current.themePreset === 'custom'}
   <ColorRow key="customAccent" label="Акцент" hint="Ссылки, кнопки, переключатели"/>
   <ColorRow key="customTint" label="Оттенок фона" hint="Фон, панели и плитки слегка окрашиваются этим цветом"/>

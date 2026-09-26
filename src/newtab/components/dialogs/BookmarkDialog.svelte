@@ -22,7 +22,10 @@
   let saving = $state(false);
 
   function getHeading(): string {
-    if (initial.kind === 'create') return isFolder ? 'Новая папка' : 'Новая закладка';
+    if (initial.kind === 'create') {
+      const heading = isFolder ? 'Новая папка' : 'Новая закладка';
+      return initial.parentTitle ? `${heading} в «${initial.parentTitle}»` : heading;
+    }
     return isFolder ? 'Изменить папку' : 'Изменить закладку';
   }
 

@@ -1,4 +1,4 @@
-import {expect, getChildren, openSettings, seed, test, tile} from './fixtures';
+import {dropAt, expect, getChildren, openSettings, seed, test, tile, waitForTileAnimations} from './fixtures';
 
 test.beforeEach(async ({newtab}) => {
   await seed(newtab, [
@@ -49,6 +49,12 @@ test('сортировка отключает перетаскивание и н
   expect(order).toEqual(['Бета', 'Альфа', 'Папка']);
 });
 
+// Перетаскивание в Playwright эмулируется: dragover приходит только при движении мыши, и под сильной
+// нагрузкой (много браузеров параллельно) браузер иногда отменяет сброс — событие drop до страницы не доходит.
+// Живой браузер шлёт dragover непрерывно, поэтому повтор здесь допустим; такие прогоны отмечаются как flaky
+test.describe('перетаскивание', () => {
+test.describe.configure({retries: 2});
+
 test('перетаскивание: порядок и перенос в папку', async ({newtab}) => {
   // «Альфа» перед «Бета»: бросаем на левую часть плитки
   const beta = tile(newtab, 'Бета');
@@ -94,15 +100,84 @@ test('во время перетаскивания плитки расступа
   await newtab.mouse.move(beta.box.x + 10, beta.y, {steps: 8});
   await expect(tile(newtab, 'Папка')).not.toHaveClass(/tile--drop-into/);
 
-  await newtab.mouse.up();
+  await dropAt(newtab, beta.box.x + 10, beta.y);
   await expect.poll(browserOrder).toEqual(['Альфа', 'Бета', 'Папка']);
   await expect(tile(newtab, 'Альфа')).not.toHaveClass(/tile--dragging/);
   expect(await titles(newtab)).toEqual(['Альфа', 'Бета', 'Папка']);
 });
 
+test('в папку можно положить, подведя плитку сбоку; задержка у края папки — встать рядом', async ({newtab}) => {
+  const browserOrder = async (folderId = '1') => (await getChildren(newtab, folderId)).map((node) => node.title);
+  const folderId = (await tile(newtab, 'Папка').getAttribute('data-bookmark-id'))!;
+
+  // «Альфа» и «Папка» в одном ряду: ведём «Альфу» по горизонтали через левый край папки к её середине
+  const alpha = (await tile(newtab, 'Альфа').boundingBox())!;
+  const folder = (await tile(newtab, 'Папка').boundingBox())!;
+  const y = folder.y + folder.height / 2;
+  await newtab.mouse.move(alpha.x + alpha.width / 2, alpha.y + alpha.height / 2);
+  await newtab.mouse.down();
+  await newtab.mouse.move(folder.x + folder.width * 0.1, y, {steps: 6}); // Край папки
+  await newtab.mouse.move(folder.x + folder.width / 2, y, {steps: 6}); // Середина
+  await newtab.mouse.move(folder.x + folder.width / 2 + 2, y); // Playwright доставляет dragover при следующем движении
+
+  // Папка осталась на месте и подсвечена
+  await expect(tile(newtab, 'Папка')).toHaveClass(/tile--drop-into/);
+  expect(await titles(newtab)).toEqual(['Бета', 'Альфа', 'Папка']);
+  await dropAt(newtab, folder.x + folder.width / 2, y);
+  await expect.poll(() => browserOrder(folderId)).toEqual(['Гамма', 'Альфа']);
+
+  // Если задержаться у края папки, плитки расступаются — закладка встанет рядом
+  await expect.poll(() => titles(newtab)).toEqual(['Бета', 'Папка']);
+  await waitForTileAnimations(newtab);
+  const beta = (await tile(newtab, 'Бета').boundingBox())!;
+  const folderNow = (await tile(newtab, 'Папка').boundingBox())!;
+  const edge = {x: folderNow.x + folderNow.width * 0.9, y: folderNow.y + folderNow.height / 2};
+  await newtab.mouse.move(beta.x + beta.width / 2, beta.y + beta.height / 2);
+  await newtab.mouse.down();
+  await newtab.mouse.move(edge.x, edge.y, {steps: 6});
+  await newtab.mouse.move(edge.x + 1, edge.y);
+  // Пока ждём — у папки «растущая» линия с той стороны, куда встанет плитка
+  await expect(newtab.locator('.bookmark-grid__cell--insert-pending.bookmark-grid__cell--insert-after')).toHaveCount(1);
+  await expect.poll(() => titles(newtab)).toEqual(['Папка', 'Бета']);
+  await expect(tile(newtab, 'Папка')).not.toHaveClass(/tile--drop-into/);
+  // Плитки расступились: отпускаем на освободившемся месте
+  await dropAt(newtab, folderNow.x + folderNow.width / 2, edge.y);
+  await expect.poll(() => browserOrder()).toEqual(['Папка', 'Бета']);
+});
+
+test('курсор между плитками — линия-вставка, плитки не двигаются', async ({newtab}) => {
+  const browserOrder = async () => (await getChildren(newtab, '1')).map((node) => node.title);
+  const cell = (title: string) => newtab.locator('.bookmark-grid__cell', {has: tile(newtab, title)});
+
+  // Тянем «Папку» в промежуток между «Бета» и «Альфа» в обход плиток — под рядом и снизу вверх:
+  // над плиткой плитки расступились бы, а нам нужен именно промежуток
+  const folder = (await tile(newtab, 'Папка').boundingBox())!;
+  const beta = (await cell('Бета').boundingBox())!;
+  const alpha = (await cell('Альфа').boundingBox())!;
+  const gap = {x: (beta.x + beta.width + alpha.x) / 2, y: alpha.y + alpha.height / 2};
+  const below = alpha.y + alpha.height + 40;
+  await newtab.mouse.move(folder.x + folder.width / 2, folder.y + folder.height / 2);
+  await newtab.mouse.down();
+  await newtab.mouse.move(folder.x + folder.width / 2, below, {steps: 4});
+  await newtab.mouse.move(gap.x, below, {steps: 6});
+  await newtab.mouse.move(gap.x, gap.y, {steps: 4});
+  await newtab.mouse.move(gap.x, gap.y + 1);
+
+  // Линия — перед «Альфа», то есть в промежутке; порядок на экране прежний
+  await expect(cell('Альфа')).toHaveClass(/bookmark-grid__cell--insert-before/);
+  await expect(newtab.locator('[class*="--insert-"]')).toHaveCount(1);
+  expect(await titles(newtab)).toEqual(['Бета', 'Альфа', 'Папка']);
+
+  await dropAt(newtab, gap.x, gap.y);
+  await expect.poll(browserOrder).toEqual(['Бета', 'Папка', 'Альфа']);
+  await expect(newtab.locator('[class*="--insert-"]')).toHaveCount(0);
+});
+
+});
+
 test('плитки «Назад» и «Добавить», новые закладки в начало', async ({newtab}) => {
   await tile(newtab, 'Папка').click();
-  await newtab.getByRole('link', {name: 'Назад'}).click();
+  await newtab.getByRole('button', {name: 'Назад'}).click();
   await expect(tile(newtab, 'Альфа')).toBeVisible();
 
   const dialog = await openSettings(newtab, 'Общие');
@@ -132,12 +207,12 @@ test('папка по умолчанию и последняя открытая 
   const settings = await openSettings(page, 'Общие');
   await settings.getByLabel('Открывать последнюю открытую папку').check();
   await settings.getByRole('button', {name: 'Готово'}).click();
-  await page.getByRole('navigation', {name: 'Путь к папке'}).getByRole('link', {name: 'Главная'}).click();
+  await page.getByRole('navigation', {name: 'Путь к папке'}).getByRole('button', {name: 'Главная'}).click();
   await expect(page.locator('[data-bookmark-id]').first()).toBeVisible();
 
   const another = await context.newPage();
   await another.goto(`chrome-extension://${extensionId}/newtab.html`);
-  await expect(another.getByRole('navigation', {name: 'Путь к папке'}).getByRole('link')).toHaveText(['Главная']);
+  await expect(another.getByRole('navigation', {name: 'Путь к папке'}).locator('.breadcrumbs__item')).toHaveText(['Главная']);
 });
 
 test('выбор папки в панели поиска', async ({newtab}) => {

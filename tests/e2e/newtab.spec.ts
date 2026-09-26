@@ -21,6 +21,31 @@ test('показывает закладки и папки без перезаг�
   const folder = tile(newtab, 'Работа');
   await expect(folder.locator('.folder-preview [title="Docs"]')).toBeVisible();
   await expect(folder.locator('.folder-preview [title="Архив"] svg')).toBeVisible();
+
+  // Значок подпапки и иконка сайта растянуты почти на всю ячейку, одинаково
+  const subfolder = folder.locator('.folder-preview [title="Архив"]');
+  const subfolderCell = (await subfolder.boundingBox())!;
+  const subfolderIcon = (await subfolder.locator('svg').boundingBox())!;
+  expect(subfolderIcon.height).toBeGreaterThan(subfolderCell.height * 0.6);
+
+  const site = folder.locator('.folder-preview [title="Docs"]');
+  const siteCell = (await site.boundingBox())!;
+  const siteIcon = (await site.locator('.site-icon').boundingBox())!;
+  expect(siteIcon.height).toBeGreaterThan(siteCell.height * 0.6);
+});
+
+test('плитка папки — кнопка без адреса; Ctrl+клик открывает папку в новой вкладке', async ({context, newtab}) => {
+  const folder = tile(newtab, 'Работа');
+  // Не ссылка: браузер не показывает при наведении адрес chrome-extension://…
+  await expect(folder).not.toHaveAttribute('href');
+
+  const opened = context.waitForEvent('page');
+  await folder.click({modifiers: ['ControlOrMeta']});
+  const page = await opened;
+  await expect(page).toHaveURL(/newtab\.html#folder=\d+$/);
+  await expect(tile(page, 'Docs')).toBeVisible();
+  // Сама вкладка осталась в прежней папке
+  await expect(tile(newtab, 'Example')).toBeVisible();
 });
 
 test('навигация по папкам и хлебным крошкам', async ({newtab}) => {
@@ -31,7 +56,9 @@ test('навигация по папкам и хлебным крошкам', as
   // Название панели закладок зависит от языка браузера
   const [bar] = await newtab.evaluate(() => chrome.bookmarks.get('1'));
   const crumbs = newtab.getByRole('navigation', {name: 'Путь к папке'});
-  await expect(crumbs.getByRole('link')).toHaveText(['Главная', bar.title, 'Работа']);
+  await expect(crumbs.locator('.breadcrumbs__item')).toHaveText(['Главная', bar.title, 'Работа']);
+  // Папки пути — кнопки: браузер не показывает при наведении адрес chrome-extension://…
+  await expect(crumbs.locator('a')).toHaveCount(0);
 
   // Перезагрузка оставляет в той же папке
   await newtab.reload();
@@ -42,9 +69,9 @@ test('навигация по папкам и хлебным крошкам', as
   await expect(tile(newtab, 'Example')).toBeVisible();
 
   // «Главная» — корень: видны системные папки, пустых крошек нет
-  await crumbs.getByRole('link', {name: 'Главная'}).click();
+  await crumbs.getByRole('button', {name: 'Главная'}).click();
   await expect(tile(newtab, bar.title)).toBeVisible();
-  await expect(crumbs.locator('a')).toHaveCount(1);
+  await expect(crumbs.locator('.breadcrumbs__item')).toHaveCount(1);
 });
 
 test('добавляет закладку в открытую папку через контекстное меню', async ({newtab}) => {

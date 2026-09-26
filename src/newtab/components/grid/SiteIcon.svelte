@@ -4,8 +4,8 @@
   import {siteName} from '../../../lib/url';
 
   // plate — иконка на подложке; fill — без подложки, крупно (область вокруг заливает плитка);
-  // mini — маленькая, рядом с названием и в миниатюрах папки
-  let {entry, appearance = 'plate'}: {entry: IconEntry; appearance?: 'plate' | 'fill' | 'mini'} = $props();
+  // cell — на всю ячейку миниатюры папки; mini — маленькая, рядом с названием
+  let {entry, appearance = 'plate'}: {entry: IconEntry; appearance?: 'plate' | 'fill' | 'cell' | 'mini'} = $props();
 
   const info = $derived(entry.info);
   // Буква и цвет — по названию сайта: у ru.wikipedia.org это W, а не R
@@ -13,10 +13,10 @@
   const letter = $derived((host.charAt(0) || '?').toUpperCase());
   const showLetter = $derived(!info && entry.loaded);
 
-  // Крупная иконка со своим фоном (как apple-touch-icon) заполняет подложку целиком
-  const cover = $derived(Boolean(
-    appearance === 'plate' && info && info.source !== 'browser' && info.fullBleed && info.size >= 96,
-  ));
+  // Иконка со своим фоном (как apple-touch-icon) заполняет подложку целиком; на большой плитке — только крупная
+  const cover = $derived(Boolean(info?.fullBleed && (
+    (appearance === 'plate' && info.source !== 'browser' && info.size >= 96) || appearance === 'cell'
+  )));
 
   // Не растягиваем картинку больше чем в 1,5 раза сверх её реальных пикселей — иначе она «мылится»
   const maxSize = $derived(info ? `${Math.max(16, Math.round(info.size / window.devicePixelRatio * 1.5))}px` : undefined);
@@ -101,6 +101,36 @@
 
   .site-icon--fill .site-icon__letter {
     font-size: clamp(16px, calc(var(--icon-scale) * 0.5cqi), 120px);
+  }
+
+  /* ===== На всю ячейку миниатюры папки: такого же размера, как значок подпапки ===== */
+  .site-icon--cell {
+    height: 72%;
+    max-width: 72%;
+    overflow: hidden;
+    /* Светлая подложка, как у больших плиток: тёмные логотипы (GitHub, X) не теряются в тёмной теме */
+    border-radius: 22%;
+    background: var(--plate-bg);
+    /* Размер буквы — от размера самой иконки */
+    container-type: size;
+  }
+
+  .site-icon--cell .site-icon__image {
+    width: min(78%, var(--icon-max));
+  }
+
+  .site-icon--cell.site-icon--cover .site-icon__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .site-icon--cell.site-icon--letter {
+    background: var(--letter-color);
+  }
+
+  .site-icon--cell .site-icon__letter {
+    font-size: 60cqh;
   }
 
   /* ===== Маленькая ===== */

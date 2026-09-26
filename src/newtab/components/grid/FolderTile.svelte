@@ -1,8 +1,9 @@
 <script lang="ts">
-  import {type BookmarkNode, folderHref} from '../../../lib/bookmarks.svelte';
+  import type {BookmarkNode} from '../../../lib/bookmarks.svelte';
   import {FOLDER_PREVIEW_SIZE} from '../../../lib/constants';
   import {dragDrop} from '../../../lib/dragDrop.svelte';
   import {icons} from '../../../lib/icons.svelte';
+  import {folderOpenHandlers} from '../../../lib/navigation';
   import {settings} from '../../../lib/settings/store.svelte';
   import Icon from '../ui/Icon.svelte';
   import SiteIcon from './SiteIcon.svelte';
@@ -16,21 +17,23 @@
 </script>
 
 <Tile
-  href={folderHref(folder.id)}
   modifiers={{folder: true, dragging: dragDrop.draggedId === folder.id, 'drop-into': dropInto}}
   title={folder.title}
+  draggable="true"
   data-bookmark-id={folder.id}
   data-folder
+  {...folderOpenHandlers(folder.id)}
 >
   {#snippet visual()}
     {#if settings.current.folderPreview}
       <span class="folder-preview" aria-hidden="true">
         {#each preview as item (item.id)}
-          <span class="folder-preview__cell" title={item.title}>
+          <span class="folder-preview__cell" class:folder-preview__cell--folder={!item.url} title={item.title}>
             {#if item.url}
-              <SiteIcon entry={icons.get(item.url)} appearance="mini"/>
+              <SiteIcon entry={icons.get(item.url)} appearance="cell"/>
             {:else}
-              <Icon name="folder" size={14}/>
+              <!-- Подпапка — значок на всю ячейку, чтобы сразу отличалась от сайтов -->
+              <Icon name="folder" class="folder-preview__folder-icon"/>
             {/if}
           </span>
         {/each}
@@ -70,5 +73,17 @@
 
   .folder-preview__cell--empty {
     background: none;
+  }
+
+  .folder-preview__cell--folder {
+    background: color-mix(in oklab, var(--accent) 14%, var(--cell-bg));
+    color: var(--accent);
+  }
+
+  .folder-preview__cell :global(.folder-preview__folder-icon) {
+    width: 72%;
+    height: 72%;
+    fill: color-mix(in oklab, var(--accent) 25%, transparent);
+    stroke-width: 1.75;
   }
 </style>

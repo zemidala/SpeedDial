@@ -16,8 +16,11 @@ export interface FolderRef {
 }
 
 export type Dialog =
-  /** Новая закладка или папка; index — место в папке (по умолчанию в конец) */
-  | {kind: 'create'; type: 'bookmark' | 'folder'; parentId: string; index?: number}
+  /**
+   * Новая закладка или папка; index — место в папке (по умолчанию в конец);
+   * parentTitle — если создаётся не в открытой папке, её название показывается в заголовке окна
+   */
+  | {kind: 'create'; type: 'bookmark' | 'folder'; parentId: string; parentTitle?: string; index?: number}
   | {kind: 'edit'; node: BookmarkNode}
   /** Иконка и миниатюра закладки */
   | {kind: 'icon'; node: BookmarkNode & {url: string}}

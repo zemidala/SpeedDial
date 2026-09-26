@@ -1,6 +1,6 @@
 <script lang="ts">
-  import {folderHref} from '../../../lib/bookmarks.svelte';
   import {dragDrop} from '../../../lib/dragDrop.svelte';
+  import {folderOpenHandlers} from '../../../lib/navigation';
   import Icon from '../ui/Icon.svelte';
   import Tile from './Tile.svelte';
 
@@ -9,10 +9,10 @@
 </script>
 
 <Tile
-  href={folderHref(folderId)}
   modifiers={{action: true, 'drop-into': dragDrop.target?.id === folderId}}
   title="Назад"
   data-drop-folder-id={folderId}
+  {...folderOpenHandlers(folderId)}
 >
   {#snippet visual()}
     <Icon name="back" class="action-tile__icon"/>

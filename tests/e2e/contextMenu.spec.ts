@@ -45,8 +45,8 @@ test('меню плитки закладки, папки и пустого ме�
     'Открыть в новом окне',
     'Назад',
     'Вперед',
-    'Новая закладка…',
-    'Новая папка…',
+    'Новая закладка в этой папке…',
+    'Новая папка в этой папке…',
     'Редактировать…',
     'Сортировать…',
     'Удалить…',
@@ -145,6 +145,28 @@ test('новая папка на пустом месте и новая закл�
   await expect(tile(newtab, 'Новая папка')).toBeVisible();
 });
 
+test('новая папка и закладка — внутри папки, на которой открыто меню', async ({newtab}) => {
+  const folderId = (await tile(newtab, 'Папка').getAttribute('data-bookmark-id'))!;
+
+  await tile(newtab, 'Папка').click({button: 'right'});
+  await newtab.getByRole('menuitem', {name: 'Новая папка в этой папке…'}).click();
+  const folderDialog = newtab.getByRole('dialog', {name: 'Новая папка в «Папка»'});
+  await folderDialog.getByLabel('Название').fill('Вложенная');
+  await folderDialog.getByRole('button', {name: 'Создать'}).click();
+
+  await tile(newtab, 'Папка').click({button: 'right'});
+  await newtab.getByRole('menuitem', {name: 'Новая закладка в этой папке…'}).click();
+  const bookmarkDialog = newtab.getByRole('dialog', {name: 'Новая закладка в «Папка»'});
+  await bookmarkDialog.getByLabel('Адрес').fill('inside.example');
+  await bookmarkDialog.getByRole('button', {name: 'Создать'}).click();
+
+  await expect.poll(async () => (await getChildren(newtab, folderId)).map((node) => node.title))
+    .toEqual(['Гамма', 'Вложенная', 'inside.example']);
+  // В открытой папке ничего не появилось, а в миниатюре папки видна новая подпапка
+  expect(await titles(newtab)).toEqual(['Бета', 'Альфа', 'Папка']);
+  await expect(tile(newtab, 'Папка').locator('.folder-preview [title="Вложенная"]')).toBeVisible();
+});
+
 test('сортировка папки меняет порядок в браузере', async ({newtab}) => {
   await openPageMenu(newtab);
   await newtab.getByRole('menuitem', {name: 'Сортировать…'}).click();
@@ -157,7 +179,7 @@ test('сортировка папки меняет порядок в брауз�
   expect((await getChildren(newtab, '1')).map((node) => node.title)).toEqual(['Папка', 'Альфа', 'Бета']);
 
   // В корне сортировать нечего: там системные папки
-  await newtab.getByRole('navigation', {name: 'Путь к папке'}).getByRole('link', {name: 'Главная'}).click();
+  await newtab.getByRole('navigation', {name: 'Путь к папке'}).getByRole('button', {name: 'Главная'}).click();
   await openPageMenu(newtab);
   await expect(newtab.getByRole('menuitem', {name: 'Сортировать…'})).toBeDisabled();
 });

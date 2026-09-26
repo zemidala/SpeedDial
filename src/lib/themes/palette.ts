@@ -75,6 +75,51 @@ export function paletteCss(preset: Pick<ThemePreset, 'light' | 'dark'>): string 
 
 const MIN_CONTRAST = 4.5; // WCAG AA для обычного текста
 
+// Тёмно-серый, к которому приглушаются светлые фоны
+const DIM_BASE = '#23272e';
+// Доля акцента темы в цвете приглушения: фоны получают лёгкий оттенок темы, как тоновые поверхности
+// в Material 3, — светлая тема становится мягче, но не «грязно-серой» и сохраняет характер
+const DIM_ACCENT_SHARE = 0.25;
+
+/**
+ * Приглушённая светлая палитра: фоны смешиваются с тёмным оттенком акцента на amount (0–1), чтобы белое
+ * не слепило. Иерархия сохраняется: фон страницы остаётся темнее плиток и панелей. Подложки иконок
+ * приглушаются вдвое слабее — иконки остаются яркими. Текст, ссылки и подписи при необходимости темнеют,
+ * чтобы контраст со всеми фонами остался не ниже WCAG AA
+ */
+export function dimLightPalette(palette: ThemePalette, amount: number): ThemePalette {
+  if (amount <= 0) return palette;
+  const target = mixColors(DIM_BASE, palette.accent, DIM_ACCENT_SHARE);
+  const dim = (color: string, strength = 1) => mixColors(color, target, amount * strength);
+
+  const backgrounds = {
+    pageFrom: dim(palette.pageFrom),
+    pageTo: dim(palette.pageTo),
+    surface: dim(palette.surface),
+    surfaceMuted: dim(palette.surfaceMuted),
+    surfaceHover: dim(palette.surfaceHover),
+    tile: dim(palette.tile),
+    folder: dim(palette.folder),
+  };
+  const readableOnAll = (color: string, surfaces: string[]) =>
+    surfaces.reduce((result, surface) => ensureContrast(result, surface, MIN_CONTRAST), color);
+  const allBackgrounds = Object.values(backgrounds);
+  const panels = [backgrounds.surface, backgrounds.surfaceMuted, backgrounds.tile];
+
+  const accent = readableOnAll(palette.accent, [backgrounds.surface]);
+  return {
+    ...palette,
+    ...backgrounds,
+    plate: dim(palette.plate, 0.5),
+    cell: 'rgb(255 255 255 / 0.45)',
+    text: readableOnAll(palette.text, allBackgrounds),
+    textMuted: readableOnAll(palette.textMuted, panels),
+    accent,
+    accentHover: accent === palette.accent ? palette.accentHover : mixColors(accent, '#000000', 0.15),
+    danger: readableOnAll(palette.danger, [backgrounds.surface]),
+  };
+}
+
 /**
  * «Свои цвета»: светлая и тёмная палитры из акцента и оттенка фона. Нейтральные цвета — белый
  * или почти чёрный с примесью оттенка; текст и акцент при необходимости сдвигаются до читаемого контраста

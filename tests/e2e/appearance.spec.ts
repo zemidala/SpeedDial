@@ -4,6 +4,9 @@ const LIGHT_SURFACE = 'rgb(255, 255, 255)';
 const DARK_SURFACE = 'rgb(35, 38, 45)'; // #23262d
 
 test.beforeEach(async ({newtab}) => {
+  // Точные цвета проверяем без приглушения светлой темы
+  await newtab.evaluate(() => chrome.storage.sync.set({settings: {lightDimming: 0}}));
+  await newtab.reload();
   await seed(newtab, [
     {title: 'Example', url: 'https://example.com/'},
     {title: 'Папка', children: [{title: 'Внутри', url: 'https://inside.example/'}]},

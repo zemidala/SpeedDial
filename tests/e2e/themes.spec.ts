@@ -2,6 +2,9 @@ import type {Page} from '@playwright/test';
 import {expect, openSettings, seed, test, tile} from './fixtures';
 
 test.beforeEach(async ({newtab}) => {
+  // Точные цвета тем проверяем без приглушения светлой темы; само приглушение — в отдельном тесте
+  await newtab.evaluate(() => chrome.storage.sync.set({settings: {lightDimming: 0}}));
+  await newtab.reload();
   await seed(newtab, [
     {title: 'Example', url: 'https://example.com/'},
     {title: 'Папка', children: [{title: 'Внутри', url: 'https://inside.example/'}]},
@@ -23,13 +26,40 @@ test('тема оформления красит панели, плитки и �
   // Светлый вариант Nord
   await expect.poll(style(newtab, '.breadcrumbs', 'background-color')).toBe('rgb(248, 249, 251)');
   await expect.poll(style(newtab, '.tile--folder .tile__card', 'background-color')).toBe('rgb(221, 230, 240)');
-  await expect.poll(style(newtab, '.breadcrumbs__link', 'color')).toBe('rgb(75, 107, 148)');
+  await expect.poll(style(newtab, '.breadcrumbs__item', 'color')).toBe('rgb(75, 107, 148)');
 
   // Тёмный вариант — сам, при смене режима системы
   await newtab.emulateMedia({colorScheme: 'dark'});
   await expect.poll(style(newtab, '.breadcrumbs', 'background-color')).toBe('rgb(59, 66, 82)');
   await expect.poll(style(newtab, '.tile--folder .tile__card', 'background-color')).toBe('rgb(57, 74, 94)');
   await expect.poll(style(newtab, 'body', 'color')).toBe('rgb(236, 239, 244)');
+});
+
+test('приглушение светлой темы: фоны мягче, текст читается, тёмная тема не меняется', async ({newtab}) => {
+  const luminance = style(newtab, '.breadcrumbs', 'background-color');
+  const brightness = async () => (await luminance()).match(/\d+/g)!.slice(0, 3).map(Number).reduce((a, b) => a + b, 0);
+  const textContrast = () => newtab.evaluate(() => {
+    const parse = (color: string) => color.match(/\d+/g)!.slice(0, 3).map(Number);
+    const lum = (rgb: number[]) => {
+      const [r, g, b] = rgb.map((v) => (v / 255 <= 0.03928 ? v / 255 / 12.92 : ((v / 255 + 0.055) / 1.055) ** 2.4));
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    };
+    const text = getComputedStyle(document.body).color;
+    const panel = getComputedStyle(document.querySelector('.breadcrumbs')!).backgroundColor;
+    const [a, b] = [lum(parse(text)), lum(parse(panel))].sort((x, y) => y - x);
+    return (a + 0.05) / (b + 0.05);
+  });
+
+  await newtab.emulateMedia({colorScheme: 'light'});
+  expect(await luminance()).toBe('rgb(255, 255, 255)');
+  const dialog = await openSettings(newtab);
+  await dialog.getByLabel('Приглушить светлую тему').fill('30');
+  await expect.poll(brightness).toBeLessThan(3 * 230);
+  expect(await textContrast()).toBeGreaterThanOrEqual(4.5);
+
+  // Тёмная тема не меняется
+  await newtab.emulateMedia({colorScheme: 'dark'});
+  await expect.poll(luminance).toBe('rgb(35, 38, 45)');
 });
 
 test('превью тем показывают вариант для текущего режима', async ({newtab}) => {
@@ -63,7 +93,7 @@ test('свои цвета: акцент и оттенок фона, читаем
       const [r, g, b] = rgb.map((v) => (v / 255 <= 0.03928 ? v / 255 / 12.92 : ((v / 255 + 0.055) / 1.055) ** 2.4));
       return 0.2126 * r + 0.7152 * g + 0.0722 * b;
     };
-    const link = getComputedStyle(document.querySelector('.breadcrumbs__link')!).color;
+    const link = getComputedStyle(document.querySelector('.breadcrumbs__item')!).color;
     const panel = getComputedStyle(document.querySelector('.breadcrumbs')!).backgroundColor;
     const [a, b] = [luminance(parse(link)), luminance(parse(panel))].sort((x, y) => y - x);
     return (a + 0.05) / (b + 0.05);

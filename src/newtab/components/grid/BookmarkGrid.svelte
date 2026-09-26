@@ -3,7 +3,7 @@
   import {MediaQuery} from 'svelte/reactivity';
   import {type BookmarkNode, bookmarks} from '../../../lib/bookmarks.svelte';
   import {ROOT_FOLDER_ID} from '../../../lib/constants';
-  import {dragDrop} from '../../../lib/dragDrop.svelte';
+  import {dragDrop, FOLDER_EDGE_DELAY} from '../../../lib/dragDrop.svelte';
   import {SEARCH_ENGINE_NAMES} from '../../../lib/search';
   import {search} from '../../../lib/search.svelte';
   import {settings} from '../../../lib/settings/store.svelte';
@@ -53,14 +53,26 @@
   });
 </script>
 
-<section class="bookmark-grid" aria-label={search.active ? 'Результаты поиска' : 'Закладки'}>
+<section
+  class="bookmark-grid"
+  aria-label={search.active ? 'Результаты поиска' : 'Закладки'}
+  style:--insert-delay="{FOLDER_EDGE_DELAY}ms"
+>
   {#if parentFolderId !== null}
     <BackTile folderId={parentFolderId}/>
   {/if}
 
   {#each items as item, slot (item.id)}
+    {@const indicator = dragDrop.indicator?.id === item.id ? dragDrop.indicator : null}
     <!-- Ячейка сетки: по ячейкам определяется место при перетаскивании, в них же анимируется перестановка -->
-    <div class="bookmark-grid__cell" data-grid-slot={slot} animate:flip={{duration: reducedMotion.current ? 0 : REORDER_DURATION}}>
+    <div
+      class="bookmark-grid__cell"
+      class:bookmark-grid__cell--insert-before={indicator?.side === 'before'}
+      class:bookmark-grid__cell--insert-after={indicator?.side === 'after'}
+      class:bookmark-grid__cell--insert-pending={indicator?.pending}
+      data-grid-slot={slot}
+      animate:flip={{duration: reducedMotion.current ? 0 : REORDER_DURATION}}
+    >
       {#if item.url}
         <BookmarkTile bookmark={item}/>
       {:else}
@@ -90,9 +102,58 @@
   }
 
   .bookmark-grid__cell {
+    position: relative;
     display: flex;
     flex-direction: column;
     min-width: 0;
+  }
+
+  /* Линия-вставка в промежутке между плитками: сюда встанет перетаскиваемая плитка */
+  .bookmark-grid__cell--insert-before::before,
+  .bookmark-grid__cell--insert-after::after {
+    position: absolute;
+    top: 4%;
+    bottom: 4%;
+    z-index: 2;
+    width: 4px;
+    border-radius: 2px;
+    background: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 25%, transparent);
+    content: '';
+    pointer-events: none;
+  }
+
+  .bookmark-grid__cell--insert-before::before {
+    left: calc(var(--gap) / -2 - 2px);
+  }
+
+  .bookmark-grid__cell--insert-after::after {
+    right: calc(var(--gap) / -2 - 2px);
+  }
+
+  /* У края папки линия «вырастает» за время ожидания: задержите курсор — плитка встанет рядом */
+  .bookmark-grid__cell--insert-pending::before,
+  .bookmark-grid__cell--insert-pending::after {
+    animation: insert-grow var(--insert-delay) ease-out both;
+  }
+
+  @keyframes insert-grow {
+    from {
+      opacity: 0.3;
+      transform: scaleY(0.15);
+    }
+
+    to {
+      opacity: 1;
+      transform: scaleY(1);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bookmark-grid__cell--insert-pending::before,
+    .bookmark-grid__cell--insert-pending::after {
+      animation: none;
+    }
   }
 
   .bookmark-grid__empty {

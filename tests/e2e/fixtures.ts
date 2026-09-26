@@ -109,6 +109,21 @@ export function tile(page: Page, title: string) {
   return page.locator('[data-bookmark-id]', {has: page.getByText(title, {exact: true})});
 }
 
+/** Ждёт, пока плитки доиграют анимацию перестановки: до этого их положение на экране промежуточное */
+export async function waitForTileAnimations(page: Page) {
+  await page.locator('.bookmark-grid').evaluate((grid) =>
+    Promise.all(grid.getAnimations({subtree: true}).map((animation) => animation.finished)));
+}
+
+/**
+ * Отпускает перетаскиваемую плитку в точке x, y. Настоящий браузер шлёт dragover непрерывно, а Playwright —
+ * только при движении мыши и без свежего dragover отменяет сброс, поэтому перед отпусканием чуть шевелим мышь
+ */
+export async function dropAt(page: Page, x: number, y: number) {
+  for (const dx of [2, 1, 0]) await page.mouse.move(x + dx, y);
+  await page.mouse.up();
+}
+
 /** Открывает окно настроек на нужной вкладке */
 export async function openSettings(page: Page, tab: 'Вид' | 'Общие' | 'Расширенные' = 'Вид') {
   await page.getByRole('button', {name: 'Настройки'}).click();
