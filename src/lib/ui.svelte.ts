@@ -21,32 +21,32 @@ export interface FolderRef {
 
 export type Dialog =
   /**
-   * Новая закладка или папка; index — место в папке (по умолчанию в конец);
-   * parentTitle — если создаётся не в открытой папке, её название показывается в заголовке окна
+   * New bookmark or folder; index — position in the folder (the end by default);
+   * parentTitle — if it's created outside the open folder, that folder's name is shown in the dialog title
    */
   | {kind: 'create'; type: 'bookmark' | 'folder'; parentId: string; parentTitle?: string; index?: number}
   | {kind: 'edit'; node: BookmarkNode}
-  /** Иконка и миниатюра закладки */
+  /** Bookmark icon and thumbnail */
   | {kind: 'icon'; node: BookmarkNode & {url: string}}
-  /** Упорядочить содержимое папки в браузере */
+  /** Sort the folder's contents in the browser */
   | {kind: 'sort'; folder: FolderRef}
-  /** Перенести выделенные закладки и папки в другую папку */
+  /** Move the selected bookmarks and folders to another folder */
   | {kind: 'move'; nodes: BookmarkNode[]}
   | {kind: 'settings'}
   | ({kind: 'confirm'} & ConfirmOptions);
 
-// Открытый диалог; одновременно показывается не больше одного
+// The open dialog; at most one is shown at a time
 export const ui = $state<{dialog: Dialog | null}>({dialog: null});
 
-// Число открытых модальных окон (окно подтверждения может открыться поверх настроек).
-// Пока модальное окно открыто, всё вне его недоступно для кликов — уведомления показываются в верхнем окне
+// Number of open modal dialogs (a confirmation may open over the settings).
+// While a modal is open, everything outside it is inert — notifications are shown in the topmost dialog
 export const modals = $state({depth: 0});
 
 export function openSettings(): void {
   ui.dialog = {kind: 'settings'};
 }
 
-/** Удаляет закладку или папку и предлагает отменить удаление */
+/** Deletes a bookmark or folder and offers to undo */
 async function deleteWithUndo(node: BookmarkNode): Promise<void> {
   const removed = await removeNode(node);
   showNotice(t.bookmark.deleted(!removed.tree.url, removed.tree.title), 'info', {
@@ -55,7 +55,7 @@ async function deleteWithUndo(node: BookmarkNode): Promise<void> {
   });
 }
 
-/** Удаление закладки или папки; с подтверждением, если оно включено в настройках */
+/** Deleting a bookmark or folder; with a confirmation if it's enabled in the settings */
 export function requestDelete(node: BookmarkNode): Promise<void> | void {
   if (!settings.current.confirmDelete) return deleteWithUndo(node);
 
@@ -72,7 +72,7 @@ export function requestDelete(node: BookmarkNode): Promise<void> | void {
   };
 }
 
-/** Удаляет выделенные закладки и папки и предлагает отменить удаление */
+/** Deletes the selected bookmarks and folders and offers to undo */
 async function deleteManyWithUndo(nodes: BookmarkNode[]): Promise<void> {
   const removed = await removeNodes(nodes);
   const saved = new Map(removed.flatMap((item) => [...item.thumbnails]));
@@ -82,7 +82,7 @@ async function deleteManyWithUndo(nodes: BookmarkNode[]): Promise<void> {
   });
 }
 
-/** Удаление нескольких; с подтверждением, если оно включено в настройках */
+/** Deleting several items; with a confirmation if it's enabled in the settings */
 export function requestDeleteMany(nodes: BookmarkNode[]): Promise<void> | void {
   if (nodes.length === 1) return requestDelete(nodes[0]);
   if (!settings.current.confirmDelete) return deleteManyWithUndo(nodes);
@@ -96,10 +96,10 @@ export function requestDeleteMany(nodes: BookmarkNode[]): Promise<void> | void {
   };
 }
 
-/** Больше стольких вкладок открываем только после подтверждения */
+/** Opening more tabs than this needs a confirmation */
 const OPEN_ALL_CONFIRM = 10;
 
-/** Открывает закладки (папки пропускаются) в фоновых вкладках */
+/** Opens bookmarks (folders are skipped) in background tabs */
 export function requestOpenAll(nodes: BookmarkNode[]): Promise<void> | void {
   const urls = nodes.flatMap((node) => (node.url ? [node.url] : []));
   const open = async () => {

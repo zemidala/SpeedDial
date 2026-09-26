@@ -1,4 +1,4 @@
-// Пункт «Добавить в SpeedDial» в контекстном меню страниц и ссылок
+// "Add to SpeedDial" item in the context menu of pages and links
 import {BOOKMARKS_BAR_ID} from '../lib/constants';
 import {setLanguage, t} from '../lib/i18n/index.svelte';
 import {SITE_ACCESS} from '../lib/permissionSets';
@@ -8,7 +8,7 @@ import {captureThumbnails} from './capture';
 
 const MENU_ITEM_ID = 'add-to-speeddial';
 
-/** Показывает или убирает пункт меню в зависимости от настройки */
+/** Shows or removes the menu item depending on the setting */
 export async function syncContextMenu(): Promise<void> {
   const {browserContextMenu, language} = await loadSettings();
   setLanguage(language);
@@ -22,7 +22,7 @@ export async function syncContextMenu(): Promise<void> {
   }
 }
 
-/** Папка по умолчанию, если она ещё существует; иначе «Панель избранного» */
+/** The default folder if it still exists; otherwise the bookmarks bar */
 async function resolveFolder(folderId: string): Promise<string> {
   try {
     const [folder] = await chrome.bookmarks.get(folderId);

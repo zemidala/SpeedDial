@@ -2,14 +2,14 @@ import {expect, patchManifest, test} from './fixtures';
 
 test.use({isolatedBuild: true});
 
-test('без уведомления, когда манифест актуален', async ({newtab}) => {
+test('no notification when the manifest is current', async ({newtab}) => {
   await expect(newtab.getByRole('navigation', {name: 'Путь к папке'})).toBeVisible();
-  await newtab.waitForTimeout(500); // Проверка манифеста асинхронная
+  await newtab.waitForTimeout(500); // The manifest check is asynchronous
   await expect(newtab.getByRole('alert')).toHaveCount(0);
 });
 
-test('подсказывает перезагрузить расширение, если манифест на диске новее загруженного', async ({extensionPath, newtab}) => {
-  // Так бывает после пересборки: файлы обновились, а браузер держит старый манифест до перезагрузки расширения
+test('suggests reloading the extension if the manifest on disk is newer than the loaded one', async ({extensionPath, newtab}) => {
+  // This happens after a rebuild: the files changed, but the browser keeps the old manifest until the extension is reloaded
   patchManifest(extensionPath, (manifest) => {
     manifest.optional_permissions = [...(manifest.optional_permissions as string[]), 'notifications'];
   });

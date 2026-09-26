@@ -1,6 +1,6 @@
-/* ===== Тема =====
-   Цвета задаются через light-dark(): первый — для светлой темы, второй — для тёмной.
-   Какая тема активна, решает color-scheme: по системе или по data-theme из настроек. */
+/* ===== Theme =====
+   Colours are set with light-dark(): the first for the light theme, the second for the dark one.
+   Which one is active is decided by color-scheme: by the system or by data-theme from the settings. */
 :root {
   color-scheme: light dark;
 }
@@ -14,14 +14,14 @@
 }
 
 :root {
-  /* Задаются из настроек (App.svelte) */
+  /* Set from the settings (App.svelte) */
   --columns: 6;
   --container-width: 90%;
   --icon-scale: 50;
   --font-family: 'Segoe UI', system-ui, sans-serif;
 
-  /* Цвета по умолчанию — тема «Стандартная» (themes/presets.ts). Выбранная тема перекрывает их
-     стилем #theme-palette, который ставит theme-init.js до первой отрисовки */
+  /* Default colours — the Standard theme (themes/presets.ts). The chosen theme overrides them
+     with the #theme-palette style that theme-init.js adds before the first paint */
   --tile-bg: light-dark(#ffffff, #2c3039);
   --folder-bg: light-dark(#e3eefc, #27354a);
 
@@ -31,7 +31,7 @@
   --surface-muted: light-dark(#f5f6f8, #262a32);
   --surface-hover: light-dark(#eceef2, #363b46);
   --cell-bg: light-dark(rgb(255 255 255 / 0.6), rgb(255 255 255 / 0.08));
-  /* Подложка иконок светлая и в тёмной теме: тёмные логотипы (GitHub, X) иначе теряются */
+  /* The icon plate is light in the dark theme too: dark logos (GitHub, X) would get lost otherwise */
   --plate-bg: light-dark(#ffffff, #eceef1);
   --text: light-dark(#1a1c1f, #f0f2f5);
   --text-muted: light-dark(#4b535d, #b4bbc5);
@@ -52,17 +52,17 @@
   --gap: 20px;
 }
 
-/* Поля, списки и кнопки — своим тоном и с заметной рамкой, как в настройках Edge и Оперы:
-   не сливаются с панелью ни в одной теме. Считаются от цветов темы, поэтому подходят ко всем */
+/* Fields, lists and buttons have their own tone and a visible border, as in the Edge and Opera settings:
+   they don't blend into the panel in any theme. Derived from theme colours, so they fit every theme */
 :root {
   --field-bg: light-dark(var(--surface), color-mix(in oklab, var(--surface), #fff 7%));
   --field-hover: light-dark(var(--surface-hover), color-mix(in oklab, var(--surface), #fff 12%));
   --field-border: light-dark(rgb(0 0 0 / 0.22), rgb(255 255 255 / 0.24));
 }
 
-/* ===== Повышенная контрастность =====
-   data-contrast ставят theme-init.js и App.svelte: выбрана в настройках или включена в системе.
-   :root:root — чтобы перекрыть цвета выбранной темы (#theme-palette) */
+/* ===== High contrast =====
+   data-contrast is set by theme-init.js and App.svelte: chosen in the settings or enabled in the system.
+   :root:root — to override the chosen theme's colours (#theme-palette) */
 :root:root[data-contrast='high'] {
   --border: light-dark(rgb(0 0 0 / 0.55), rgb(255 255 255 / 0.6));
   --text-muted: color-mix(in oklab, var(--text) 88%, transparent);

@@ -1,4 +1,4 @@
-// Экспорт и импорт настроек в файл. Закладки и картинки в файл не входят
+// Exporting and importing settings to a file. Bookmarks and images aren't included
 import {t} from '../i18n/index.svelte';
 import {LOCAL_KEYS, sanitizeSettings, type Settings, splitSettings} from './schema';
 
@@ -12,7 +12,7 @@ interface SettingsFile {
   settings: Partial<Settings>;
 }
 
-/** Настройки для файла; локальные (папка по умолчанию, синхронизация) не выгружаются */
+/** Settings for the file; local ones (default folder, sync) aren't exported */
 export function serializeSettings(settings: Settings, now = new Date()): string {
   const file: SettingsFile = {
     format: FILE_FORMAT,
@@ -23,7 +23,7 @@ export function serializeSettings(settings: Settings, now = new Date()): string 
   return JSON.stringify(file, null, 2);
 }
 
-/** Настройки из файла поверх текущих локальных; бросает ошибку, если файл не подходит */
+/** Settings from the file over the current local ones; throws if the file doesn't fit */
 export function parseSettingsFile(text: string, current: Settings): Settings {
   let file: Partial<SettingsFile>;
   try {

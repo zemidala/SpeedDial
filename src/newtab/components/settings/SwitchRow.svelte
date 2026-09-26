@@ -4,7 +4,7 @@
   import Switch from '../ui/Switch.svelte';
   import SettingRow from './SettingRow.svelte';
 
-  // Переключатель, привязанный к настройке key, или с собственными checked/onchange
+  // A switch bound to setting key, or with its own checked/onchange
   let {label, hint, key, checked, disabled = false, onchange}: {
     label: string;
     hint?: string;

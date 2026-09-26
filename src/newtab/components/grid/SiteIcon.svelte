@@ -3,26 +3,26 @@
   import type {IconEntry} from '../../../lib/icons.svelte';
   import {siteName} from '../../../lib/url';
 
-  // plate — иконка на подложке; fill — без подложки, крупно (область вокруг заливает плитка);
-  // cell — на всю ячейку миниатюры папки; mini — маленькая, рядом с названием
+  // plate — icon on a plate; fill — no plate, large (the tile fills the area around it);
+  // cell — fills a folder preview cell; mini — small, next to the name
   let {entry, appearance = 'plate'}: {entry: IconEntry; appearance?: 'plate' | 'fill' | 'cell' | 'mini'} = $props();
 
   const info = $derived(entry.info);
-  // Буква и цвет — по названию сайта: у ru.wikipedia.org это W, а не R
+  // Letter and colour come from the site name: for ru.wikipedia.org it's W, not R
   const host = $derived(siteName(entry.pageUrl));
   const letter = $derived((host.charAt(0) || '?').toUpperCase());
   const showLetter = $derived(!info && entry.loaded);
 
-  // Иконка со своим фоном (как apple-touch-icon) заполняет подложку целиком; на большой плитке — только крупная
+  // An icon with its own background (like apple-touch-icon) fills the whole plate; on a large tile — only a large one
   const cover = $derived(Boolean(info?.fullBleed && (
     (appearance === 'plate' && info.source !== 'browser' && info.size >= 96) || appearance === 'cell'
   )));
 
-  // Не растягиваем картинку больше чем в 1,5 раза сверх её реальных пикселей — иначе она «мылится»
+  // Don't stretch the image more than 1.5× beyond its real pixels — otherwise it gets blurry
   const maxSize = $derived(info ? `${Math.max(16, Math.round(info.size / window.devicePixelRatio * 1.5))}px` : undefined);
 </script>
 
-<!-- Иконка декоративная: название сайта всегда есть рядом -->
+<!-- The icon is decorative: the site name is always next to it -->
 <span
   aria-hidden="true"
   class="site-icon site-icon--{appearance}"
@@ -60,9 +60,9 @@
     user-select: none;
   }
 
-  /* ===== На подложке ===== */
+  /* ===== On a plate ===== */
   .site-icon--plate {
-    /* Размер задаёт --site-icon-size (например, в меню сервисов), иначе доля высоты области плитки */
+    /* Size comes from --site-icon-size (e.g. in the services menu), otherwise a share of the tile area height */
     height: var(--site-icon-size, calc(var(--icon-scale) * 1%));
     max-width: 90%;
     overflow: hidden;
@@ -89,7 +89,7 @@
     font-size: clamp(14px, calc(var(--icon-scale) * 0.3cqi), 52px);
   }
 
-  /* ===== На весь блок ===== */
+  /* ===== Fill ===== */
   .site-icon--fill {
     height: calc(var(--icon-scale) * 1%);
     max-width: 100%;
@@ -103,15 +103,15 @@
     font-size: clamp(16px, calc(var(--icon-scale) * 0.5cqi), 120px);
   }
 
-  /* ===== На всю ячейку миниатюры папки: такого же размера, как значок подпапки ===== */
+  /* ===== Fills a folder preview cell: the same size as the subfolder icon ===== */
   .site-icon--cell {
     height: 72%;
     max-width: 72%;
     overflow: hidden;
-    /* Светлая подложка, как у больших плиток: тёмные логотипы (GitHub, X) не теряются в тёмной теме */
+    /* A light plate, as on large tiles: dark logos (GitHub, X) don't get lost in the dark theme */
     border-radius: 22%;
     background: var(--plate-bg);
-    /* Размер буквы — от размера самой иконки */
+    /* Letter size follows the icon size */
     container-type: size;
   }
 
@@ -133,7 +133,7 @@
     font-size: 60cqh;
   }
 
-  /* ===== Маленькая ===== */
+  /* ===== Small ===== */
   .site-icon--mini {
     width: 16px;
     height: 16px;

@@ -4,7 +4,7 @@
   box-sizing: border-box;
 }
 
-/* Шрифт задаём на body: Chrome ставит страницам расширений свой font-family и font-size именно на body */
+/* The font is set on body: Chrome sets its own font-family and font-size for extension pages exactly on body */
 body {
   min-height: 100vh;
   margin: 0;
@@ -15,7 +15,7 @@ body {
   font-size: 0.875rem;
 }
 
-/* Фон из настроек: цвет или изображение */
+/* Background from the settings: a colour or an image */
 body.page--background-color {
   background: var(--page-background-color);
 }
@@ -25,8 +25,8 @@ body.page--background-image {
 }
 
 /*
- * Картинка — отдельным слоем под страницей: размывается только она, а не плитки.
- * Слой чуть больше окна, чтобы размытые края не просвечивали; затемнение — полупрозрачным чёрным поверх
+ * The image is a separate layer under the page: only it gets blurred, not the tiles.
+ * The layer is slightly larger than the window so blurred edges don't show; dimming is translucent black on top
  */
 body.page--background-image::before {
   position: fixed;

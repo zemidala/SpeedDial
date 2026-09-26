@@ -1,5 +1,5 @@
-// Язык интерфейса. Основной — английский; по умолчанию берётся язык браузера (системы),
-// а если перевода на него нет — английский. Работает и на странице, и в service worker
+// Interface language. English is the primary one; by default the browser (system) language is used,
+// and English if there's no translation for it. Works both on pages and in the service worker
 import type {LanguageSetting} from '../settings/schema';
 import {en, type Messages} from './en';
 import {ru} from './ru';
@@ -11,10 +11,10 @@ export type Language = (typeof LANGUAGES)[number];
 
 const DICTIONARIES: Record<Language, Messages> = {en, ru};
 
-/** Название языка на нём самом — так его проще найти в списке */
+/** Language name in the language itself — easier to find in the list */
 export const LANGUAGE_NAMES: Record<Language, string> = {en: 'English', ru: 'Русский'};
 
-/** Язык браузера, если на него есть перевод; иначе английский */
+/** The browser language if there's a translation for it; otherwise English */
 export function browserLanguage(): Language {
   const ui = globalThis.chrome?.i18n?.getUILanguage?.() ?? globalThis.navigator?.language ?? 'en';
   const code = ui.toLowerCase().split(/[-_]/)[0];
@@ -36,14 +36,14 @@ export function currentLanguage(): Language {
 }
 
 /**
- * Тексты текущего языка: t.menu.open. Чтение отслеживается Svelte —
- * при смене языка интерфейс перерисовывается без перезагрузки
+ * Texts in the current language: t.menu.open. Reads are tracked by Svelte —
+ * switching the language re-renders the interface without a reload
  */
 export const t: Messages = new Proxy({} as Messages, {
   get: (_target, key) => DICTIONARIES[language][key as keyof Messages],
 });
 
-/** Дата и время в формате текущего языка */
+/** Date and time in the current language's format */
 export function formatDateTime(time: number): string {
   return new Intl.DateTimeFormat(language, {dateStyle: 'medium', timeStyle: 'short'}).format(time);
 }

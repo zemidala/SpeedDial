@@ -1,6 +1,6 @@
-/* ===== Плитка: закладка, папка, «Назад», «Добавить» =====
-   .tile — вся плитка (ссылка или кнопка), .tile__card — карточка с картинкой,
-   .tile__title — название: внутри карточки или снаружи, сверху или снизу */
+/* ===== Tile: bookmark, folder, Back, Add =====
+   .tile — the whole tile (link or button), .tile__card — the card with the image,
+   .tile__title — the name: inside the card or outside, at the top or bottom */
 .tile {
   position: relative;
   display: flex;
@@ -27,7 +27,7 @@
   flex-direction: column;
   aspect-ratio: 4 / 3;
   overflow: hidden;
-  /* Размеры внутри карточки считаются от её ширины (единицы cqi) */
+  /* Sizes inside the card are relative to its width (cqi units) */
   container-type: inline-size;
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -48,7 +48,7 @@
   outline-offset: 2px;
 }
 
-/* Область под картинку: иконка, миниатюра или сетка папки */
+/* Area for the image: icon, thumbnail or folder grid */
 .tile__visual {
   position: relative;
   display: flex;
@@ -67,7 +67,7 @@
   object-position: top center;
 }
 
-/* Значок папки (без миниатюр) и значки служебных плиток */
+/* Folder icon (without previews) and icons of service tiles */
 .tile__visual .folder-tile__icon {
   width: auto;
   height: calc(var(--icon-scale) * 1%);
@@ -80,7 +80,7 @@
   height: calc(var(--icon-scale) * 0.6%);
 }
 
-/* ===== Название ===== */
+/* ===== Name ===== */
 .tile__title {
   display: flex;
   flex-shrink: 0;
@@ -89,7 +89,7 @@
   gap: 6px;
   min-width: 0;
   padding: 4px 8px;
-  /* Размер и насыщенность — из настроек (App.svelte) */
+  /* Size and weight — from the settings (App.svelte) */
   font-size: var(--title-font-size, 0.8125rem);
   font-weight: var(--title-font-weight, 400);
 }
@@ -100,7 +100,7 @@
   white-space: nowrap;
 }
 
-/* Внутри карточки — полоса с разделителем */
+/* Inside the card — a strip with a divider */
 .tile--title-bottom-inside .tile__title {
   border-top: 1px solid var(--border);
 }
@@ -113,7 +113,7 @@
   border-bottom: 1px solid var(--border);
 }
 
-/* Снаружи — под карточкой или над ней */
+/* Outside — below or above the card */
 .tile--title-top-outside {
   flex-direction: column-reverse;
 }
@@ -123,22 +123,22 @@
   padding: 0 4px;
 }
 
-/* На фоновом изображении названия снаружи должны читаться на любой картинке */
+/* On a background image, names outside must be readable on any picture */
 .page--background-image .tile--title-bottom-outside .tile__title,
 .page--background-image .tile--title-top-outside .tile__title {
   color: #fff;
   text-shadow: 0 1px 3px rgb(0 0 0 / 0.8);
 }
 
-/* ===== Модификаторы ===== */
-/* Папка отличается от закладки не только фоном, но и рамкой в цвете акцента */
+/* ===== Modifiers ===== */
+/* A folder differs from a bookmark not only by background but also by an accent-coloured border */
 .tile--folder .tile__card {
   border-color: color-mix(in oklab, var(--accent) 45%, var(--border));
   background: var(--folder-bg);
   color: var(--folder-text, var(--text));
 }
 
-/* Повышенная контрастность: толстые рамки, жирные названия, папка — рамкой в полный цвет акцента */
+/* High contrast: thick borders, bold names, a folder gets a full-accent border */
 :root[data-contrast='high'] .tile__card {
   border-width: 2px;
 }
@@ -151,12 +151,12 @@
   font-weight: 600;
 }
 
-/* Лёгкий оттенок основного цвета иконки поверх цвета плитки */
+/* A light tint of the icon's main colour over the tile colour */
 .tile--tinted .tile__card {
   background: color-mix(in oklab, var(--icon-color) 14%, var(--tile-bg));
 }
 
-/* «Назад» и «Добавить»: служебные плитки без фона */
+/* Back and Add: service tiles without a background */
 .tile--action {
   color: var(--text-muted);
 }
@@ -174,7 +174,7 @@
   color: var(--text);
 }
 
-/* Перетаскиваемая плитка: на её месте остаётся «след», сама она — под курсором */
+/* Dragged tile: a "ghost" stays in its place, the tile itself is under the pointer */
 .tile--dragging .tile__card {
   border-style: dashed;
   border-color: var(--accent);
@@ -187,7 +187,7 @@
   opacity: 0.35;
 }
 
-/* Папка или «Назад», куда упадёт закладка */
+/* A folder or Back tile the bookmark will drop into */
 .tile--drop-into .tile__card {
   outline: 2px dashed var(--accent);
   outline-offset: 2px;

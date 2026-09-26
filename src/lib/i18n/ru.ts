@@ -171,7 +171,25 @@ export const ru: Messages = {
   settings: {
     title: 'Настройки',
     sections: 'Разделы настроек',
-    tabs: {view: 'Вид', general: 'Общие', backup: 'Копии', advanced: 'Расширенные'},
+    tabs: {view: 'Вид', general: 'Общие', backup: 'Копии', advanced: 'Расширенные', about: 'О программе'},
+    groups: {
+      languageTheme: 'Язык и тема',
+      tiles: 'Плитки',
+      names: 'Названия',
+      font: 'Шрифт',
+      icons: 'Иконки',
+      pageElements: 'Элементы страницы',
+      background: 'Фон',
+      folders: 'Папки',
+      search: 'Поиск и сервисы',
+      bookmarks: 'Закладки',
+      thumbnails: 'Миниатюры',
+      browserMenu: 'Меню браузера',
+      sync: 'Синхронизация',
+      permissions: 'Разрешения',
+      data: 'Данные',
+      customCss: 'Свой CSS',
+    },
   },
 
   view: {
@@ -353,6 +371,7 @@ export const ru: Messages = {
 
   backup: {
     file: 'Копия в файле',
+    fileRow: 'Сохранить или восстановить',
     fileHint: 'Закладки с порядком, настройки, миниатюры и фон — в одном файле',
     saveToFile: 'Сохранить в файл',
     restoreEllipsis: 'Восстановить…',
@@ -406,6 +425,40 @@ export const ru: Messages = {
     added: (count: number) => `Добавлено ${count} ${plural(count, 'закладка или папка', 'закладки или папки', 'закладок и папок')}`,
     nothingToAdd: 'Все закладки из копии уже есть',
     restoreUndone: 'Восстановление отменено',
+  },
+
+  about: {
+    tagline: 'Визуальные закладки на странице новой вкладки',
+    details: 'Сведения',
+    version: 'Версия',
+    versionBuild: (version: string, build: number) => `Версия ${version}, сборка ${build}`,
+    build: 'Сборка',
+    browser: 'Браузер',
+    extensionId: 'ID расширения',
+    install: 'Установка',
+    installDevelopment: 'Разработка (распакованное)',
+    installStore: 'Из магазина',
+    copy: 'Скопировать сведения',
+    copied: 'Сведения скопированы',
+    welcomePage: 'Страница приветствия',
+  },
+
+  support: {
+    title: 'Поддержать автора',
+    button: 'Поддержать автора',
+    hint: 'SpeedDial бесплатный и без рекламы. Если он вам полезен, можно поддержать разработку на Boosty.',
+  },
+
+  welcome: {
+    title: 'Спасибо за установку SpeedDial!',
+    lead: 'Ваши закладки теперь на странице новой вкладки — плитками с иконками и миниатюрами сайтов.',
+    features: [
+      'Папки, перетаскивание, выделение нескольких плиток',
+      'Одиннадцать тем, светлый и тёмный режим, шрифты и фон',
+      'Копии в файл и в облако: Google Диск, Dropbox, OneDrive, Яндекс.Диск',
+      'Управление с клавиатуры и поиск по всем закладкам',
+    ],
+    open: 'Открыть SpeedDial',
   },
 
   /** Ошибки копий и облаков — показываются в настройках и уведомлениях */

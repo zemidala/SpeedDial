@@ -1,30 +1,30 @@
-// Общее для облачных хранилищ копий: интерфейс клиента и запросы к API сервисов
+// Shared by cloud backup storages: the client interface and requests to service APIs
 import {t} from '../i18n/index.svelte';
 
 export interface RemoteFile {
   name: string;
-  /** Время изменения, мс; 0 — сервис не сообщил */
+  /** Modification time, ms; 0 — the service didn't report it */
   modified: number;
   size: number;
 }
 
-/** Хранилище копий: одна папка с файлами */
+/** Backup storage: one folder with files */
 export interface CloudClient {
-  /** Создаёт папку для копий, если сервису это нужно */
+  /** Creates the backup folder if the service needs it */
   ensureFolder(): Promise<void>;
-  /** Копии SpeedDial (файлы speeddial-*.json), новые первыми */
+  /** SpeedDial backups (speeddial-*.json files), newest first */
   list(): Promise<RemoteFile[]>;
   read(name: string): Promise<string>;
   write(name: string, content: string): Promise<void>;
   remove(name: string): Promise<void>;
 }
 
-/** Файлы копий, новые первыми: время зашито в имя, поэтому достаточно сортировки по имени */
+/** Backup files, newest first: the time is in the name, so sorting by name is enough */
 export function sortBackups(files: RemoteFile[]): RemoteFile[] {
   return files.filter((file) => file.name.endsWith('.json')).sort((a, b) => b.name.localeCompare(a.name));
 }
 
-/** Вход устарел или отозван — нужно подключиться заново */
+/** Sign-in expired or was revoked — the user must reconnect */
 export class AuthExpiredError extends Error {
   constructor(message = t.cloudErrors.authExpired) {
     super(message);
@@ -32,7 +32,7 @@ export class AuthExpiredError extends Error {
   }
 }
 
-/** Запрос к API сервиса с токеном; понятные ошибки вместо кодов HTTP */
+/** Request to a service API with a token; clear errors instead of HTTP codes */
 export async function apiFetch(
   url: string,
   token: string | null,

@@ -9,7 +9,7 @@ describe('relevantManifestFields', () => {
     description: 'не влияет',
   };
 
-  it('не зависит от порядка ключей и от неважных полей', () => {
+  it('ignores key order and irrelevant fields', () => {
     const reordered = {
       background: {type: 'module', service_worker: 'background.js'},
       description: 'другое описание',
@@ -19,7 +19,7 @@ describe('relevantManifestFields', () => {
     expect(relevantManifestFields(reordered)).toBe(relevantManifestFields(manifest));
   });
 
-  it('замечает изменение разрешений и версии', () => {
+  it('notices changes to permissions and version', () => {
     const base = relevantManifestFields(manifest);
     expect(relevantManifestFields({...manifest, permissions: ['bookmarks']})).not.toBe(base);
     expect(relevantManifestFields({...manifest, optional_permissions: ['clipboardRead']})).not.toBe(base);

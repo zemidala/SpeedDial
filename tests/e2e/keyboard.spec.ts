@@ -19,7 +19,7 @@ test.beforeEach(async ({context, newtab}) => {
 
 const focusedTitle = (page: Page) => page.evaluate(() => (document.activeElement as HTMLElement | null)?.title ?? null);
 
-test('«/» — в поиск, стрелка вниз — к плиткам, Enter открывает', async ({newtab}) => {
+test('"/" — to search, arrow down — to tiles, Enter opens', async ({newtab}) => {
   await newtab.locator('main').click({position: {x: 5, y: 5}});
   await newtab.keyboard.press('/');
   const searchInput = newtab.getByRole('searchbox', {name: 'Поиск'});
@@ -35,7 +35,7 @@ test('«/» — в поиск, стрелка вниз — к плиткам, En
   await expect(newtab).toHaveURL('https://gamma.example/');
 });
 
-test('стрелки по сетке, Home и End', async ({newtab}) => {
+test('arrows across the grid, Home and End', async ({newtab}) => {
   await newtab.getByRole('searchbox', {name: 'Поиск'}).focus();
   await newtab.keyboard.press('ArrowDown');
   await expect(tile(newtab, 'Альфа')).toBeFocused();
@@ -45,7 +45,7 @@ test('стрелки по сетке, Home и End', async ({newtab}) => {
   await newtab.keyboard.press('ArrowLeft');
   await expect(tile(newtab, 'Альфа')).toBeFocused();
 
-  // Вниз — плитка под текущей, в той же колонке
+  // Down — the tile below the current one, in the same column
   const x = async () => (await newtab.locator(':focus').boundingBox())!;
   const before = await x();
   await newtab.keyboard.press('ArrowDown');
@@ -55,16 +55,16 @@ test('стрелки по сетке, Home и End', async ({newtab}) => {
   await newtab.keyboard.press('ArrowUp');
   await expect(tile(newtab, 'Альфа')).toBeFocused();
 
-  // End — последняя плитка («Добавить закладку»), Home — первая
+  // End — the last tile ("Add bookmark"), Home — the first
   await newtab.keyboard.press('End');
   await expect(newtab.getByRole('button', {name: 'Добавить закладку'})).toBeFocused();
   await newtab.keyboard.press('Home');
   await expect(tile(newtab, 'Альфа')).toBeFocused();
-  // Страница при этом не прокручивалась стрелками
+  // The page didn't scroll with the arrows meanwhile
   expect(await newtab.evaluate(() => scrollY)).toBe(0);
 });
 
-test('Delete удаляет плитку в фокусе, F2 — редактирует', async ({newtab}) => {
+test('Delete removes the focused tile, F2 edits', async ({newtab}) => {
   await tile(newtab, 'Бета').focus();
   await newtab.keyboard.press('F2');
   const dialog = newtab.getByRole('dialog', {name: 'Изменить закладку'});
@@ -75,13 +75,13 @@ test('Delete удаляет плитку в фокусе, F2 — редакти�
   await tile(newtab, 'Бета').focus();
   await newtab.keyboard.press('Delete');
   await expect(tile(newtab, 'Бета')).toHaveCount(0);
-  // Фокус — на плитке, вставшей на место удалённой: можно удалять подряд
+  // Focus is on the tile that took the removed one's place: delete in a row
   await expect.poll(() => focusedTitle(newtab)).toBe('Гамма');
   await expect(newtab.getByRole('status').filter({hasText: 'Закладка «Бета» удалена'})).toBeVisible();
   expect((await getChildren(newtab, '1')).map((node) => node.title)).not.toContain('Бета');
 });
 
-test('Alt+цифра открывает плитку по номеру', async ({newtab}) => {
+test('Alt+digit opens a tile by number', async ({newtab}) => {
   await newtab.keyboard.press('Alt+2');
   await expect(tile(newtab, 'Внутри')).toBeVisible();
 
@@ -89,7 +89,7 @@ test('Alt+цифра открывает плитку по номеру', async (
   await expect(newtab).toHaveURL('https://inside.example/');
 });
 
-test('меню с клавиатуры открывается у плитки, Esc возвращает фокус', async ({newtab}) => {
+test('a keyboard-opened menu appears at the tile, Esc returns focus', async ({newtab}) => {
   await tile(newtab, 'Гамма').focus();
   await newtab.keyboard.press('Shift+F10');
   const menu = newtab.getByRole('menu');

@@ -3,13 +3,13 @@
   import type {HTMLAnchorAttributes} from 'svelte/elements';
   import {settings} from '../../../lib/settings/store.svelte';
 
-  // Общая разметка плитки: карточка с картинкой и название — внутри карточки или снаружи, сверху или снизу.
-  // Ссылка, если передан href, иначе кнопка
+  // Shared tile markup: a card with an image and a name — inside the card or outside, at the top or bottom.
+  // A link if href is given, otherwise a button
   let {href, modifiers = {}, visualBackground = null, visual, label, ...rest}: {
     href?: string;
-    /** Модификаторы блока: {folder: true} → класс tile--folder */
+    /** Block modifiers: {folder: true} → class tile--folder */
     modifiers?: Record<string, boolean | null | undefined>;
-    /** Заливка области под картинкой (режим «иконка на весь блок») */
+    /** Fill of the area under the image ("fill" icon mode) */
     visualBackground?: string | null;
     visual: Snippet;
     label?: Snippet;

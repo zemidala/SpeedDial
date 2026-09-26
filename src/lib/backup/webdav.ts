@@ -1,19 +1,19 @@
-// Клиент WebDAV: Яндекс.Диск (пароль приложения), Nextcloud, ownCloud, Koofr и другие.
-// Без DOMParser — его нет в service worker, ответ PROPFIND разбирается регулярными выражениями
+// WebDAV client: Yandex Disk (app password), Nextcloud, ownCloud, Koofr and others.
+// No DOMParser — the service worker doesn't have it, so PROPFIND responses are parsed with regular expressions
 import {t} from '../i18n/index.svelte';
 import {type CloudClient, type RemoteFile, sortBackups} from './provider';
 
 export interface WebDavConfig {
-  /** Адрес сервера WebDAV, например https://webdav.yandex.ru */
+  /** WebDAV server URL, e.g. https://webdav.yandex.ru */
   url: string;
   username: string;
   password: string;
 }
 
-/** Папка на сервере, где лежат копии */
+/** Folder on the server that holds the backups */
 export const REMOTE_FOLDER = 'SpeedDial';
 
-/** Адрес сервера с косой чертой на конце; бросает ошибку, если адрес не https (или http для localhost) */
+/** Server URL with a trailing slash; throws if it isn't https (or http for localhost) */
 export function normalizeServerUrl(value: string): string {
   let url: URL;
   try {
@@ -31,18 +31,18 @@ export function normalizeServerUrl(value: string): string {
   return url.href;
 }
 
-/** Разрешение на доступ к серверу для chrome.permissions */
+/** Permission to access the server for chrome.permissions */
 export function serverOrigin(value: string): string {
   return `${new URL(normalizeServerUrl(value)).origin}/*`;
 }
 
 function basicAuth(username: string, password: string): string {
-  // btoa принимает только латиницу — кодируем UTF-8
+  // btoa accepts only Latin-1 — encode as UTF-8
   const bytes = new TextEncoder().encode(`${username}:${password}`);
   return `Basic ${btoa(String.fromCharCode(...bytes))}`;
 }
 
-// Теги в ответе могут быть с любым префиксом пространства имён: d:, D:, lp1: или без него
+// Response tags may have any namespace prefix: d:, D:, lp1: or none
 const tag = (name: string) => new RegExp(`<(?:[\\w-]+:)?${name}\\b[^>]*>([\\s\\S]*?)</(?:[\\w-]+:)?${name}>`, 'i');
 
 function decodeXml(text: string): string {
@@ -54,7 +54,7 @@ function decodeXml(text: string): string {
     .replaceAll('&amp;', '&');
 }
 
-/** Файлы из ответа PROPFIND (Depth: 1): только файлы .json, без самой папки и подпапок */
+/** Files from a PROPFIND (Depth: 1) response: only .json files, without the folder itself and subfolders */
 export function parsePropfind(xml: string): RemoteFile[] {
   const responses = xml.split(/<(?:[\w-]+:)?response\b[^>]*>/i).slice(1);
   const files: RemoteFile[] = [];
@@ -104,16 +104,16 @@ export class WebDavClient implements CloudClient {
     return new URL(encodeURIComponent(name), this.#folderUrl).href;
   }
 
-  /** Создаёт папку SpeedDial, если её ещё нет */
+  /** Creates the SpeedDial folder if it doesn't exist yet */
   async ensureFolder(): Promise<void> {
     const response = await this.#request('MKCOL', this.#folderUrl);
-    // 201 — создана, 405 — уже существует (так отвечает большинство серверов)
+    // 201 — created, 405 — already exists (that's how most servers answer)
     if (!response.ok && response.status !== 405) {
       throw new Error(t.cloudErrors.folderFailed(REMOTE_FOLDER, response.status));
     }
   }
 
-  /** Копии на сервере, новые первыми */
+  /** Backups on the server, newest first */
   async list(): Promise<RemoteFile[]> {
     const response = await this.#request('PROPFIND', this.#folderUrl, {
       headers: {Depth: '1', 'Content-Type': 'application/xml; charset=utf-8'},

@@ -23,11 +23,11 @@
   import ConfirmDialog from './components/ui/ConfirmDialog.svelte';
   import Notice from './components/ui/Notice.svelte';
 
-  const CUSTOM_CSS_ID = 'custom-css'; // Тот же id использует theme-init.js
+  const CUSTOM_CSS_ID = 'custom-css'; // theme-init.js uses the same id
 
   const systemHighContrast = new MediaQuery('(prefers-contrast: more)');
 
-  // Свой цвет фона вместо цвета темы; текст на нём подбирается по контрасту
+  // A custom background colour instead of the theme's; the text on it is picked for contrast
   function setCustomColor(style: CSSStyleDeclaration, name: 'tile' | 'folder', color: string) {
     if (color) {
       style.setProperty(`--${name}-bg`, color);
@@ -38,7 +38,7 @@
     }
   }
 
-  // Оформление из настроек — через data-theme и CSS-переменные на корневом элементе
+  // Appearance from the settings — via data-theme and CSS variables on the root element
   $effect(() => {
     const {theme, columns, containerWidth, iconScale, tileColor, folderColor, fontFamily} = settings.current;
     const root = document.documentElement;
@@ -49,7 +49,7 @@
       root.dataset.theme = theme;
     }
 
-    // Повышенная контрастность — выбрана явно или включена в системе
+    // High contrast — chosen explicitly or enabled in the system
     const {contrast} = settings.current;
     const high = contrast === 'high' || (contrast === 'auto' && systemHighContrast.current);
     if (high) root.dataset.contrast = 'high';
@@ -59,7 +59,7 @@
     root.style.setProperty('--container-width', `${containerWidth}%`);
     root.style.setProperty('--icon-scale', String(iconScale));
     root.style.setProperty('--font-family', fontFamily || 'system-ui');
-    // Размер текста всей страницы — на html: размеры шрифтов в стилях заданы в rem
+    // Text size of the whole page — on html: font sizes in the styles are in rem
     root.style.fontSize = `${FONT_SCALES[settings.current.fontSize] * 100}%`;
     root.style.setProperty('--title-font-size', TITLE_FONT_SIZES[settings.current.titleSize]);
     root.style.setProperty('--title-font-weight', settings.current.boldTitles ? '600' : '400');
@@ -67,15 +67,15 @@
     setCustomColor(root.style, 'folder', folderColor);
   });
 
-  // Язык интерфейса, язык документа и заголовок вкладки
+  // Interface language, document language and tab title
   $effect(() => {
     setLanguage(settings.current.language);
     document.documentElement.lang = currentLanguage();
     document.title = t.common.newTab;
   });
 
-  // Тема оформления: цвета обоих режимов в одном стиле (light-dark), плюс кэш для theme-init.js,
-  // чтобы при следующем открытии вкладки тема применилась до первой отрисовки
+  // Theme: colours of both modes in one style (light-dark), plus a cache for theme-init.js
+  // so the theme applies before the first paint next time the tab opens
   $effect(() => {
     const css = paletteCss(resolvePreset(settings.current));
     let style = document.getElementById(PALETTE_STYLE_ID);
@@ -88,11 +88,11 @@
     try {
       localStorage.setItem(PALETTE_CACHE_KEY, css);
     } catch {
-      // Без кэша тема просто применится чуть позже при следующем открытии
+      // Without the cache the theme simply applies a bit later on the next open
     }
   });
 
-  // Картинка дня Bing загружается, только когда выбрана как фон и доступ к Bing выдан
+  // The Bing image of the day loads only when it's the chosen background and Bing access is granted
   $effect(() => {
     if (settings.current.background !== 'bing' || !permissions.bing) return;
     background.loadBing().catch((error) => {
@@ -101,7 +101,7 @@
     });
   });
 
-  // Фон страницы: цвет, своё изображение или картинка дня Bing
+  // Page background: a colour, a custom image or the Bing image of the day
   $effect(() => {
     const {background: type, backgroundColor, backgroundBlur, backgroundDim} = settings.current;
     const body = document.body;
@@ -116,8 +116,8 @@
     else body.style.removeProperty('--page-background-image');
   });
 
-  // Пользовательский CSS — отдельным элементом style после всех стилей страницы, чтобы перекрывать их.
-  // theme-init.js создаёт его раньше подключения основных стилей, поэтому переносим в конец head
+  // Custom CSS — a separate style element after all page styles so it overrides them.
+  // theme-init.js creates it before the main styles load, so it's moved to the end of head
   $effect(() => {
     let style = document.getElementById(CUSTOM_CSS_ID);
     if (!style) {
@@ -132,7 +132,7 @@
     ui.dialog = null;
   };
 
-  // Изменения из окна настроек сохраняем сразу при его закрытии
+  // Changes from the settings dialog are saved right when it closes
   const closeSettings = () => {
     settings.flush();
     closeDialog();
@@ -196,7 +196,7 @@
     flex-direction: column;
   }
 
-  /* Сетка по центру свободного места под панелью */
+  /* The grid is centred in the free space below the panel */
   .app--centered .app__content {
     justify-content: center;
   }

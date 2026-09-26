@@ -1,24 +1,24 @@
-// Применяет режим (светлый/тёмный), цвета темы оформления и пользовательский CSS до первой отрисовки,
-// чтобы при открытии вкладки ничего не мелькало.
-// Отдельный файл, а не inline-скрипт: политика безопасности страниц расширений запрещает inline.
+// Applies the mode (light/dark), theme colours and custom CSS before the first paint,
+// so nothing flickers when the tab opens.
+// A separate file, not an inline script: the extension pages' security policy forbids inline scripts.
 
 function addStyle(id, css) {
   const style = document.createElement('style');
-  style.id = id; // Те же id использует App.svelte
+  style.id = id; // App.svelte uses the same ids
   style.textContent = css;
   document.head.append(style);
 }
 
 try {
   const {theme, contrast, customCss, fontSize, fontFamily} = JSON.parse(localStorage.getItem('settings-cache') ?? '{}').settings ?? {};
-  // Размер и шрифт текста — те же значения, что ставит App.svelte (FONT_SCALES в lib/fonts.ts)
+  // Text size and font — the same values App.svelte sets (FONT_SCALES in lib/fonts.ts)
   const fontScales = {xs: 0.875, s: 0.9375, m: 1, l: 1.125, xl: 1.25};
   if (fontScales[fontSize]) document.documentElement.style.fontSize = `${fontScales[fontSize] * 100}%`;
   if (typeof fontFamily === 'string' && fontFamily) document.documentElement.style.setProperty('--font-family', fontFamily);
   if (theme === 'light' || theme === 'dark') {
     document.documentElement.dataset.theme = theme;
   }
-  // Повышенная контрастность — как в App.svelte: выбрана явно или включена в системе
+  // High contrast — as in App.svelte: chosen explicitly or enabled in the system
   const systemHighContrast = matchMedia('(prefers-contrast: more)').matches;
   if (contrast === 'high' || ((contrast ?? 'auto') === 'auto' && systemHighContrast)) {
     document.documentElement.dataset.contrast = 'high';
@@ -29,5 +29,5 @@ try {
 
   if (typeof customCss === 'string' && customCss) addStyle('custom-css', customCss);
 } catch {
-  // Нет сохранённых настроек — тема как в системе
+  // No saved settings — the theme follows the system
 }

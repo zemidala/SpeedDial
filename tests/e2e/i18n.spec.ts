@@ -6,10 +6,10 @@ test.beforeEach(async ({newtab}) => {
   await expect(tile(newtab, 'Example')).toBeVisible();
 });
 
-test.describe('английский браузер', () => {
+test.describe('English browser', () => {
   test.use({browserLocale: 'en-US'});
 
-  test('интерфейс на английском', async ({newtab}) => {
+  test('interface in English', async ({newtab}) => {
     await expect(newtab).toHaveTitle('New Tab');
     await expect(newtab.locator('html')).toHaveAttribute('lang', 'en');
     await expect(newtab.getByRole('searchbox', {name: 'Search'})).toHaveAttribute('placeholder', 'Search bookmarks, Enter to search Google');
@@ -20,37 +20,37 @@ test.describe('английский браузер', () => {
 
     await newtab.getByRole('button', {name: 'Settings'}).click();
     const dialog = newtab.getByRole('dialog', {name: 'Settings'});
-    await expect(dialog.getByRole('tab')).toHaveText(['Appearance', 'General', 'Backups', 'Advanced']);
+    await expect(dialog.getByRole('tab')).toHaveText(['Appearance', 'General', 'Backups', 'Advanced', 'About']);
     await expect(dialog.getByLabel('Language')).toHaveValue('auto');
   });
 
-  test('русский можно выбрать в настройках — интерфейс меняется сразу', async ({newtab}) => {
+  test('Russian can be chosen in the settings — the interface changes immediately', async ({newtab}) => {
     await newtab.getByRole('button', {name: 'Settings'}).click();
     const settings = newtab.getByRole('dialog', {name: 'Settings'});
     await settings.getByLabel('Language').selectOption('ru');
 
     const russian = newtab.getByRole('dialog', {name: 'Настройки'});
-    await expect(russian.getByRole('tab')).toHaveText(['Вид', 'Общие', 'Копии', 'Расширенные']);
+    await expect(russian.getByRole('tab')).toHaveText(['Вид', 'Общие', 'Копии', 'Расширенные', 'О программе']);
     await expect(newtab.locator('html')).toHaveAttribute('lang', 'ru');
     await expect(newtab).toHaveTitle('Новая вкладка');
 
-    // Выбор сохраняется
+    // The choice is saved
     await russian.getByRole('button', {name: 'Готово'}).click();
     await newtab.reload();
     await expect(newtab.getByRole('button', {name: 'Настройки'})).toBeVisible();
   });
 });
 
-test.describe('браузер на языке без перевода', () => {
+test.describe('browser in a language without a translation', () => {
   test.use({browserLocale: 'de-DE'});
 
-  test('английский по умолчанию', async ({newtab}) => {
+  test('English by default', async ({newtab}) => {
     await expect(newtab.getByRole('button', {name: 'Settings'})).toBeVisible();
     await expect(newtab.locator('html')).toHaveAttribute('lang', 'en');
   });
 });
 
-test('русский браузер — русский интерфейс; English в настройках', async ({newtab}) => {
+test('Russian browser — Russian interface; English in the settings', async ({newtab}) => {
   await expect(newtab).toHaveTitle('Новая вкладка');
 
   const dialog = await openSettings(newtab);
@@ -59,7 +59,7 @@ test('русский браузер — русский интерфейс; Engli
   await expect(tile(newtab, 'Example')).toBeVisible();
 });
 
-test('описание в манифесте — из _locales, английский по умолчанию', () => {
+test('manifest description comes from _locales, English by default', () => {
   const read = (file: string) => JSON.parse(readFileSync(`${EXTENSION_PATH}/${file}`, 'utf8'));
   const manifest = read('manifest.json');
   expect(manifest.default_locale).toBe('en');

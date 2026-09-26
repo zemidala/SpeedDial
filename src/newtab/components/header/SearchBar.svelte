@@ -15,13 +15,13 @@
     if (settings.current.autofocusSearch) input.focus();
   });
 
-  // Ввод ищет по закладкам, Enter — в интернете, Esc — очищает
+  // Typing searches bookmarks, Enter searches the web, Esc clears
   function onsubmit(event: SubmitEvent) {
     event.preventDefault();
     search.searchWeb();
   }
 
-  // Esc — очистить поиск, стрелка вниз — к первой плитке: найти, перейти стрелками, открыть Enter
+  // Esc — clear the search, arrow down — to the first tile: find, move with arrows, open with Enter
   function onkeydown(event: KeyboardEvent) {
     if (event.key === 'Escape' && search.active) {
       event.stopPropagation();
@@ -34,7 +34,7 @@
     }
   }
 
-  // «/» в любом месте страницы, кроме полей ввода, переводит фокус в поиск
+  // "/" anywhere on the page except input fields moves focus to the search
   function onWindowKeydown(event: KeyboardEvent) {
     if (event.key !== '/' || event.ctrlKey || event.altKey || event.metaKey || modals.depth > 0) return;
     if ((event.target as Element).closest('input, textarea, select, [contenteditable]')) return;

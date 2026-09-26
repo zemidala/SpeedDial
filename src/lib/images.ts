@@ -1,9 +1,9 @@
-// Уменьшение картинок перед сохранением. Работает и на странице, и в service worker
+// Downscaling images before saving. Works both on pages and in the service worker
 
 export const THUMBNAIL_WIDTH = 800;
 export const THUMBNAIL_HEIGHT = 500;
 
-/** Вписывает картинку в maxWidth×maxHeight (без увеличения) и сжимает */
+/** Fits the image into maxWidth×maxHeight (without enlarging) and compresses it */
 export async function resizeImage(
   source: Blob,
   maxWidth: number,

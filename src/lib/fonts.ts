@@ -1,16 +1,16 @@
-// Шрифты: размеры текста и выбор шрифта интерфейса — как в настройках шрифтов Edge и Оперы
+// Fonts: text sizes and the interface font — like the font settings in Edge and Opera
 import type {FontSize, TitleSize} from './settings/schema';
 
-/** Масштаб текста всей страницы; 1 — средний (рекомендуется) */
+/** Text scale of the whole page; 1 — medium (recommended) */
 export const FONT_SCALES: Record<FontSize, number> = {xs: 0.875, s: 0.9375, m: 1, l: 1.125, xl: 1.25};
 
-/** Размер названий плиток */
+/** Tile name size */
 export const TITLE_FONT_SIZES: Record<TitleSize, string> = {s: '0.75rem', m: '0.8125rem', l: '0.9375rem'};
 
-/** Системный шрифт интерфейса — есть всегда */
+/** The system interface font — always available */
 export const SYSTEM_FONT = 'system-ui';
 
-/** Популярные шрифты: в списке показываются только установленные */
+/** Popular fonts: only installed ones are listed */
 export const FONT_CANDIDATES = [
   'Segoe UI',
   'Arial',
@@ -34,12 +34,12 @@ export const FONT_CANDIDATES = [
   'Courier New',
 ];
 
-/** Первый шрифт из списка font-family, без кавычек */
+/** The first font of a font-family list, without quotes */
 export function firstFamily(fontFamily: string): string {
   return (fontFamily.split(',')[0] ?? '').trim().replace(/^["']|["']$/g, '');
 }
 
-/** Значение font-family для выбранного шрифта: с запасными, если шрифта не окажется на другом устройстве */
+/** font-family value for the chosen font: with fallbacks in case the font is missing on another device */
 export function fontStack(name: string): string {
   if (name === SYSTEM_FONT) return 'system-ui, sans-serif';
   return `"${name.replaceAll('"', '')}", system-ui, sans-serif`;
@@ -49,8 +49,8 @@ const SAMPLE = 'mmmmmmmmmmlliWWQ@#';
 const BASELINES = ['monospace', 'serif', 'sans-serif'] as const;
 
 /**
- * Установлен ли шрифт: текст этим шрифтом (с запасным baseline) шире или уже, чем просто baseline.
- * Работает без разрешений, в отличие от queryLocalFonts
+ * Whether a font is installed: text in it (with a fallback baseline) is wider or narrower than the baseline alone.
+ * Works without permissions, unlike queryLocalFonts
  */
 export function isFontInstalled(name: string, context: CanvasRenderingContext2D): boolean {
   if (name === SYSTEM_FONT) return true;
@@ -61,7 +61,7 @@ export function isFontInstalled(name: string, context: CanvasRenderingContext2D)
   return BASELINES.some((baseline) => width(`"${name}", ${baseline}`) !== width(baseline));
 }
 
-/** Установленные шрифты из популярных */
+/** Installed fonts among the popular ones */
 export function installedFonts(): string[] {
   const context = document.createElement('canvas').getContext('2d');
   if (!context) return FONT_CANDIDATES;
@@ -78,12 +78,12 @@ declare global {
   }
 }
 
-/** Можно ли получить полный список шрифтов системы (Local Font Access API) */
+/** Whether the full list of system fonts is available (Local Font Access API) */
 export function canListSystemFonts(): boolean {
   return typeof window.queryLocalFonts === 'function';
 }
 
-/** Все семейства шрифтов системы; браузер спросит разрешение. null — не разрешили */
+/** All system font families; the browser asks for permission. null — not allowed */
 export async function systemFontFamilies(): Promise<string[] | null> {
   try {
     const fonts = await window.queryLocalFonts!();

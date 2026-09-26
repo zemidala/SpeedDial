@@ -18,21 +18,21 @@ const check = (page: Page, title: string) => page.getByRole('checkbox', {name: `
 const bar = (page: Page) => page.getByRole('toolbar', {name: 'Выделенные закладки'});
 const browserOrder = async (page: Page, folderId = '1') => (await getChildren(page, folderId)).map((node) => node.title);
 
-test('галочка, клик, Shift — диапазон, Ctrl+A и Esc', async ({newtab}) => {
+test('check mark, click, Shift range, Ctrl+A and Esc', async ({newtab}) => {
   await expect(bar(newtab)).toHaveCount(0);
   await tile(newtab, 'Альфа').hover();
   await check(newtab, 'Альфа').click();
   await expect(check(newtab, 'Альфа')).toBeChecked();
   await expect(bar(newtab)).toContainText('Выбрано: 1');
 
-  // Пока что-то выделено, клик по плитке отмечает её, а не открывает
+  // While something is selected, a click on a tile marks it instead of opening it
   await tile(newtab, 'Гамма').click();
   await expect(newtab).toHaveURL(/newtab\.html/);
   await expect(bar(newtab)).toContainText('Выбрано: 2');
   await tile(newtab, 'Гамма').click();
   await expect(check(newtab, 'Гамма')).not.toBeChecked();
 
-  // Shift+клик — от последней нажатой («Гамма») до этой; «Альфа» остаётся отмеченной
+  // Shift+click — from the last clicked tile ("Гамма") to this one; "Альфа" stays marked
   await tile(newtab, 'Дельта').click({modifiers: ['Shift']});
   await expect(bar(newtab)).toContainText('Выбрано: 3');
   await expect(check(newtab, 'Бета')).not.toBeChecked();
@@ -46,7 +46,7 @@ test('галочка, клик, Shift — диапазон, Ctrl+A и Esc', asyn
   await newtab.keyboard.press('Control+KeyA');
   await expect(bar(newtab)).toContainText('Выбрано: 5');
 
-  // Выделение сбрасывается при переходе в другую папку
+  // The selection resets when moving to another folder
   await bar(newtab).getByRole('button', {name: 'Снять выделение'}).click();
   await tile(newtab, 'Альфа').focus();
   await newtab.keyboard.press('Space');
@@ -58,7 +58,7 @@ test('галочка, клик, Shift — диапазон, Ctrl+A и Esc', asyn
   await expect(bar(newtab)).toHaveCount(0);
 });
 
-test('перенос в папку и удаление группы с отменой', async ({newtab}) => {
+test('moving to a folder and deleting a group with undo', async ({newtab}) => {
   const folderId = (await tile(newtab, 'Папка').getAttribute('data-bookmark-id'))!;
   await tile(newtab, 'Бета').hover();
   await check(newtab, 'Бета').click();
@@ -73,7 +73,7 @@ test('перенос в папку и удаление группы с отме�
   await expect(newtab.getByRole('status').filter({hasText: 'Перемещено в «Папка»: 2'})).toBeVisible();
   await expect(bar(newtab)).toHaveCount(0);
 
-  // Удаление группы — одним действием, и так же отменяется
+  // Deleting a group is one action and is undone the same way
   await tile(newtab, 'Альфа').hover();
   await check(newtab, 'Альфа').click();
   await tile(newtab, 'Гамма').click();
@@ -84,7 +84,7 @@ test('перенос в папку и удаление группы с отме�
   await expect.poll(() => browserOrder(newtab)).toEqual(['Альфа', 'Гамма', 'Папка']);
 });
 
-test('Delete на выделенной плитке удаляет всю группу', async ({newtab}) => {
+test('Delete on a selected tile removes the whole group', async ({newtab}) => {
   await tile(newtab, 'Альфа').focus();
   await newtab.keyboard.press('Space');
   await tile(newtab, 'Бета').focus();
@@ -94,10 +94,10 @@ test('Delete на выделенной плитке удаляет всю гру
 });
 
 test.describe(() => {
-  // Нужен доступ к сайтам, чтобы chrome.tabs показывал адреса вкладок
+  // Site access is needed for chrome.tabs to show tab URLs
   test.use({hostAccess: true});
 
-  test('«Открыть все» открывает закладки в фоновых вкладках, папки пропускает', async ({newtab}) => {
+  test('"Open all" opens bookmarks in background tabs and skips folders', async ({newtab}) => {
     await newtab.keyboard.press('Control+KeyA');
     await bar(newtab).getByRole('button', {name: 'Открыть все'}).click();
     await expect.poll(() => newtab.evaluate(async () => {
@@ -113,7 +113,7 @@ test.describe(() => {
   });
 });
 
-test.describe('перетаскивание группы', () => {
+test.describe('dragging a group', () => {
   test.describe.configure({retries: 2});
 
   const center = async (locator: Locator) => {
@@ -121,7 +121,7 @@ test.describe('перетаскивание группы', () => {
     return {x: box.x + box.width / 2, y: box.y + box.height / 2};
   };
 
-  test('выделенные плитки переезжают блоком', async ({newtab}) => {
+  test('selected tiles move as a block', async ({newtab}) => {
     await tile(newtab, 'Альфа').hover();
     await check(newtab, 'Альфа').click();
     await tile(newtab, 'Бета').click();
@@ -131,14 +131,14 @@ test.describe('перетаскивание группы', () => {
     await newtab.mouse.move(from.x, from.y);
     await newtab.mouse.down();
     await newtab.mouse.move(to.x, to.y, {steps: 10});
-    // Остальные выделенные тоже «в полёте»
+    // The other selected tiles are "in flight" too
     await expect(newtab.locator('.bookmark-grid__cell--group-dragging')).toHaveCount(1);
     await dropAt(newtab, to.x, to.y);
 
     await expect.poll(() => browserOrder(newtab)).toEqual(['Гамма', 'Дельта', 'Альфа', 'Бета', 'Папка']);
   });
 
-  test('выделенные плитки переносятся в папку', async ({newtab}) => {
+  test('selected tiles move into a folder', async ({newtab}) => {
     const folderId = (await tile(newtab, 'Папка').getAttribute('data-bookmark-id'))!;
     await tile(newtab, 'Альфа').hover();
     await check(newtab, 'Альфа').click();

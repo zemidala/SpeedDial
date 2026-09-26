@@ -3,7 +3,7 @@
   import {t} from '../../../lib/i18n/index.svelte';
   import Modal from '../ui/Modal.svelte';
 
-  // Выбор способа восстановления копии
+  // Choosing how to restore a backup
   let {title, onrestore, onclose}: {
     title: string;
     onrestore: (mode: RestoreMode) => Promise<void>;

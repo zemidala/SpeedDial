@@ -9,7 +9,7 @@
   import {selection} from '../../../lib/selection.svelte';
   import Modal from '../ui/Modal.svelte';
 
-  // Перенос выделенных закладок и папок в другую папку
+  // Moving the selected bookmarks and folders to another folder
   let {nodes, onclose}: {nodes: BookmarkNode[]; onclose: () => void} = $props();
 
   const formId = $props.id();
@@ -18,7 +18,7 @@
   let error = $state('');
   let moving = $state(false);
 
-  /** Папку нельзя перенести в неё саму и во вложенные в неё — такие варианты не показываем */
+  /** A folder can't be moved into itself or its subfolders — such options aren't shown */
   function allowedFolders(options: FolderOption[]): FolderOption[] {
     const moved = new Set(nodes.filter((node) => !node.url).map((node) => node.id));
     const result: FolderOption[] = [];

@@ -5,8 +5,8 @@
   import {t} from '../../../lib/i18n/index.svelte';
   import {folderOpenHandlers} from '../../../lib/navigation';
 
-  // Путь к открытой папке. Папки пути — кнопки (не ссылки, чтобы браузер не показывал адрес
-  // chrome-extension://… при наведении) и принимают перетаскиваемые закладки; текущая — просто текст
+  // Path to the open folder. Path folders are buttons (not links, so the browser doesn't show
+  // chrome-extension://… on hover) and accept dragged bookmarks; the current one is plain text
   const crumbs = $derived([{id: ROOT_FOLDER_ID, title: t.common.home}, ...bookmarks.path]);
 </script>
 

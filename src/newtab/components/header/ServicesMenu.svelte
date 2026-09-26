@@ -72,7 +72,7 @@
   }
 
   .services-menu__item {
-    /* Размер буквы-заглушки считается от ширины пункта */
+    /* Placeholder letter size follows the item width */
     container-type: inline-size;
     display: flex;
     flex-direction: column;

@@ -1,17 +1,17 @@
-// Вход в облачные сервисы по OAuth 2.0 через chrome.identity.launchWebAuthFlow — работает в Chrome и Edge.
-// Секретов у расширения нет: Dropbox и OneDrive — код с PKCE, Google — токен сразу (implicit flow)
+// Signing in to cloud services with OAuth 2.0 via chrome.identity.launchWebAuthFlow — works in Chrome and Edge.
+// The extension has no secrets: Dropbox and OneDrive use a code with PKCE, Google returns the token directly (implicit flow)
 import {t} from '../i18n/index.svelte';
 
 
 export interface OAuthTokens {
   accessToken: string;
-  /** Когда токен перестанет действовать, мс */
+  /** When the token expires, ms */
   expiresAt: number;
-  /** Для продления без окна входа; есть не у всех сервисов */
+  /** For refreshing without a sign-in window; not every service issues one */
   refreshToken?: string;
 }
 
-/** Адрес, на который сервис возвращает после входа; его нужно указать при регистрации приложения */
+/** Where the service returns after sign-in; it must be registered with the app */
 export function redirectUrl(): string {
   return chrome.identity.getRedirectURL();
 }
@@ -24,14 +24,14 @@ export function randomString(bytes = 32): string {
   return base64Url(crypto.getRandomValues(new Uint8Array(bytes)));
 }
 
-/** Пара PKCE: verifier остаётся у нас, challenge уходит в адрес входа */
+/** PKCE pair: the verifier stays with us, the challenge goes into the sign-in URL */
 export async function pkcePair(): Promise<{verifier: string; challenge: string}> {
   const verifier = randomString(48);
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
   return {verifier, challenge: base64Url(new Uint8Array(digest))};
 }
 
-/** Параметры ответа: из строки запроса и из фрагмента после # */
+/** Response parameters: from the query string and from the fragment after # */
 export function responseParams(url: string): URLSearchParams {
   const parsed = new URL(url);
   const params = new URLSearchParams(parsed.search);
@@ -40,8 +40,8 @@ export function responseParams(url: string): URLSearchParams {
 }
 
 /**
- * Открывает окно входа сервиса (или пробует войти молча, interactive = false) и возвращает параметры ответа.
- * Проверяет state — защиту от подмены ответа
+ * Opens the service's sign-in window (or tries a silent sign-in, interactive = false) and returns the response parameters.
+ * Checks state — protection against a forged response
  */
 export async function authorize(url: URL, interactive: boolean): Promise<URLSearchParams> {
   const state = randomString(16);
@@ -64,7 +64,7 @@ export async function authorize(url: URL, interactive: boolean): Promise<URLSear
   return params;
 }
 
-/** Обмен кода или refresh-токена на токен доступа */
+/** Exchanges a code or a refresh token for an access token */
 export async function requestToken(
   endpoint: string,
   form: Record<string, string>,
@@ -90,12 +90,12 @@ export async function requestToken(
   return {
     accessToken: data.access_token,
     expiresAt: Date.now() + Number(data.expires_in ?? 3600) * 1000,
-    // Сервис может не выдать новый refresh-токен при продлении — тогда остаётся прежний
+    // The service may not issue a new refresh token when refreshing — then the old one stays
     refreshToken: typeof data.refresh_token === 'string' ? data.refresh_token : previous?.refreshToken,
   };
 }
 
-/** Токен ещё поработает хотя бы минуту */
+/** The token is good for at least another minute */
 export function isFresh(tokens: OAuthTokens, now = Date.now()): boolean {
   return tokens.expiresAt - 60_000 > now;
 }

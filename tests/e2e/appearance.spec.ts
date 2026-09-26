@@ -4,7 +4,7 @@ const LIGHT_SURFACE = 'rgb(255, 255, 255)';
 const DARK_SURFACE = 'rgb(44, 48, 57)'; // #2c3039
 
 test.beforeEach(async ({newtab}) => {
-  // Точные цвета проверяем без приглушения светлой темы
+  // Exact colours are checked without softening the light theme
   await newtab.evaluate(() => chrome.storage.sync.set({settings: {lightDimming: 0}}));
   await newtab.reload();
   await seed(newtab, [
@@ -18,7 +18,7 @@ function surfaceColor(page: import('@playwright/test').Page) {
   return () => page.locator('.breadcrumbs').evaluate((el) => getComputedStyle(el).backgroundColor);
 }
 
-test('тема по умолчанию следует за системой', async ({newtab}) => {
+test('the default theme follows the system', async ({newtab}) => {
   await newtab.emulateMedia({colorScheme: 'dark'});
   await expect.poll(surfaceColor(newtab)).toBe(DARK_SURFACE);
 
@@ -26,7 +26,7 @@ test('тема по умолчанию следует за системой', as
   await expect.poll(surfaceColor(newtab)).toBe(LIGHT_SURFACE);
 });
 
-test('переключение темы кнопкой и в настройках', async ({newtab}) => {
+test('switching the theme with the button and in the settings', async ({newtab}) => {
   await newtab.emulateMedia({colorScheme: 'light'});
 
   await newtab.getByRole('button', {name: 'Включить тёмную тему'}).click();
@@ -36,19 +36,19 @@ test('переключение темы кнопкой и в настройка�
   await newtab.getByRole('button', {name: 'Включить светлую тему'}).click();
   await expect(newtab.locator('html')).toHaveAttribute('data-theme', 'light');
 
-  // «Как в системе» убирает явный выбор
+  // "System default" removes the explicit choice
   const dialog = await openSettings(newtab);
   await dialog.getByLabel('Светлая или тёмная').selectOption('auto');
   await expect(newtab.locator('html')).not.toHaveAttribute('data-theme');
 });
 
-test('тема и свой CSS применяются до первой отрисовки, без вспышки', async ({context, newtab}) => {
+test('theme and custom CSS apply before the first paint, without a flash', async ({context, newtab}) => {
   await newtab.getByRole('button', {name: 'Включить тёмную тему'}).click();
   const dialog = await openSettings(newtab, 'Расширенные');
   await dialog.getByLabel('Пользовательский CSS').fill('.tile__title { letter-spacing: 3px; }');
   await expect(tile(newtab, 'Example').locator('.tile__title')).toHaveCSS('letter-spacing', '3px');
 
-  // Запоминаем состояние в момент, когда парсер только дошёл до body, — до запуска приложения
+  // Record the state at the moment the parser reaches body — before the app starts
   await context.addInitScript(() => {
     new MutationObserver((_, observer) => {
       if (!document.body) return;
@@ -67,11 +67,11 @@ test('тема и свой CSS применяются до первой отри
     theme: 'dark',
     css: '.tile__title { letter-spacing: 3px; }',
   });
-  // Свой CSS перекрывает стили страницы
+  // Custom CSS overrides the page styles
   await expect(tile(newtab, 'Example').locator('.tile__title')).toHaveCSS('letter-spacing', '3px');
 });
 
-test('свой цвет плитки с читаемым текстом в тёмной теме', async ({newtab}) => {
+test('custom tile colour with readable text in the dark theme', async ({newtab}) => {
   await newtab.emulateMedia({colorScheme: 'dark'});
   const dialog = await openSettings(newtab);
 
@@ -79,7 +79,7 @@ test('свой цвет плитки с читаемым текстом в тё�
   await expect(reset).toBeDisabled();
   await dialog.getByLabel('Цвет плитки').fill('#ffffff');
 
-  // Подкрашивание отключаем, чтобы проверить чистый цвет
+  // Tinting is off to check the pure colour
   await dialog.getByLabel('Подкрашивать плитку цветом иконки').uncheck();
   const card = tile(newtab, 'Example').locator('.tile__card');
   await expect(card).toHaveCSS('background-color', 'rgb(255, 255, 255)');
@@ -89,7 +89,7 @@ test('свой цвет плитки с читаемым текстом в тё�
   await expect(card).toHaveCSS('background-color', 'rgb(44, 48, 57)');
 });
 
-test('положение названий: внутри и снаружи, сверху и снизу', async ({newtab}) => {
+test('name position: inside and outside, top and bottom', async ({newtab}) => {
   const example = tile(newtab, 'Example');
   const card = example.locator('.tile__card');
   const title = example.locator('.tile__title');
@@ -109,7 +109,7 @@ test('положение названий: внутри и снаружи, св�
   }
 });
 
-test('ширина панели, центрирование, названия и служебные плитки', async ({newtab}) => {
+test('panel width, centring, names and service tiles', async ({newtab}) => {
   await newtab.setViewportSize({width: 1000, height: 800});
   const app = newtab.locator('.app');
   const dialog = await openSettings(newtab);
@@ -134,23 +134,23 @@ test('ширина панели, центрирование, названия и
   await dialog.getByRole('button', {name: 'Готово'}).click();
   await expect(newtab.getByRole('button', {name: 'Настройки'})).toHaveCount(0);
 
-  // Настройки остаются доступны из контекстного меню
+  // Settings stay available from the context menu
   await newtab.locator('main').click({button: 'right', position: {x: 5, y: 5}});
   await newtab.getByRole('menuitem', {name: 'Настройки'}).click();
   await expect(newtab.getByRole('dialog', {name: 'Настройки'})).toBeVisible();
 });
 
-test('контрастность: как в системе, повышенная, обычная', async ({newtab}) => {
+test('contrast: system default, high, normal', async ({newtab}) => {
   const html = newtab.locator('html');
   const cardBorder = tile(newtab, 'Example').locator('.tile__card');
 
-  // «Как в системе» следует за prefers-contrast
+  // "System default" follows prefers-contrast
   await expect(html).not.toHaveAttribute('data-contrast');
   await newtab.emulateMedia({contrast: 'more'});
   await expect(html).toHaveAttribute('data-contrast', 'high');
   await expect(cardBorder).toHaveCSS('border-top-width', '2px');
 
-  // «Обычная» — даже при системной высокой контрастности
+  // "Normal" — even with system high contrast
   const dialog = await openSettings(newtab);
   await dialog.getByLabel('Контрастность').selectOption('normal');
   await expect(html).not.toHaveAttribute('data-contrast');
@@ -159,17 +159,17 @@ test('контрастность: как в системе, повышенная
   await newtab.emulateMedia({contrast: 'no-preference'});
   await dialog.getByLabel('Контрастность').selectOption('high');
   await expect(html).toHaveAttribute('data-contrast', 'high');
-  // Папка — рамкой в цвет акцента, названия жирные
+  // A folder gets an accent-coloured border, names are bold
   await expect(tile(newtab, 'Папка').locator('.tile__card')).toHaveCSS('border-top-color', 'rgb(0, 102, 204)');
   await expect(tile(newtab, 'Example').locator('.tile__title')).toHaveCSS('font-weight', '600');
 
-  // Применяется до первой отрисовки
+  // Applied before the first paint
   await dialog.getByRole('button', {name: 'Готово'}).click();
   await newtab.reload();
   await expect(html).toHaveAttribute('data-contrast', 'high');
 });
 
-test('шрифты: размер текста, пример шрифта, свой шрифт, названия плиток', async ({newtab}) => {
+test('fonts: text size, font sample, custom font, tile names', async ({newtab}) => {
   const html = newtab.locator('html');
   const title = tile(newtab, 'Example').locator('.tile__title');
   const dialog = await openSettings(newtab);
@@ -177,37 +177,37 @@ test('шрифты: размер текста, пример шрифта, сво
   await expect(html).toHaveCSS('font-size', '16px');
   await dialog.getByLabel('Размер шрифта').selectOption({label: 'Крупный'});
   await expect(html).toHaveCSS('font-size', '18px');
-  await expect(title).toHaveCSS('font-size', '14.625px'); // 0.8125rem при 18px
+  await expect(title).toHaveCSS('font-size', '14.625px'); // 0.8125rem at 18px
 
-  // Пример текста набран выбранным шрифтом
+  // The sample text is set in the chosen font
   await dialog.getByLabel('Шрифт', {exact: true}).selectOption('Georgia');
   await expect(dialog.getByText('Съешь же ещё этих мягких французских булок, да выпей чаю'))
     .toHaveCSS('font-family', /Georgia/);
 
-  // «Другой…» — любое название вручную
+  // "Other…" — any name typed in
   await dialog.getByLabel('Шрифт', {exact: true}).selectOption({label: 'Другой…'});
   await dialog.getByLabel('Название шрифта').fill('Comic Sans MS');
   await expect(newtab.locator('body')).toHaveCSS('font-family', /^"?Comic Sans MS/);
 
   await dialog.getByLabel('Размер названий плиток').selectOption({label: 'Мелкий'});
   await dialog.getByLabel('Жирные названия плиток').check();
-  await expect(title).toHaveCSS('font-size', '13.5px'); // 0.75rem при 18px
+  await expect(title).toHaveCSS('font-size', '13.5px'); // 0.75rem at 18px
   await expect(title).toHaveCSS('font-weight', '600');
 
-  // Размер текста применяется до первой отрисовки — без скачка
+  // Text size is applied before the first paint — no jump
   await dialog.getByRole('button', {name: 'Готово'}).click();
   await newtab.reload();
   expect(await newtab.evaluate(() => document.documentElement.style.fontSize)).toBe('112.5%');
 });
 
-test('фон страницы: цвет', async ({newtab}) => {
+test('page background: colour', async ({newtab}) => {
   const dialog = await openSettings(newtab);
   await dialog.getByLabel('Фон', {exact: true}).selectOption('color');
   await dialog.getByLabel('Цвет фона').fill('#336699');
   await expect(newtab.locator('body')).toHaveCSS('background-color', 'rgb(51, 102, 153)');
 });
 
-test('плитка папки без миниатюр показывает значок папки', async ({newtab}) => {
+test('a folder tile without previews shows the folder icon', async ({newtab}) => {
   const folder = tile(newtab, 'Папка');
   await expect(folder.locator('.folder-preview')).toBeVisible();
 

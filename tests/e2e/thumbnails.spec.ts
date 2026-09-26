@@ -17,7 +17,7 @@ test.beforeEach(async ({context, newtab}) => {
 
 const thumbnailOf = (page: Page, title: string) => tile(page, title).locator('.tile__thumbnail');
 
-/** Окно «Значок…» закладки из контекстного меню */
+/** The bookmark's "Icon…" dialog from the context menu */
 async function openIconDialog(page: Page, title: string) {
   await tile(page, title).click({button: 'right'});
   await page.getByRole('menuitem', {name: 'Значок…'}).click();
@@ -33,29 +33,29 @@ async function chooseImage(page: Page, title: string, color: string) {
   return dialog;
 }
 
-test('снимок страницы из окна «Значок» и удаление миниатюры', async ({newtab}) => {
+test('page screenshot from the "Icon" dialog and removing the thumbnail', async ({newtab}) => {
   const dialog = await openIconDialog(newtab, 'Shot');
   await dialog.getByRole('button', {name: 'Сделать снимок страницы'}).click();
 
-  // Превью в окне и плитка обновляются, когда снимок готов
+  // The preview in the dialog and the tile update when the screenshot is ready
   await expect(dialog.getByRole('img', {name: 'Текущая картинка'})).toBeVisible({timeout: 20_000});
   const thumbnail = thumbnailOf(newtab, 'Shot');
   await expect(thumbnail).toHaveAttribute('src', /^blob:/);
-  // Цвет снимка — фон страницы-заглушки
+  // The screenshot colour is the stub page's background
   const color = await thumbnail.evaluate(async (img: HTMLImageElement) => {
     const canvas = new OffscreenCanvas(1, 1);
     const context = canvas.getContext('2d')!;
     context.drawImage(img, img.naturalWidth - 1, img.naturalHeight - 1, 1, 1, 0, 0, 1, 1);
     return [...context.getImageData(0, 0, 1, 1).data.slice(0, 3)];
   });
-  expect(color[2]).toBeGreaterThan(180); // Синий канал #00a0e0
+  expect(color[2]).toBeGreaterThan(180); // Blue channel of #00a0e0
 
   await dialog.getByRole('button', {name: 'Убрать картинку'}).click();
   await expect(thumbnail).toHaveCount(0);
   await dialog.getByRole('button', {name: 'Готово'}).click();
 });
 
-test('кнопка обновления миниатюр с подпапками', async ({newtab}) => {
+test('thumbnail refresh button with subfolders', async ({newtab}) => {
   const dialog = await openSettings(newtab, 'Общие');
   await dialog.getByLabel('Задержка перед снимком').fill('0');
   await dialog.getByLabel('Включая подпапки').check();
@@ -68,9 +68,9 @@ test('кнопка обновления миниатюр с подпапками
   await expect(thumbnailOf(newtab, 'Inner')).toBeVisible({timeout: 30_000});
 });
 
-test('создание миниатюр останавливается повторным нажатием', async ({newtab}) => {
+test('creating thumbnails stops on a second press', async ({newtab}) => {
   test.setTimeout(60_000);
-  // Большая задержка перед снимком — успеем остановить, пока открыто окно первой страницы
+  // A long delay before the screenshot — enough time to stop while the first page's window is open
   const settings = await openSettings(newtab, 'Общие');
   await settings.getByLabel('Задержка перед снимком').fill('6');
   await settings.getByLabel('Включая подпапки').check();
@@ -80,12 +80,12 @@ test('создание миниатюр останавливается повт�
   const stop = newtab.getByRole('button', {name: 'Остановить создание миниатюр'});
   await expect(stop).toHaveText('0/2');
 
-  // Вкладка, открытая посреди съёмки, тоже предлагает её остановить. Ждём окно для снимка: съёмка уже идёт
+  // A tab opened mid-capture also offers to stop it. Wait for the screenshot window: capturing is under way
   await expect.poll(() => newtab.evaluate(async () => (await chrome.windows.getAll()).length)).toBe(2);
   await newtab.reload();
   await expect(stop).toHaveText('0/2');
 
-  // Отказались останавливать — съёмка продолжается
+  // Declined to stop — capturing continues
   await stop.click();
   await newtab.getByRole('dialog', {name: 'Остановить создание миниатюр?'}).getByRole('button', {name: 'Отмена'}).click();
   await expect(stop).toBeVisible();
@@ -94,14 +94,14 @@ test('создание миниатюр останавливается повт�
   await newtab.getByRole('dialog', {name: 'Остановить создание миниатюр?'}).getByRole('button', {name: 'Остановить'}).click();
   await expect(newtab.getByRole('button', {name: 'Обновить миниатюры'})).toBeVisible();
 
-  // Окно для снимка закрыто сразу, и после истечения задержки миниатюры так и не появились
+  // The screenshot window closed right away, and after the delay no thumbnails appeared
   await expect.poll(() => newtab.evaluate(async () => (await chrome.windows.getAll()).length)).toBe(1);
   await newtab.waitForTimeout(8000);
   await expect(thumbnailOf(newtab, 'Shot')).toHaveCount(0);
   await expect(newtab.getByRole('button', {name: 'Обновить миниатюры'})).toBeVisible();
 });
 
-test('снимок при создании закладки', async ({newtab}) => {
+test('screenshot when creating a bookmark', async ({newtab}) => {
   const dialog = await openSettings(newtab, 'Общие');
   await dialog.getByLabel('Снимок страницы при создании закладки').check();
   await dialog.getByRole('button', {name: 'Готово'}).click();
@@ -115,7 +115,7 @@ test('снимок при создании закладки', async ({newtab}) =
   await expect(thumbnailOf(newtab, 'Новая')).toBeVisible({timeout: 20_000});
 });
 
-test('своя картинка вместо снимка; очистка миниатюр', async ({newtab}) => {
+test('custom image instead of a screenshot; clearing thumbnails', async ({newtab}) => {
   const iconDialog = await chooseImage(newtab, 'Shot', '#ff8800');
   await iconDialog.getByRole('button', {name: 'Готово'}).click();
   await expect(thumbnailOf(newtab, 'Shot')).toBeVisible();
@@ -127,7 +127,7 @@ test('своя картинка вместо снимка; очистка мин
   await expect(thumbnailOf(newtab, 'Shot')).toHaveCount(0);
 });
 
-test('отмена удаления возвращает и миниатюры', async ({newtab}) => {
+test('undoing a deletion brings back thumbnails too', async ({newtab}) => {
   await tile(newtab, 'Папка').click();
   const iconDialog = await chooseImage(newtab, 'Inner', '#ff00ff');
   await iconDialog.getByRole('button', {name: 'Готово'}).click();
@@ -142,7 +142,7 @@ test('отмена удаления возвращает и миниатюры',
   await expect(thumbnailOf(newtab, 'Inner')).toBeVisible();
 });
 
-test('миниатюра удаляется вместе с закладкой', async ({newtab}) => {
+test('a thumbnail is removed together with its bookmark', async ({newtab}) => {
   const iconDialog = await chooseImage(newtab, 'Shot', '#00ff00');
   await iconDialog.getByRole('button', {name: 'Готово'}).click();
   const id = await tile(newtab, 'Shot').getAttribute('data-bookmark-id');

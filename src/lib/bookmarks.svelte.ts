@@ -8,10 +8,10 @@ export interface Crumb {
   title: string;
 }
 
-const RELOAD_DELAY = 100; // Мс; схлопываем пачку изменений закладок в одну перезагрузку
-const LAST_FOLDER_KEY = 'last-folder'; // localStorage: последняя открытая папка на этом устройстве
+const RELOAD_DELAY = 100; // Ms; collapse a burst of bookmark changes into one reload
+const LAST_FOLDER_KEY = 'last-folder'; // localStorage: the last opened folder on this device
 
-// Открытая папка хранится в адресе (#folder=5): работают «Назад» и перезагрузка страницы
+// The open folder is kept in the URL (#folder=5): Back and page reload work
 export function folderHref(folderId: string): string {
   return `#folder=${folderId}`;
 }
@@ -20,7 +20,7 @@ function folderFromHash(): string | null {
   return /^#folder=(\w+)$/.exec(location.hash)?.[1] ?? null;
 }
 
-/** Папка при открытии новой вкладки: последняя открытая или папка по умолчанию */
+/** Folder shown in a new tab: the last opened one or the default folder */
 function startFolder(): string {
   if (settings.current.rememberLastFolder) {
     const last = localStorage.getItem(LAST_FOLDER_KEY);
@@ -44,30 +44,30 @@ class BookmarksStore {
   folderId = $state(BOOKMARKS_BAR_ID);
   items = $state.raw<BookmarkNode[]>([]);
   path = $state.raw<Crumb[]>([]);
-  /** Первые элементы каждой папки из items — для миниатюр на плитке папки */
+  /** First items of each folder in items — for the folder tile preview */
   previews = $state.raw<Record<string, BookmarkNode[]>>({});
-  /** Первая загрузка завершена */
+  /** The first load is done */
   loaded = $state(false);
 
-  #loadId = 0; // Номер последней загрузки, чтобы отбрасывать устаревшие
+  #loadId = 0; // Number of the latest load, to drop stale ones
   #reloadTimer: ReturnType<typeof setTimeout> | undefined;
 
-  /** Папка для новых закладок: текущая, но не корень — в него API добавлять не разрешает */
+  /** Folder for new bookmarks: the current one, but not the root — the API doesn't allow adding there */
   get targetFolderId(): string {
     return this.folderId === ROOT_FOLDER_ID ? BOOKMARKS_BAR_ID : this.folderId;
   }
 
-  /** Родительская папка открытой; null в корне */
+  /** Parent of the open folder; null at the root */
   get parentFolderId(): string | null {
     if (this.folderId === ROOT_FOLDER_ID) return null;
     return this.path.at(-2)?.id ?? ROOT_FOLDER_ID;
   }
 
-  /** settingsLoaded — загрузка настроек: от неё зависит папка по умолчанию */
+  /** settingsLoaded — loading of the settings: the default folder depends on it */
   async start(settingsLoaded: Promise<unknown>): Promise<void> {
     window.addEventListener('hashchange', () => this.#load(folderFromHash() ?? startFolder()));
 
-    // Перезагружаем при любых изменениях закладок, в том числе сделанных в самом браузере
+    // Reload on any bookmark change, including ones made in the browser itself
     const scheduleReload = () => {
       clearTimeout(this.#reloadTimer);
       this.#reloadTimer = setTimeout(() => this.#load(this.folderId), RELOAD_DELAY);
@@ -108,7 +108,7 @@ class BookmarksStore {
       ]));
     } catch (error) {
       if (loadId !== this.#loadId) return;
-      // Папку могли удалить — возвращаемся к «Панели избранного»
+      // The folder may have been removed — go back to the bookmarks bar
       console.error('Failed to load folder', folderId, error);
       if (folderId !== BOOKMARKS_BAR_ID) {
         history.replaceState(null, '', location.pathname);
@@ -117,7 +117,7 @@ class BookmarksStore {
       return;
     }
 
-    // Пока ждали данные, началась более новая загрузка
+    // A newer load started while we were waiting for data
     if (loadId !== this.#loadId) return;
 
     this.folderId = folderId;

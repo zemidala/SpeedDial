@@ -1,9 +1,12 @@
-/* ===== Кнопки ===== */
+/* ===== Buttons ===== */
 .button {
+  display: inline-block;
   padding: 8px 14px;
   border: 1px solid var(--field-border);
   border-radius: var(--radius-small);
   background: var(--field-bg);
+  color: inherit;
+  text-decoration: none;
   cursor: pointer;
 }
 
@@ -36,7 +39,7 @@
   background: color-mix(in oklab, var(--danger) 85%, var(--text));
 }
 
-/* Круглая кнопка с иконкой в верхней панели */
+/* Round icon button in the top bar */
 .icon-button {
   display: flex;
   flex-shrink: 0;
@@ -60,7 +63,7 @@
   color: var(--text);
 }
 
-/* ===== Поля ввода ===== */
+/* ===== Input fields ===== */
 .input,
 .textarea {
   width: 100%;
@@ -96,7 +99,7 @@
   outline-offset: 1px;
 }
 
-/* ===== Переключатель ===== */
+/* ===== Switch ===== */
 .switch {
   position: relative;
   display: inline-flex;
@@ -104,7 +107,7 @@
   cursor: pointer;
 }
 
-/* Настоящий чекбокс — прозрачный и поверх дорожки: клик по любому месту переключает его */
+/* A real checkbox — transparent and on top of the track: clicking anywhere toggles it */
 .switch__input {
   position: absolute;
   inset: 0;
@@ -125,7 +128,7 @@
   width: 36px;
   height: 20px;
   border-radius: 10px;
-  /* Выключенный — заметно серый в любой теме, а не цвета панели */
+  /* Off — clearly grey in any theme, not the panel colour */
   background: light-dark(
     color-mix(in oklab, var(--text) 18%, var(--surface)),
     color-mix(in oklab, var(--text) 30%, var(--surface))

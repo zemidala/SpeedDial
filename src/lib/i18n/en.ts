@@ -1,5 +1,5 @@
-// Английские тексты интерфейса — основной язык. Этот словарь задаёт тип Messages:
-// в переводах (ru.ts) должны быть те же ключи. Тексты с числами и названиями — функции
+// English interface texts — the primary language. This dictionary defines the Messages type:
+// translations (ru.ts) must have the same keys. Texts with numbers and names are functions
 
 export const en = {
   common: {
@@ -161,7 +161,25 @@ export const en = {
   settings: {
     title: 'Settings',
     sections: 'Settings sections',
-    tabs: {view: 'Appearance', general: 'General', backup: 'Backups', advanced: 'Advanced'},
+    tabs: {view: 'Appearance', general: 'General', backup: 'Backups', advanced: 'Advanced', about: 'About'},
+    groups: {
+      languageTheme: 'Language and theme',
+      tiles: 'Tiles',
+      names: 'Tile names',
+      font: 'Font',
+      icons: 'Icons',
+      pageElements: 'Page elements',
+      background: 'Background',
+      folders: 'Folders',
+      search: 'Search and services',
+      bookmarks: 'Bookmarks',
+      thumbnails: 'Thumbnails',
+      browserMenu: 'Browser context menu',
+      sync: 'Sync',
+      permissions: 'Permissions',
+      data: 'Data',
+      customCss: 'Custom CSS',
+    },
   },
 
   view: {
@@ -343,6 +361,7 @@ export const en = {
 
   backup: {
     file: 'Backup file',
+    fileRow: 'Save or restore',
     fileHint: 'Bookmarks with their order, settings, thumbnails and background — in one file',
     saveToFile: 'Save to file',
     restoreEllipsis: 'Restore…',
@@ -398,7 +417,41 @@ export const en = {
     restoreUndone: 'Restore undone',
   },
 
-  /** Ошибки копий и облаков — показываются в настройках и уведомлениях */
+  about: {
+    tagline: 'Visual bookmarks for the new tab page',
+    details: 'Details',
+    version: 'Version',
+    versionBuild: (version: string, build: number) => `Version ${version}, build ${build}`,
+    build: 'Build',
+    browser: 'Browser',
+    extensionId: 'Extension ID',
+    install: 'Installation',
+    installDevelopment: 'Development (unpacked)',
+    installStore: 'From a store',
+    copy: 'Copy details',
+    copied: 'Details copied',
+    welcomePage: 'Welcome page',
+  },
+
+  support: {
+    title: 'Support the author',
+    button: 'Support the author',
+    hint: 'SpeedDial is free and has no ads. If you find it useful, you can support its development on Boosty.',
+  },
+
+  welcome: {
+    title: 'Thanks for installing SpeedDial!',
+    lead: 'Your bookmarks are now on the new tab page — as tiles with site icons and thumbnails.',
+    features: [
+      'Folders, drag and drop, selecting several tiles',
+      'Eleven themes, light and dark modes, fonts and background',
+      'Backups to a file or to the cloud: Google Drive, Dropbox, OneDrive, Yandex Disk',
+      'Keyboard control and search across all bookmarks',
+    ],
+    open: 'Open SpeedDial',
+  },
+
+  /** Backup and cloud errors — shown in the settings and notifications */
   cloudErrors: {
     backupNotJson: 'The backup file is corrupted: it isn’t JSON',
     notBackup: 'This isn’t a SpeedDial backup',

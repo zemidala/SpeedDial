@@ -1,7 +1,7 @@
 import type {BrowserContext, Page} from '@playwright/test';
 import {expect, grantPermissions, makeIco, makePng, openSettings, seed, test, tile} from './fixtures';
 
-// Сайт-заглушка: страница и файлы по адресам. CORS-заголовок нужен, пока доступ к сайтам имитирован
+// Stub site: a page and files by path. The CORS header is needed while site access is imitated
 async function serveSite(context: BrowserContext, origin: string, files: Record<string, {type: string; body: Buffer | string}>) {
   const headers = {'Access-Control-Allow-Origin': '*'};
   await context.route(`${origin}/**`, (route) => {
@@ -18,15 +18,15 @@ async function enableSiteIcons(context: BrowserContext, newtab: import('@playwri
   await newtab.reload();
 }
 
-test('вместо стандартного глобуса — цветная буква сайта', async ({newtab}) => {
+test('a coloured site letter instead of the standard globe', async ({newtab}) => {
   await seed(newtab, [{title: 'Example', url: 'https://example.com/'}]);
-  // В чистом профиле браузер не знает иконок сайтов и отдаёт глобус
+  // In a clean profile the browser knows no site icons and returns a globe
   const icon = tile(newtab, 'Example').locator('.site-icon');
   await expect(icon).toHaveClass(/site-icon--letter/);
   await expect(icon).toHaveText('E');
 });
 
-test('крупная иконка с сайта заполняет подложку и берётся из кэша', async ({context, newtab}) => {
+test('a large site icon fills the plate and comes from the cache', async ({context, newtab}) => {
   await serveSite(context, 'https://hq.example', {
     '/': {type: 'text/html', body: '<link rel="apple-touch-icon" href="/touch.png">'},
     '/touch.png': {type: 'image/png', body: await makePng(newtab, 180, '#d03030')},
@@ -39,16 +39,16 @@ test('крупная иконка с сайта заполняет подлож�
   await expect(hq.locator('.site-icon')).toHaveClass(/site-icon--cover/);
   expect(await hq.evaluate((el) => el.style.getPropertyValue('--icon-color'))).toBe('#d03030');
 
-  // После перезагрузки иконка берётся из кэша, без запросов к сайту
+  // After a reload the icon comes from the cache, without requests to the site
   await context.unroute('https://hq.example/**');
   await context.route('https://hq.example/**', (route) => route.abort());
   await newtab.reload();
   await expect(tile(newtab, 'HQ').locator('.site-icon__image')).toHaveAttribute('src', /^blob:/);
 });
 
-test('самая крупная картинка из .ico', async ({context, newtab}) => {
-  // Размер .ico не объявлен, а внутри лежит версия 256×256.
-  // Путь не /favicon.ico: запросы к нему Playwright не перехватывает
+test('the largest image from an .ico', async ({context, newtab}) => {
+  // The .ico size isn't declared, and inside there's a 256×256 version.
+  // The path isn't /favicon.ico: Playwright doesn't intercept requests to it
   const png = await makePng(newtab, 256, '#2060c0');
   await serveSite(context, 'https://ico.example', {
     '/': {type: 'text/html', body: '<link rel="icon" href="/static/site.ico">'},
@@ -62,8 +62,8 @@ test('самая крупная картинка из .ico', async ({context, ne
   expect(await image.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(256);
 });
 
-test('маленькие картинки с сайта отклоняются', async ({context, newtab}) => {
-  // Объявлен «большой» apple-touch-icon, а на деле он 32×32 — объявленным размерам не верим
+test('small images from the site are rejected', async ({context, newtab}) => {
+  // A "large" apple-touch-icon is declared but it's actually 32×32 — declared sizes aren't trusted
   await serveSite(context, 'https://tiny.example', {
     '/': {type: 'text/html', body: '<link rel="apple-touch-icon" href="/touch.png">'},
     '/touch.png': {type: 'image/png', body: await makePng(newtab, 32, '#10a010')},
@@ -74,7 +74,7 @@ test('маленькие картинки с сайта отклоняются',
   await expect(tile(newtab, 'Tiny').locator('.site-icon')).toHaveClass(/site-icon--letter/);
 });
 
-test('иконка на весь блок: область заливается цветом краёв иконки', async ({context, newtab}) => {
+test('fill icon: the area is filled with the icon\'s edge colour', async ({context, newtab}) => {
   await serveSite(context, 'https://fill.example', {
     '/': {type: 'text/html', body: '<link rel="icon" sizes="192x192" href="/icon.png">'},
     '/icon.png': {type: 'image/png', body: await makePng(newtab, 192, '#e0a020')},
@@ -87,7 +87,7 @@ test('иконка на весь блок: область заливается �
   await expect(fill.locator('.tile__visual')).toHaveCSS('background-color', 'rgb(224, 160, 32)');
 });
 
-/** Картинка small×small из цветного шума, растянутая без сглаживания до size×size — как favicon у браузера */
+/** A small×small image of colour noise upscaled without smoothing to size×size — like a browser favicon */
 async function makeUpscaledPng(page: Page, small: number, size: number) {
   const bytes = await page.evaluate(async ({small, size}) => {
     const source = new OffscreenCanvas(small, small);
@@ -108,7 +108,7 @@ async function makeUpscaledPng(page: Page, small: number, size: number) {
   return Buffer.from(bytes);
 }
 
-/** Отвечает на запросы к сервису иконок: у каждого домена своя картинка, у остальных — заглушка */
+/** Answers icon service requests: each domain has its own image, the rest get a placeholder */
 async function serveLogoService(
   context: BrowserContext,
   pattern: string,
@@ -128,7 +128,7 @@ async function serveLogoService(
   return requested;
 }
 
-test('свой адрес сервиса иконок', async ({context, newtab}) => {
+test('custom icon service URL', async ({context, newtab}) => {
   const requested = await serveLogoService(context, 'https://logos.example/**', {
     'github.com': {type: 'image/png', body: await makePng(newtab, 128, '#7030c0')},
   });
@@ -144,8 +144,8 @@ test('свой адрес сервиса иконок', async ({context, newtab}
   expect(await tile(newtab, 'GitHub').evaluate((el) => el.style.getPropertyValue('--icon-color'))).toBe('#7030c0');
 });
 
-test('Google: растянутая картинка не растягивается ещё больше, заглушка — буква', async ({context, newtab}) => {
-  const placeholder = await makeUpscaledPng(newtab, 16, 256); // Для неизвестных сайтов Google отдаёт свою заглушку
+test('Google: an upscaled image isn\'t stretched further, the placeholder becomes a letter', async ({context, newtab}) => {
+  const placeholder = await makeUpscaledPng(newtab, 16, 256); // Google returns its own placeholder for unknown sites
   await serveLogoService(context, 'https://www.google.com/s2/favicons**', {
     'small.example': {type: 'image/png', body: await makeUpscaledPng(newtab, 32, 256)},
   }, {type: 'image/png', body: placeholder});
@@ -156,7 +156,7 @@ test('Google: растянутая картинка не растягивает�
   await newtab.evaluate(() => chrome.storage.sync.set({settings: {logoService: 'google', iconScale: 100}}));
   await newtab.reload();
 
-  // Google растянул иконку 32×32 до 256×256: показываем её не больше 32 × 1,5 = 48 px, а не на всю плитку
+  // Google upscaled a 32×32 icon to 256×256: show it no larger than 32 × 1.5 = 48 px, not over the whole tile
   const image = tile(newtab, 'Small').locator('.site-icon__image');
   await expect(image).toHaveAttribute('src', /^blob:/);
   expect((await image.boundingBox())!.width).toBeLessThanOrEqual(48);
@@ -164,7 +164,7 @@ test('Google: растянутая картинка не растягивает�
   await expect(tile(newtab, 'Unknown').locator('.site-icon')).toHaveClass(/site-icon--letter/);
 });
 
-test('DuckDuckGo: крупная картинка из .ico', async ({context, newtab}) => {
+test('DuckDuckGo: the large image from an .ico', async ({context, newtab}) => {
   const png = await makePng(newtab, 128, '#10a0a0');
   await serveLogoService(context, 'https://icons.duckduckgo.com/**', {
     'duck.example': {type: 'image/x-icon', body: makeIco(png, 128)},
@@ -178,7 +178,7 @@ test('DuckDuckGo: крупная картинка из .ico', async ({context, n
   expect(await image.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(128);
 });
 
-test('иконка с сайта главнее сервиса', async ({context, newtab}) => {
+test('the site icon wins over the service', async ({context, newtab}) => {
   await serveSite(context, 'https://both.example', {
     '/': {type: 'text/html', body: '<link rel="apple-touch-icon" href="/touch.png">'},
     '/touch.png': {type: 'image/png', body: await makePng(newtab, 180, '#d03030')},
@@ -189,11 +189,11 @@ test('иконка с сайта главнее сервиса', async ({context
   await enableSiteIcons(context, newtab, {logoService: 'custom', externalLogoUrl: 'https://logos.example/{{website}}.png'});
   await seed(newtab, [{title: 'Both', url: 'https://both.example/'}]);
 
-  // Сначала показывается иконка сервиса, потом её заменяет более крупная иконка с сайта
+  // The service icon shows first, then a larger icon from the site replaces it
   const both = tile(newtab, 'Both');
   await expect.poll(() => both.evaluate((el) => el.style.getPropertyValue('--icon-color'))).toBe('#d03030');
 
-  // После перезагрузки иконка с сайта берётся из кэша сразу, без сервиса
+  // After a reload the site icon comes from the cache right away, without the service
   await newtab.reload();
   await expect(tile(newtab, 'Both').locator('.site-icon')).toHaveClass(/site-icon--cover/);
   expect(await tile(newtab, 'Both').evaluate((el) => el.style.getPropertyValue('--icon-color'))).toBe('#d03030');

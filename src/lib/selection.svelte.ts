@@ -1,10 +1,10 @@
-// Выделение нескольких плиток: галочка на плитке, Shift — диапазон, Ctrl+A — все
+// Selecting several tiles: the check mark on a tile, Shift — a range, Ctrl+A — all
 import {SvelteSet} from 'svelte/reactivity';
 
 class SelectionStore {
   ids = new SvelteSet<string>();
 
-  /** Плитка, от которой считается диапазон при Shift */
+  /** Tile the Shift range is counted from */
   #anchor: string | null = null;
 
   get active(): boolean {
@@ -21,7 +21,7 @@ class SelectionStore {
     this.#anchor = id;
   }
 
-  /** Выделяет плитки от предыдущей отмеченной до id включительно — в порядке order */
+  /** Selects tiles from the previously marked one to id inclusive — in the given order */
   range(id: string, order: string[]): void {
     const from = this.#anchor ? order.indexOf(this.#anchor) : -1;
     const to = order.indexOf(id);
@@ -38,7 +38,7 @@ class SelectionStore {
     for (const id of order) this.ids.add(id);
   }
 
-  /** Оставляет только плитки, которые ещё показаны: после удаления или смены папки */
+  /** Keeps only tiles that are still shown: after deleting or switching folders */
   retain(order: string[]): void {
     const visible = new Set(order);
     for (const id of this.ids) if (!visible.has(id)) this.ids.delete(id);
@@ -50,7 +50,7 @@ class SelectionStore {
     this.#anchor = null;
   }
 
-  /** Выделенные в порядке order */
+  /** Selected ids in the given order */
   ordered(order: string[]): string[] {
     return order.filter((id) => this.ids.has(id));
   }

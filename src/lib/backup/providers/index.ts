@@ -1,4 +1,4 @@
-// Облака со входом по OAuth. Client ID приложений задаются при сборке в .env.local (см. docs/cloud-setup.md)
+// Clouds with OAuth sign-in. App Client IDs are set at build time in .env.local (see docs/cloud-setup.md)
 import {dropbox} from './dropbox';
 import {googleDrive} from './googleDrive';
 import {oneDrive} from './oneDrive';

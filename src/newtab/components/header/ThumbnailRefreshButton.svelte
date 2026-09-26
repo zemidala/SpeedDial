@@ -12,9 +12,9 @@
 
   const running = $derived(thumbnails.progress !== null);
 
-  // Делает снимки всех веб-закладок открытой папки (и вложенных, если включено в настройках)
+  // Takes screenshots of all web bookmarks in the open folder (and nested ones if enabled in the settings)
   async function refresh() {
-    // Запрос разрешения — первым делом, пока действует клик пользователя
+    // Request the permission first, while the user's click still counts
     if (!permissions.siteAccess && !(await permissions.request(SITE_ACCESS))) return;
 
     const [folder] = await chrome.bookmarks.getSubTree(bookmarks.folderId);
@@ -24,7 +24,7 @@
     await thumbnails.capture(items);
   }
 
-  // Повторное нажатие во время съёмки — остановить (с подтверждением)
+  // Pressing again while capturing — stop (with a confirmation)
   function onclick() {
     if (!running) {
       refresh().catch((error) => console.error('Failed to refresh thumbnails', error));
@@ -51,7 +51,7 @@
   {onclick}
 >
   {#if thumbnails.progress}
-    <!-- Кольцо заполняется по мере готовности снимков -->
+    <!-- The ring fills as screenshots are done -->
     <svg class="refresh-button__ring" viewBox="0 0 40 40" aria-hidden="true">
       <circle class="refresh-button__track" cx="20" cy="20" r="18.5"/>
       <circle

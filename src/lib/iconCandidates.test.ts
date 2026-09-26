@@ -19,7 +19,7 @@ describe('parseSizes', () => {
 });
 
 describe('candidatesFromLinks', () => {
-  it('берёт иконки и apple-touch-icon, достраивая адреса и размеры', () => {
+  it('takes icons and apple-touch-icon, resolving URLs and sizes', () => {
     const result = candidatesFromLinks([
       {rel: 'icon', href: '/favicon.ico'},
       {rel: 'shortcut icon', href: 'icon-32.png', sizes: '32x32'},
@@ -41,7 +41,7 @@ describe('candidatesFromLinks', () => {
 });
 
 describe('candidatesFromManifest', () => {
-  it('разбирает иконки манифеста и штрафует только-maskable', () => {
+  it('parses manifest icons and penalises maskable-only ones', () => {
     const manifest = {
       icons: [
         {src: 'icons/192.png', sizes: '192x192'},
@@ -58,14 +58,14 @@ describe('candidatesFromManifest', () => {
     ]);
   });
 
-  it('некорректный манифест — пустой список', () => {
+  it('invalid manifest — empty list', () => {
     expect(candidatesFromManifest(null, BASE)).toEqual([]);
     expect(candidatesFromManifest({icons: 'nope'}, BASE)).toEqual([]);
   });
 });
 
 describe('rankCandidates', () => {
-  it('отбрасывает мелкие, сортирует по штрафу и размеру, убирает повторы', () => {
+  it('drops small ones, sorts by penalty and size, removes duplicates', () => {
     const ranked = rankCandidates([
       {url: 'a', size: 16},
       {url: 'b', size: 180},

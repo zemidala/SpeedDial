@@ -5,7 +5,7 @@ import {settings} from './settings/store.svelte';
 const SEARCH_DELAY = 150;
 const MAX_RESULTS = 60;
 
-/** Поиск по закладкам в строке поиска; Enter — поиск в интернете */
+/** Searching bookmarks from the search box; Enter — web search */
 class SearchStore {
   query = $state('');
   results = $state.raw<BookmarkNode[]>([]);
@@ -37,7 +37,7 @@ class SearchStore {
     this.setQuery('');
   }
 
-  /** Открывает результаты поиска в интернете */
+  /** Opens web search results */
   searchWeb(): void {
     if (!this.active) return;
     const {searchEngine, customSearchUrl, openInNewTab} = settings.current;

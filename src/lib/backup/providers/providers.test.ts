@@ -14,7 +14,7 @@ interface Call {
   body: string;
 }
 
-/** Подмена fetch: ответы по началу адреса, все запросы записываются */
+/** fetch stub: responses by URL prefix; every request is recorded */
 function mockFetch(routes: Record<string, (call: Call) => Response>) {
   const calls: Call[] = [];
   vi.stubGlobal('fetch', vi.fn(async (url: string, init: RequestInit = {}) => {
@@ -31,7 +31,7 @@ function mockFetch(routes: Record<string, (call: Call) => Response>) {
 const json = (value: unknown, init: ResponseInit = {}) =>
   new Response(JSON.stringify(value), {...init, headers: {'Content-Type': 'application/json', ...init.headers}});
 
-/** Окно входа: сразу «возвращается» на адрес возврата с нужными параметрами и тем же state */
+/** Sign-in window: immediately "returns" to the redirect URL with the needed parameters and the same state */
 function mockIdentity(reply: (url: URL) => string, launches: URL[] = []) {
   vi.stubGlobal('chrome', {
     identity: {
@@ -57,19 +57,19 @@ afterEach(() => {
 });
 
 describe('OAuth', () => {
-  it('PKCE: challenge — SHA-256 от verifier в base64url', async () => {
+  it('PKCE: challenge is SHA-256 of the verifier in base64url', async () => {
     const {verifier, challenge} = await pkcePair();
     expect(verifier).toMatch(/^[\w-]{43,128}$/);
     const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier)));
     expect(challenge).toBe(Buffer.from(digest).toString('base64url'));
   });
 
-  it('параметры ответа из строки запроса и фрагмента', () => {
+  it('response parameters from the query string and the fragment', () => {
     const params = responseParams(`${REDIRECT}?code=1&state=s#access_token=t&expires_in=60`);
     expect(Object.fromEntries(params)).toEqual({code: '1', state: 's', access_token: 't', expires_in: '60'});
   });
 
-  it('ответ с чужим state и отказ пользователя отклоняются', async () => {
+  it('rejects a foreign state and the user declining', async () => {
     mockIdentity(() => `${REDIRECT}?code=1&state=подмена`);
     await expect(authorize(new URL('https://auth.example/'), true)).rejects.toThrow('не прошёл проверку');
 
@@ -80,7 +80,7 @@ describe('OAuth', () => {
     await expect(authorize(new URL('https://auth.example/'), true)).rejects.toThrow('Вход отменён');
   });
 
-  it('токен считается свежим, пока до конца больше минуты', () => {
+  it('a token is fresh while more than a minute is left', () => {
     expect(isFresh({accessToken: 't', expiresAt: Date.now() + 120_000})).toBe(true);
     expect(isFresh({accessToken: 't', expiresAt: Date.now() + 30_000})).toBe(false);
   });
@@ -90,7 +90,7 @@ describe('Dropbox', () => {
   const provider = dropbox('dbx-id');
   const withCode = (url: URL) => `${REDIRECT}?code=the-code&state=${url.searchParams.get('state')}`;
 
-  it('вход с PKCE, refresh-токен и email аккаунта', async () => {
+  it('PKCE sign-in, refresh token and account email', async () => {
     const [launch] = [mockIdentity(withCode)];
     const calls = mockFetch({
       'POST https://api.dropboxapi.com/oauth2/token': () =>
@@ -110,13 +110,13 @@ describe('Dropbox', () => {
     const form = new URLSearchParams(calls[0].body);
     expect(form.get('code')).toBe('the-code');
     expect(form.get('grant_type')).toBe('authorization_code');
-    // verifier соответствует challenge из адреса входа
+    // The verifier matches the challenge from the sign-in URL
     const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(form.get('code_verifier')!));
     expect(Buffer.from(digest).toString('base64url')).toBe(auth.get('code_challenge'));
     expect(calls[1].headers.Authorization).toBe('Bearer access');
   });
 
-  it('продление по refresh-токену сохраняет его, если новый не выдан', async () => {
+  it('refreshing keeps the refresh token if no new one is issued', async () => {
     const calls = mockFetch({'POST https://api.dropboxapi.com/oauth2/token': () => json({access_token: 'new', expires_in: 100})});
     const tokens = await provider.refresh({accessToken: 'old', expiresAt: 0, refreshToken: 'refresh'}, '');
     expect(tokens).toEqual({accessToken: 'new', expiresAt: Date.now() + 100_000, refreshToken: 'refresh'});
@@ -124,7 +124,7 @@ describe('Dropbox', () => {
       .toEqual({grant_type: 'refresh_token', refresh_token: 'refresh', client_id: 'dbx-id'});
   });
 
-  it('файлы: список, загрузка, скачивание, удаление', async () => {
+  it('files: list, upload, download, delete', async () => {
     const calls = mockFetch({
       'POST https://api.dropboxapi.com/2/files/list_folder': () => json({entries: [
         {'.tag': 'file', name: 'speeddial-2026-09-01_10-00-00.json', server_modified: '2026-09-01T10:00:00Z', size: 10},
@@ -147,7 +147,7 @@ describe('Dropbox', () => {
     expect(JSON.parse(calls[3].body)).toEqual({path: '/a.json'});
   });
 
-  it('папки ещё нет — копий нет; просроченный токен — понятная ошибка', async () => {
+  it('no folder yet — no backups; expired token — a clear error', async () => {
     mockFetch({'POST https://api.dropboxapi.com/2/files/list_folder': () => json({error: 'not_found'}, {status: 409})});
     expect(await provider.client('token').list()).toEqual([]);
 
@@ -155,15 +155,15 @@ describe('Dropbox', () => {
     await expect(provider.client('token').list()).rejects.toBeInstanceOf(AuthExpiredError);
   });
 
-  it('headerJson экранирует всё, кроме ASCII', () => {
+  it('headerJson escapes everything except ASCII', () => {
     expect(headerJson({path: '/ё'})).toBe('{"path":"/\\u0451"}');
   });
 });
 
-describe('Google Диск', () => {
+describe('Google Drive', () => {
   const provider = googleDrive('google-id');
 
-  it('вход без секрета (токен во фрагменте) и продление молчаливым входом', async () => {
+  it('sign-in without a secret (token in the fragment) and refresh via silent sign-in', async () => {
     const launches = mockIdentity((url) => `${REDIRECT}#access_token=g-token&expires_in=3599&state=${url.searchParams.get('state')}`);
     mockFetch({'GET https://www.googleapis.com/drive/v3/about': () => json({user: {emailAddress: 'me@gmail.com'}})});
 
@@ -178,7 +178,7 @@ describe('Google Диск', () => {
     expect(launches[1].searchParams.get('login_hint')).toBe('me@gmail.com');
   });
 
-  it('файлы в папке приложения; загрузка в два шага', async () => {
+  it('files in the app folder; two-step upload', async () => {
     const files = {files: [
       {id: '1', name: 'speeddial-2026-09-01_10-00-00.json', modifiedTime: '2026-09-01T10:00:00Z', size: '10'},
       {id: '2', name: 'speeddial-2026-09-26_10-00-00.json', size: '20'},
@@ -211,7 +211,7 @@ describe('Google Диск', () => {
 describe('OneDrive', () => {
   const provider = oneDrive('ms-id');
 
-  it('вход с PKCE, email из профиля', async () => {
+  it('PKCE sign-in, email from the profile', async () => {
     const launches = mockIdentity((url) => `${REDIRECT}?code=ms-code&state=${url.searchParams.get('state')}`);
     const calls = mockFetch({
       'POST https://login.microsoftonline.com/common/oauth2/v2.0/token': () =>
@@ -225,7 +225,7 @@ describe('OneDrive', () => {
     expect(new URLSearchParams(calls[0].body).get('code')).toBe('ms-code');
   });
 
-  it('истёк refresh-токен — молчаливый вход', async () => {
+  it('expired refresh token — silent sign-in', async () => {
     const launches = mockIdentity((url) => `${REDIRECT}?code=again&state=${url.searchParams.get('state')}`);
     mockFetch({
       'POST https://login.microsoftonline.com/common/oauth2/v2.0/token': (call) =>
@@ -239,7 +239,7 @@ describe('OneDrive', () => {
     expect(launches[0].searchParams.get('login_hint')).toBe('me@outlook.com');
   });
 
-  it('скачивание по готовой ссылке — без токена', async () => {
+  it('downloads via a ready link — without the token', async () => {
     const calls = mockFetch({
       'GET https://graph.microsoft.com/v1.0/me/drive/special/approot:/a.json:': () =>
         json({'@microsoft.graph.downloadUrl': 'https://files.example/download/a'}),

@@ -27,9 +27,9 @@ function typeRank(order: TypeOrder, node: SortableNode): number {
   return isFolder === (order === 'foldersFirst') ? 0 : 1;
 }
 
-/** Порядок отображения; исходный массив не меняется. При 'none' порядок как в браузере */
+/** Display order; the original array isn't changed. With 'none' the order is as in the browser */
 export function sortNodes<T extends SortableNode>(nodes: T[], order: SortOrder, typeOrder: TypeOrder): T[] {
   if (order === 'none' && typeOrder === 'none') return nodes;
-  // Сортировка устойчивая: при равенстве остаётся порядок из браузера
+  // Stable sort: on ties the browser order stays
   return [...nodes].sort((a, b) => typeRank(typeOrder, a) - typeRank(typeOrder, b) || compareBy(order, a, b));
 }

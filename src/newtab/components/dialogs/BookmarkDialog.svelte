@@ -8,10 +8,10 @@
   import {getHostname, isWebUrl, normalizeUrl} from '../../../lib/url';
   import Modal from '../ui/Modal.svelte';
 
-  // Создание закладки или папки либо изменение существующей
+  // Creating a bookmark or folder, or editing an existing one
   let {dialog, onclose}: {dialog: Extract<Dialog, {kind: 'create' | 'edit'}>; onclose: () => void} = $props();
 
-  // Форма заполняется один раз при открытии; дальнейшие изменения закладки её не сбрасывают
+  // The form is filled once when it opens; later changes to the bookmark don't reset it
   // svelte-ignore state_referenced_locally
   const initial = $state.snapshot(dialog);
   const isFolder = initial.kind === 'create' ? initial.type === 'folder' : !initial.node.url;
@@ -30,7 +30,7 @@
     return isFolder ? t.bookmark.editFolder : t.bookmark.editBookmark;
   }
 
-  /** Место новой закладки: в начало, если так задано в настройках, иначе переданное (по умолчанию — в конец) */
+  /** Position of the new bookmark: at the top if the settings say so, otherwise the given one (the end by default) */
   function newIndex(index: number | undefined): number | undefined {
     return settings.current.newBookmarksFirst ? 0 : index;
   }
@@ -60,7 +60,7 @@
       return;
     }
 
-    // Разрешение на снимок запрашиваем до остальных await, пока действует нажатие кнопки
+    // The screenshot permission is requested before other awaits, while the button press still counts
     const canCapture = settings.current.captureOnCreate && isWebUrl(normalizedUrl)
       && (permissions.siteAccess || await permissions.request(SITE_ACCESS));
     const created = await chrome.bookmarks.create({

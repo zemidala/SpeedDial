@@ -15,17 +15,17 @@ describe('normalizeUrl', () => {
     expect(normalizeUrl(input)).toBe(expected);
   });
 
-  it.each(['', '   ', 'exa mple.com', 'exa mple', 'https://exa\tmple.com', 'https://'])('отклоняет %j', (input) => {
+  it.each(['', '   ', 'exa mple.com', 'exa mple', 'https://exa\tmple.com', 'https://'])('rejects %j', (input) => {
     expect(normalizeUrl(input)).toBeNull();
   });
 });
 
 describe('getHostname', () => {
-  it('возвращает домен', () => {
+  it('returns the domain', () => {
     expect(getHostname('https://sub.example.com/a?b')).toBe('sub.example.com');
   });
 
-  it('возвращает пустую строку для некорректного URL', () => {
+  it('returns an empty string for an invalid URL', () => {
     expect(getHostname('not a url')).toBe('');
   });
 });
@@ -46,7 +46,7 @@ describe('siteName', () => {
 });
 
 describe('isWebUrl', () => {
-  it('различает веб-ссылки и остальные схемы', () => {
+  it('tells web links from other schemes', () => {
     expect(isWebUrl('https://example.com')).toBe(true);
     expect(isWebUrl('HTTP://example.com')).toBe(true);
     expect(isWebUrl('edge://settings')).toBe(false);

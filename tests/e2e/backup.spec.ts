@@ -2,13 +2,13 @@ import {readFileSync} from 'node:fs';
 import type {BrowserContext, Page} from '@playwright/test';
 import {expect, getChildren, openSettings, seed, test, tile} from './fixtures';
 
-// Разрешение на доступ к серверу копий входит в доступ ко всем сайтам — выдаём его заранее
+// Access to the backup server is part of access to all sites — grant it up front
 test.use({hostAccess: true});
 
 const SERVER = 'https://dav.example/dav';
 const AUTH = `Basic ${Buffer.from('user:секрет').toString('base64')}`;
 
-/** Простой WebDAV-сервер в памяти: папки, PROPFIND, GET, PUT, DELETE и проверка пароля */
+/** A simple in-memory WebDAV server: folders, PROPFIND, GET, PUT, DELETE and a password check */
 async function fakeWebDav(context: BrowserContext) {
   const files = new Map<string, {body: string; modified: Date}>();
   const folders = new Set<string>();
@@ -69,13 +69,13 @@ test.beforeEach(async ({newtab}) => {
   await expect(tile(newtab, 'Альфа')).toBeVisible();
 });
 
-test('подключение, копия в облако и полное восстановление с отменой', async ({context, newtab}) => {
+test('connecting, cloud backup and full restore with undo', async ({context, newtab}) => {
   const server = await fakeWebDav(context);
   const dialog = await connect(newtab);
   await expect(dialog.getByRole('status')).toHaveText('Подключено. Копии будут сохраняться автоматически');
   expect(server.folders).toContain('/dav/SpeedDial/');
   await expect(dialog.getByText('На сервере пока нет копий')).toBeVisible();
-  // Пароль в настройках браузера не синхронизируется
+  // The password isn't synced in the browser settings
   expect(await newtab.evaluate(async () => JSON.stringify(await chrome.storage.sync.get()))).not.toContain('секрет');
 
   await dialog.getByRole('button', {name: 'Сохранить копию сейчас'}).click();
@@ -86,7 +86,7 @@ test('подключение, копия в облако и полное вос�
   expect(name).toMatch(/^\/dav\/SpeedDial\/speeddial-\d{4}-\d\d-\d\d_\d\d-\d\d-\d\d\.json$/);
   expect(JSON.parse(file.body).roots[0].children.map((node: {title: string}) => node.title)).toEqual(['Альфа', 'Папка', 'Бета']);
 
-  // Меняем закладки и настройки — и восстанавливаем копию полностью
+  // Change bookmarks and settings — and restore the backup fully
   await dialog.getByRole('tab', {name: 'Вид'}).click();
   await dialog.getByLabel('Количество колонок').selectOption('3');
   await dialog.getByRole('tab', {name: 'Копии'}).click();
@@ -107,19 +107,19 @@ test('подключение, копия в облако и полное вос�
   await expect.poll(titles).toEqual(['Альфа', 'Папка', 'Бета']);
   expect(await newtab.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--columns'))).not.toBe('3');
 
-  // Восстановление можно отменить
+  // The restore can be undone
   await newtab.getByRole('status').filter({hasText: 'Копия восстановлена'}).getByRole('button', {name: 'Отменить'}).click();
   await expect.poll(titles).toEqual(['Папка', 'Бета', 'Лишняя']);
 });
 
-test('«добавить недостающие» из облака и автоматическая копия после изменений', async ({context, newtab}) => {
+test('"add missing" from the cloud and an automatic backup after changes', async ({context, newtab}) => {
   const server = await fakeWebDav(context);
   const dialog = await connect(newtab);
   await dialog.getByRole('button', {name: 'Сохранить копию сейчас'}).click();
   await expect(dialog.getByRole('list', {name: 'Копии на сервере'}).getByRole('listitem')).toHaveCount(1);
   expect(server.files.size).toBe(1);
 
-  // Изменение закладок назначает автоматическую копию
+  // A bookmark change schedules an automatic backup
   await newtab.evaluate(() => chrome.alarms.clearAll());
   await newtab.evaluate(async () => {
     const [beta] = await chrome.bookmarks.search({title: 'Бета'});
@@ -136,14 +136,14 @@ test('«добавить недостающие» из облака и авто�
   expect((await getChildren(newtab, '1')).map((node) => node.title)).toEqual(['Альфа', 'Папка', 'Бета']);
 });
 
-test('неверный пароль — понятная ошибка, подключение не сохраняется', async ({context, newtab}) => {
+test('wrong password — a clear error, the connection isn\'t saved', async ({context, newtab}) => {
   await fakeWebDav(context);
   const dialog = await connect(newtab, 'неверный');
   await expect(dialog.getByRole('alert')).toContainText('Сервер отклонил логин или пароль');
   await expect(dialog.getByRole('button', {name: 'Подключить'})).toBeVisible();
 });
 
-test('копия в файл и восстановление из файла', async ({newtab}) => {
+test('backup to a file and restore from a file', async ({newtab}) => {
   const dialog = await openSettings(newtab, 'Копии');
   const download = newtab.waitForEvent('download');
   await dialog.getByRole('button', {name: 'Сохранить в файл'}).click();
@@ -168,7 +168,7 @@ test('копия в файл и восстановление из файла', a
   await expect(tile(newtab, 'Внутри')).toBeVisible();
 });
 
-test('облако без Client ID в сборке — в режиме разработки подсказка и адрес возврата', async ({extensionId, newtab}) => {
+test('cloud without a Client ID in the build — a hint and the redirect URL in development mode', async ({extensionId, newtab}) => {
   const dialog = await openSettings(newtab, 'Копии');
   for (const service of ['Google Диск', 'Dropbox', 'OneDrive']) {
     await dialog.getByLabel('Сервис').selectOption({label: service});
@@ -180,7 +180,7 @@ test('облако без Client ID в сборке — в режиме разр
   await expect(dialog.getByLabel('Адрес сервера')).toHaveValue('https://webdav.yandex.ru');
 });
 
-test('установка из магазина — ненастроенных облаков в списке нет', async ({context, newtab}) => {
+test('store install — unconfigured clouds aren\'t listed', async ({context, newtab}) => {
   await context.addInitScript(() => {
     Object.defineProperty(chrome.management, 'getSelf', {
       value: async () => ({installType: 'normal'}),

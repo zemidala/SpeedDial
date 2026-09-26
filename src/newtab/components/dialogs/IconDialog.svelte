@@ -10,7 +10,7 @@
   import SiteIcon from '../grid/SiteIcon.svelte';
   import Modal from '../ui/Modal.svelte';
 
-  // Иконка и миниатюра закладки: превью и все способы их поменять
+  // Bookmark icon and thumbnail: a preview and every way to change them
   let {node, onclose}: {node: BookmarkNode & {url: string}; onclose: () => void} = $props();
 
   const icon = $derived(icons.get(node.url));
@@ -37,7 +37,7 @@
   const refreshIcon = () => run(() => icons.refresh(node.url), t.iconDialog.iconReloading);
 
   const capture = () => run(async () => {
-    // Запрос разрешения — первым делом, пока действует клик пользователя
+    // Request the permission first, while the user's click still counts
     if (!permissions.siteAccess && !(await permissions.request(SITE_ACCESS))) {
       throw new Error(t.iconDialog.captureNeedsAccess);
     }

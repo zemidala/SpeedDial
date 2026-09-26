@@ -1,9 +1,9 @@
-// Проверка, что браузер загрузил текущий manifest.json.
-// У распакованного расширения страницы и скрипты читаются с диска сразу, а манифест — только при
-// перезагрузке расширения. После обновления файлов новый код может работать со старым манифестом
-// и, например, запрашивать разрешения, о которых браузер ещё не знает
+// Checks that the browser has loaded the current manifest.json.
+// For an unpacked extension, pages and scripts are read from disk right away, while the manifest is read only
+// when the extension is reloaded. After the files change, new code may run against the old manifest
+// and, for example, request permissions the browser doesn't know about yet
 
-// Поля, от которых зависит работа расширения
+// Fields the extension's behaviour depends on
 const RELEVANT_KEYS = [
   'version',
   'permissions',
@@ -14,7 +14,7 @@ const RELEVANT_KEYS = [
   'chrome_url_overrides',
 ] as const;
 
-/** JSON с отсортированными ключами: браузер может вернуть поля манифеста в другом порядке */
+/** JSON with sorted keys: the browser may return manifest fields in a different order */
 function stableStringify(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(stableStringify).join(',')}]`;
   if (typeof value === 'object' && value !== null) {
@@ -28,7 +28,7 @@ export function relevantManifestFields(manifest: Record<string, unknown>): strin
   return stableStringify(Object.fromEntries(RELEVANT_KEYS.map((key) => [key, manifest[key] ?? null])));
 }
 
-/** true — файл манифеста на диске отличается от загруженного в браузер */
+/** true — the manifest file on disk differs from the one loaded in the browser */
 export async function isManifestOutdated(): Promise<boolean> {
   const response = await fetch(chrome.runtime.getURL('manifest.json'), {cache: 'no-store'});
   const onDisk = await response.json() as Record<string, unknown>;

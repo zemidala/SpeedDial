@@ -1,11 +1,11 @@
-// Работа с цветом: основной цвет иконки, контрастный текст, цвет-заглушка по строке
+// Colour helpers: the main colour of an icon, readable text colour, a placeholder colour from a string
 
 export interface PixelAnalysis {
-  /** Основной цвет картинки (#rrggbb) или null, если непрозрачных пикселей нет */
+  /** Main colour of the image (#rrggbb), or null if there are no opaque pixels */
   color: string | null;
-  /** Средний цвет по краям; null, если края прозрачные. Им заливают область вокруг иконки без шва */
+  /** Average colour of the edges; null if the edges are transparent. Used to fill around the icon seamlessly */
   edgeColor: string | null;
-  /** Углы непрозрачные — у иконки свой фон, её можно растянуть на всю подложку */
+  /** Opaque corners — the icon has its own background and can be stretched over the whole plate */
   fullBleed: boolean;
 }
 
@@ -20,10 +20,10 @@ export function parseHex(hex: string): [number, number, number] | null {
   return [(value >> 16) & 255, (value >> 8) & 255, value & 255];
 }
 
-/** Анализ RGBA-пикселей (как в ImageData.data) */
+/** Analyses RGBA pixels (as in ImageData.data) */
 export function analyzePixels(data: Uint8ClampedArray, width: number, height: number): PixelAnalysis {
-  // Группируем похожие цвета (по 4 бита на канал) и берём самую «весомую» группу.
-  // Насыщенные цвета весят больше: у логотипа важнее фирменный цвет, чем белый фон.
+  // Group similar colours (4 bits per channel) and take the "heaviest" group.
+  // Saturated colours weigh more: for a logo the brand colour matters more than a white background.
   const buckets = new Map<number, {weight: number; r: number; g: number; b: number; count: number}>();
   const neutral = {r: 0, g: 0, b: 0, count: 0};
 
@@ -33,7 +33,7 @@ export function analyzePixels(data: Uint8ClampedArray, width: number, height: nu
 
     const max = Math.max(r, g, b);
     const min = Math.min(r, g, b);
-    // Почти белые и почти чёрные пиксели учитываем отдельно — на случай монохромной иконки
+    // Near-white and near-black pixels are counted separately — in case of a monochrome icon
     if (min > 235 || max < 25) {
       neutral.r += r;
       neutral.g += g;
@@ -85,7 +85,7 @@ function averageEdgeColor(data: Uint8ClampedArray, width: number, height: number
       opaque++;
     }
   }
-  // Если больше половины края прозрачно, единого фона у иконки нет
+  // If more than half of the edge is transparent, the icon has no single background
   return opaque > total / 2 ? toHex(r / opaque, g / opaque, b / opaque) : null;
 }
 
@@ -95,21 +95,21 @@ function hasOpaqueCorners(data: Uint8ClampedArray, width: number, height: number
   return corners.every(([x, y]) => data[(y * width + x) * 4 + 3] > 245);
 }
 
-const BLOCK_THRESHOLD = 3; // Средний разброс пикселей внутри квадрата, при котором он считается одноцветным
-// Доля неоднородных квадратов, при которой картинка всё ещё считается растянутой (на случай артефактов сжатия).
-// У настоящей картинки контуры не совпадают с сеткой квадратов, и неоднородных квадратов заметно больше
+const BLOCK_THRESHOLD = 3; // Average pixel spread inside a square below which it counts as single-coloured
+// Share of non-uniform squares at which the image still counts as upscaled (to allow for compression artefacts).
+// In a real image the outlines don't match the square grid, and there are noticeably more non-uniform squares
 const IRREGULAR_SHARE = 0.02;
 
 /**
- * Картинка size×size состоит из одноцветных квадратов factor×factor — то есть растянута без сглаживания.
- * Проверяется каждый квадрат, а не среднее: у плоского логотипа с большими заливками почти все квадраты
- * одноцветные, но на контурах — нет
+ * A size×size image consists of single-coloured factor×factor squares — i.e. it was upscaled without smoothing.
+ * Every square is checked, not the average: a flat logo with large fills has almost all squares
+ * single-coloured, but not on its outlines
  */
 function isBlocky(data: Uint8ClampedArray, size: number, factor: number): boolean {
   let irregular = 0;
   for (let by = 0; by < size; by += factor) {
     for (let bx = 0; bx < size; bx += factor) {
-      // Цвета с учётом прозрачности: у прозрачных пикселей цвет не важен
+      // Colours with transparency taken into account: the colour of transparent pixels doesn't matter
       const sum = [0, 0, 0, 0];
       for (let y = by; y < by + factor; y++) {
         for (let x = bx; x < bx + factor; x++) {
@@ -139,9 +139,9 @@ function isBlocky(data: Uint8ClampedArray, size: number, factor: number): boolea
 }
 
 /**
- * Настоящее разрешение картинки size×size. Браузер отдаёт favicon 16×16 растянутым до 64×64,
- * и по размеру файла этого не видно — зато видно по пикселям: они идут одноцветными квадратами.
- * Одноцветная картинка без деталей одинаково хороша в любом размере — для неё возвращается size
+ * The real resolution of a size×size image. The browser returns a 16×16 favicon scaled up to 64×64,
+ * and the file size doesn't show it — but the pixels do: they come in single-coloured squares.
+ * A single-colour image without details looks equally good at any size — size is returned for it
  */
 export function effectiveResolution(data: Uint8ClampedArray, size: number, minSize = 16): number {
   if (isBlocky(data, size, size)) return size;
@@ -154,7 +154,7 @@ export function effectiveResolution(data: Uint8ClampedArray, size: number, minSi
   return effective;
 }
 
-/** Средняя разница между двумя картинками одинакового размера (0–255) */
+/** Average difference between two images of the same size (0–255) */
 export function meanDifference(a: Uint8ClampedArray, b: Uint8ClampedArray): number {
   if (a.length !== b.length || a.length === 0) return 255;
   let sum = 0;
@@ -162,7 +162,7 @@ export function meanDifference(a: Uint8ClampedArray, b: Uint8ClampedArray): numb
   return sum / a.length;
 }
 
-/** Относительная яркость по WCAG */
+/** Relative luminance per WCAG */
 function luminance([r, g, b]: [number, number, number]): number {
   const [lr, lg, lb] = [r, g, b].map((v) => {
     const c = v / 255;
@@ -171,15 +171,15 @@ function luminance([r, g, b]: [number, number, number]): number {
   return 0.2126 * lr + 0.7152 * lg + 0.0722 * lb;
 }
 
-/** Цвет текста, читаемый на заданном фоне */
+/** Text colour readable on the given background */
 export function readableTextColor(background: string): string {
   const rgb = parseHex(background);
   if (!rgb) return '#1f2328';
-  // Порог, при котором контраст с белым и чёрным текстом одинаков
+  // Threshold at which the contrast with white and black text is equal
   return luminance(rgb) > 0.179 ? '#1f2328' : '#f0f2f4';
 }
 
-/** Контраст двух цветов по WCAG: от 1 до 21. Для обычного текста нужно не меньше 4.5 */
+/** WCAG contrast of two colours: 1 to 21. Normal text needs at least 4.5 */
 export function contrastRatio(a: string, b: string): number {
   const rgbA = parseHex(a);
   const rgbB = parseHex(b);
@@ -188,7 +188,7 @@ export function contrastRatio(a: string, b: string): number {
   return (light + 0.05) / (dark + 0.05);
 }
 
-/** Смесь цветов: amount = 0 — цвет a, 1 — цвет b */
+/** Mix of colours: amount = 0 — colour a, 1 — colour b */
 export function mixColors(a: string, b: string, amount: number): string {
   const rgbA = parseHex(a) ?? [0, 0, 0];
   const rgbB = parseHex(b) ?? [0, 0, 0];
@@ -197,8 +197,8 @@ export function mixColors(a: string, b: string, amount: number): string {
 }
 
 /**
- * Цвет, читаемый на фоне: если контраста не хватает, понемногу сдвигаем цвет к чёрному или белому
- * (в ту сторону, где контраст больше), сохраняя оттенок, насколько возможно
+ * A colour readable on the background: if the contrast is too low, gradually shift the colour towards black or white
+ * (whichever gives more contrast), keeping the hue as much as possible
  */
 export function ensureContrast(color: string, background: string, minRatio: number): string {
   if (contrastRatio(color, background) >= minRatio) return color;
@@ -210,7 +210,7 @@ export function ensureContrast(color: string, background: string, minRatio: numb
   return target;
 }
 
-/** Стабильный приятный цвет по строке — для заглушки с буквой */
+/** A stable pleasant colour from a string — for the letter placeholder */
 export function hashColor(text: string): string {
   let hash = 0;
   for (const char of text) hash = (hash * 31 + char.codePointAt(0)!) | 0;

@@ -1,29 +1,41 @@
 import {AUTO_BACKUP_ALARM, runCloudBackup, scheduleAutoBackup} from '../lib/backup/cloud';
 import {setLanguage} from '../lib/i18n/index.svelte';
+import {WELCOME_PAGE} from '../lib/links';
 import {onMessage, type RuntimeMessage, sendMessage} from '../lib/messages';
 import {loadSettings, onSettingsChanged} from '../lib/settings/storage';
 import {deleteThumbnail} from '../lib/thumbnails/storage';
 import {cancelCapture, captureStatus, captureThumbnails} from './capture';
 import {setupContextMenu, syncContextMenu} from './contextMenu';
 
-// Язык сообщений service worker (ошибки копий, пункт меню) — из настроек
+// Language of service worker messages (backup errors, the menu item) — from the settings
 const applyLanguage = () => {
   loadSettings().then(({language}) => setLanguage(language)).catch((error) => console.error('Failed to load language', error));
 };
 applyLanguage();
 onSettingsChanged(applyLanguage);
 
-// Клик по значку расширения открывает новую вкладку, то есть SpeedDial
+// Clicking the extension icon opens a new tab, i.e. SpeedDial
 chrome.action.onClicked.addListener(() => {
   chrome.tabs.create({});
 });
 
-// Пункт в контекстном меню браузера: создаётся при установке и запуске, обновляется при смене настройки
+// Item in the browser's context menu: created on install and startup, updated when the setting changes
 setupContextMenu();
 const refreshContextMenu = () => {
   syncContextMenu().catch((error) => console.error('Failed to update context menu', error));
 };
 chrome.runtime.onInstalled.addListener(refreshContextMenu);
+
+// "Thanks for installing" page — once, after installing from a store. Unpacked (development) installs skip it:
+// it would pop up on every reload of the extension and in every test run; it's reachable from Settings → About
+chrome.runtime.onInstalled.addListener(({reason}) => {
+  if (reason !== chrome.runtime.OnInstalledReason.INSTALL) return;
+  chrome.management.getSelf()
+    .then((self) => {
+      if (self.installType !== 'development') return chrome.tabs.create({url: WELCOME_PAGE});
+    })
+    .catch((error) => console.error('Failed to open the welcome page', error));
+});
 chrome.runtime.onStartup.addListener(refreshContextMenu);
 onSettingsChanged(refreshContextMenu);
 
@@ -37,14 +49,14 @@ onMessage((message) => {
   }
 });
 
-// На запрос хода съёмки отвечаем сразу; остальные сообщения ответа не ждут
+// The capture-status request is answered right away; other messages don't expect a reply
 chrome.runtime.onMessage.addListener((message: RuntimeMessage, _sender, sendResponse) => {
   if (message.type !== 'capture-status') return false;
   sendResponse(captureStatus());
   return false;
 });
 
-// Миниатюры удалённых закладок больше не нужны; у папки удаляются и миниатюры вложенных закладок
+// Thumbnails of removed bookmarks aren't needed anymore; for a folder, thumbnails of nested bookmarks go too
 chrome.bookmarks.onRemoved.addListener((_id, {node}) => {
   const ids: string[] = [];
   const collect = (item: chrome.bookmarks.BookmarkTreeNode) => {
@@ -57,7 +69,7 @@ chrome.bookmarks.onRemoved.addListener((_id, {node}) => {
     .catch((error) => console.error('Failed to delete thumbnails', error));
 });
 
-// Автоматическая копия в облако: через минуту после изменений закладок, настроек или миниатюр
+// Automatic cloud backup: a minute after changes to bookmarks, settings or thumbnails
 const onDataChanged = () => {
   scheduleAutoBackup().catch((error) => console.error('Failed to schedule backup', error));
 };

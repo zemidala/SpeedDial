@@ -1,4 +1,4 @@
-// Открытие ссылок: в этой вкладке, в новой, в фоновой, в новом окне, в режиме инкогнито
+// Opening links: in this tab, a new one, a background one, a new window, incognito
 import {bookmarks} from './bookmarks.svelte';
 
 export type OpenMode = 'current' | 'tab' | 'background' | 'window' | 'incognito';
@@ -6,7 +6,7 @@ export type OpenMode = 'current' | 'tab' | 'background' | 'window' | 'incognito'
 export async function openUrl(url: string, mode: OpenMode): Promise<void> {
   switch (mode) {
     case 'current': {
-      // Именно вкладка SpeedDial: активной в окне может быть другая (например, если SpeedDial открыт в фоне)
+      // Exactly the SpeedDial tab: another tab may be active in the window (e.g. if SpeedDial is open in the background)
       const tab = await chrome.tabs.getCurrent();
       await chrome.tabs.update(tab?.id as number, {url});
       break;
@@ -26,15 +26,15 @@ export async function openUrl(url: string, mode: OpenMode): Promise<void> {
   }
 }
 
-/** Адрес страницы SpeedDial с открытой папкой — чтобы открыть папку в другой вкладке или окне */
+/** URL of the SpeedDial page with a folder open — to open a folder in another tab or window */
 export function folderPageUrl(folderId: string): string {
   return chrome.runtime.getURL(`newtab.html#folder=${folderId}`);
 }
 
 /**
- * Обработчики для кнопок, открывающих папку. Кнопки, а не ссылки: иначе браузер при наведении
- * показывал бы внизу адрес chrome-extension://…; поведение ссылки повторяем сами —
- * клик открывает папку здесь, Ctrl+клик и средняя кнопка — в новой вкладке
+ * Handlers for buttons that open a folder. Buttons, not links: otherwise the browser would show
+ * chrome-extension://… at the bottom on hover; the link behaviour is reproduced here —
+ * a click opens the folder here, Ctrl+click and the middle button — in a new tab
  */
 export function folderOpenHandlers(folderId: string) {
   const openInNewTab = () => {
@@ -48,7 +48,7 @@ export function folderOpenHandlers(folderId: string) {
     onauxclick: (event: MouseEvent) => {
       if (event.button === 1) openInNewTab();
     },
-    // Средняя кнопка без этого включает автопрокрутку
+    // Without this the middle button turns on autoscroll
     onmousedown: (event: MouseEvent) => {
       if (event.button === 1) event.preventDefault();
     },

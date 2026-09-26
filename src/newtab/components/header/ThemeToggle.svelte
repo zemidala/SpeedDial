@@ -9,7 +9,7 @@
   const dark = $derived(isDarkTheme(settings.current.theme, systemDark.current));
 </script>
 
-<!-- Быстрое переключение: выбирает тему явно; вернуть «как в системе» можно в настройках -->
+<!-- Quick switch: picks the theme explicitly; "System default" can be restored in the settings -->
 <button
   type="button"
   class="icon-button"

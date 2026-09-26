@@ -12,13 +12,14 @@
   import {settings} from '../../../lib/settings/store.svelte';
   import RestoreDialog from './RestoreDialog.svelte';
   import SettingRow from './SettingRow.svelte';
+  import SettingsGroup from './SettingsGroup.svelte';
   import SwitchRow from './SwitchRow.svelte';
 
   const YANDEX_WEBDAV_URL = 'https://webdav.yandex.ru';
 
   type PresetId = 'yandex' | 'google' | 'dropbox' | 'onedrive' | 'nextcloud' | 'other';
 
-  // Облака: вход через окно сервиса (oauth) или по WebDAV с готовым адресом
+  // Clouds: sign-in via the service window (oauth) or WebDAV with a preset URL
   const PRESETS: Record<PresetId, {label: string; hint: string; url?: string; oauth?: OAuthProviderId}> = $derived({
     yandex: {label: t.backup.yandex, url: YANDEX_WEBDAV_URL, hint: t.backup.yandexHint},
     google: {label: t.backup.google, oauth: 'google', hint: t.backup.googleHint},
@@ -37,11 +38,11 @@
   let busy = $state(false);
   let status = $state('');
   let error = $state('');
-  /** Копия, которую собираются восстановить: имя файла на сервере или прочитанная из файла */
+  /** Backup about to be restored: a file name on the server or one read from a file */
   let restoring = $state<{title: string; load: () => Promise<Backup>} | null>(null);
 
-  // Распакованное расширение (режим разработки) показывает и ненастроенные облака — с подсказкой, как их настроить.
-  // Установленное из магазина — только те, для которых в сборке есть Client ID
+  // An unpacked extension (development mode) also shows unconfigured clouds — with a hint on how to set them up.
+  // A store install shows only those with a Client ID in the build
   let developer = $state(false);
 
   const presets = $derived(Object.entries(PRESETS).filter(([, item]) =>
@@ -69,7 +70,7 @@
 
   async function signIn() {
     if (!oauth) return;
-    // Разрешение — первым делом, пока действует нажатие кнопки
+    // Permission first, while the button press still counts
     if (!await permissions.request({origins: oauth.origins})) {
       error = t.backup.noAccess(oauth.label);
       return;
@@ -77,7 +78,7 @@
     await run(() => cloud.signIn(oauth.id), t.backup.connectedStatus);
   }
 
-  /** Выполняет действие, показывая ход и ошибку под разделом */
+  /** Runs an action, showing progress and errors below the section */
   async function run(action: () => Promise<unknown>, done: string) {
     busy = true;
     status = '';
@@ -101,7 +102,7 @@
       error = e instanceof Error ? e.message : String(e);
       return;
     }
-    // Разрешение — первым делом, пока действует нажатие кнопки
+    // Permission first, while the button press still counts
     const granted = await permissions.request({origins: [origin]});
     if (!granted) {
       error = t.backup.serverAccessDenied;
@@ -130,13 +131,14 @@
     : t.common.kilobytes(Math.max(1, Math.round(bytes / 1024))));
 </script>
 
-<SettingRow label={t.backup.file} hint={t.backup.fileHint}>
-  <button type="button" class="button" disabled={busy} onclick={saveToFile}>{t.backup.saveToFile}</button>
-  <button type="button" class="button" disabled={busy} onclick={restoreFromFile}>{t.backup.restoreEllipsis}</button>
-</SettingRow>
+<SettingsGroup title={t.backup.file}>
+  <SettingRow label={t.backup.fileRow} hint={t.backup.fileHint}>
+    <button type="button" class="button" disabled={busy} onclick={saveToFile}>{t.backup.saveToFile}</button>
+    <button type="button" class="button" disabled={busy} onclick={restoreFromFile}>{t.backup.restoreEllipsis}</button>
+  </SettingRow>
+</SettingsGroup>
 
-<h3 class="backup-settings__heading">{t.backup.cloud}</h3>
-
+<SettingsGroup title={t.backup.cloud}>
 {#if !cloud.loaded}
   <p class="backup-settings__note">{t.common.loading}</p>
 {:else if !cloud.config}
@@ -239,6 +241,7 @@
     <p class="backup-settings__note">{t.backup.noFiles}</p>
   {/if}
 {/if}
+</SettingsGroup>
 
 {#if status}
   <p class="backup-settings__status" role="status">{status}</p>
@@ -257,10 +260,6 @@
 {/if}
 
 <style>
-  .backup-settings__heading {
-    margin: 24px 0 4px;
-    font-size: 0.9375rem;
-  }
 
   .backup-settings__note {
     margin: 8px 0;

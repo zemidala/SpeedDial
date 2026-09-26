@@ -1,4 +1,4 @@
-// Резервные копии на странице: подключение к облаку, список копий, восстановление
+// Backups on the page: cloud connection, list of backups, restoring
 import {background} from '../background.svelte';
 import {t} from '../i18n/index.svelte';
 import {showNotice} from '../notice.svelte';
@@ -13,8 +13,8 @@ import {OAUTH_PROVIDERS, type OAuthProviderId} from './providers';
 import {normalizeServerUrl, type WebDavConfig} from './webdav';
 
 /**
- * Применяет копию. merge — только добавляет недостающие закладки; replace — закладки, настройки и фон
- * как в копии. Возвращает текст для уведомления
+ * Applies a backup. merge — only adds missing bookmarks; replace — bookmarks, settings and background
+ * as in the backup. Returns the notification text
  */
 async function applyBackup(backup: Backup, mode: RestoreMode): Promise<string> {
   const result = await restoreBookmarks(backup, mode);
@@ -28,8 +28,8 @@ async function applyBackup(backup: Backup, mode: RestoreMode): Promise<string> {
 }
 
 /**
- * Восстанавливает копию с уведомлением. Перед полной заменой запоминает текущее состояние —
- * в уведомлении можно отменить восстановление
+ * Restores a backup with a notification. Before a full replace it saves the current state —
+ * the restore can be undone from the notification
  */
 export async function restoreBackup(backup: Backup, mode: RestoreMode): Promise<void> {
   const previous = mode === 'replace' ? await createBackup({includeImages: true}, chrome.bookmarks, settings.snapshot()) : null;
@@ -43,13 +43,13 @@ export async function restoreBackup(backup: Backup, mode: RestoreMode): Promise<
 class CloudStore {
   config = $state<CloudConfig | null>(null);
   status = $state<CloudStatus>({lastBackupAt: 0, lastFingerprint: '', lastError: ''});
-  /** Копии на сервере; null — список ещё не загружен */
+  /** Backups on the server; null — the list isn't loaded yet */
   files = $state<RemoteFile[] | null>(null);
   loaded = $state(false);
 
   #started = false;
 
-  /** Загружается, только когда открыт раздел настроек с копиями */
+  /** Loaded only when the backups tab of the settings is opened */
   async start(): Promise<void> {
     if (this.#started) return;
     this.#started = true;
@@ -64,7 +64,7 @@ class CloudStore {
     this.loaded = true;
   }
 
-  /** Подключение к серверу WebDAV. Разрешение на доступ к серверу запрашивается до вызова */
+  /** Connecting to a WebDAV server. The server permission is requested before the call */
   connectWebDav(connection: WebDavConfig): Promise<void> {
     return this.#connect({
       provider: 'webdav',
@@ -74,13 +74,13 @@ class CloudStore {
     });
   }
 
-  /** Вход в облако через окно сервиса. Разрешение на доступ к API запрашивается до вызова */
+  /** Signing in to a cloud via the service window. The API permission is requested before the call */
   async signIn(provider: OAuthProviderId): Promise<void> {
     const {tokens, account} = await OAUTH_PROVIDERS[provider].signIn();
     await this.#connect({provider, account, tokens});
   }
 
-  /** Проверяет подключение (папка и список копий) и сохраняет его */
+  /** Checks the connection (folder and backup list) and saves it */
   async #connect(connection: CloudConnection): Promise<void> {
     const config: CloudConfig = {...connection, auto: true, includeImages: true};
     const client = await cloudClient(config);
@@ -116,7 +116,7 @@ class CloudStore {
     await this.loadFiles();
   }
 
-  /** Содержимое копии на сервере */
+  /** Contents of a backup on the server */
   async readFile(name: string): Promise<string> {
     return (await this.#client()).read(name);
   }

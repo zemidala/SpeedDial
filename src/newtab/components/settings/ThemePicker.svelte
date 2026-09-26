@@ -7,17 +7,17 @@
   import {customPreset, type ThemePalette} from '../../../lib/themes/palette';
   import {THEME_PRESETS} from '../../../lib/themes/presets';
 
-  // Галерея тем: мини-превью в цветах каждой темы для текущего режима — светлого или тёмного
+  // Theme gallery: mini previews in each theme's colours for the current mode — light or dark
   const systemDark = new MediaQuery('(prefers-color-scheme: dark)');
   const dark = $derived(isDarkTheme(settings.current.theme, systemDark.current));
 
-  // Превью с тем же приглушением светлой темы, что и на странице
+  // Previews use the same light theme softening as the page
   const presets = $derived([
     ...THEME_PRESETS,
     customPreset(settings.current.customAccent, settings.current.customTint),
   ].map((preset) => withDimming(preset, settings.current.lightDimming)));
 
-  // Названия-бренды не переводятся, а «Стандартная» и «Свои цвета» — на языке интерфейса
+  // Brand names aren't translated, while "Standard" and "Custom colours" are in the interface language
   const presetName = (preset: {id: string; name: string}) => {
     if (preset.id === 'standard') return t.view.themeStandard;
     if (preset.id === 'custom') return t.view.themeCustom;

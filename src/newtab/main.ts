@@ -14,7 +14,7 @@ import './styles/index.css';
 
 const logError = (message: string) => (error: unknown) => console.error(message, error);
 
-// Обновлённое расширение меняет структуру базы — эта вкладка работает на старом коде, перезагружаем её
+// An updated extension changes the database structure — this tab runs old code, so reload it
 onDatabaseOutdated(() => location.reload());
 
 const settingsLoaded = settings.start();
@@ -31,6 +31,6 @@ isManifestOutdated()
   })
   .catch(logError('Failed to check manifest'));
 
-// Язык — до первой отрисовки: настройки уже прочитаны из кэша
+// Language — before the first render: settings have already been read from the cache
 setLanguage(settings.current.language);
 mount(App, {target: document.getElementById('app')!});

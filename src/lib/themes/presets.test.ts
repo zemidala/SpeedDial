@@ -3,9 +3,9 @@ import {contrastRatio} from '../color';
 import {customPreset, dimLightPalette, paletteCss, type ThemePalette} from './palette';
 import {THEME_PRESETS} from './presets';
 
-const AA = 4.5; // WCAG AA для обычного текста
+const AA = 4.5; // WCAG AA for normal text
 
-/** Все пары «текст — фон», которые встречаются в интерфейсе, с недостающим контрастом */
+/** All "text on background" pairs used in the interface that lack contrast */
 function contrastProblems(palette: ThemePalette): string[] {
   const pairs: Array<[keyof ThemePalette, keyof ThemePalette]> = [
     ['text', 'surface'],
@@ -30,8 +30,8 @@ function contrastProblems(palette: ThemePalette): string[] {
     .map(({foreground, background, ratio}) => `${foreground} на ${background}: ${ratio.toFixed(2)}`);
 }
 
-describe('готовые темы', () => {
-  it('у тем разные id и названия', () => {
+describe('built-in themes', () => {
+  it('themes have distinct ids and names', () => {
     expect(new Set(THEME_PRESETS.map((preset) => preset.id)).size).toBe(THEME_PRESETS.length);
     expect(new Set(THEME_PRESETS.map((preset) => preset.name)).size).toBe(THEME_PRESETS.length);
   });
@@ -40,19 +40,19 @@ describe('готовые темы', () => {
     [`${preset.name}, светлая`, preset.light],
     [`${preset.name}, тёмная`, preset.dark],
   ] as const))('%s', (_name, palette) => {
-    it('весь текст читается (контраст WCAG AA)', () => {
+    it('all text is readable (WCAG AA contrast)', () => {
       expect(contrastProblems(palette)).toEqual([]);
     });
 
-    it('плитки и папки отличаются от фона страницы и друг от друга', () => {
+    it('tiles and folders differ from the page background and from each other', () => {
       expect(palette.tile).not.toBe(palette.folder);
       expect(contrastRatio(palette.folder, palette.pageFrom)).toBeGreaterThan(1.02);
     });
   });
 });
 
-describe('свои цвета', () => {
-  // Разные акценты и оттенки, в том числе неудачные для чтения: жёлтый, бледно-серый, почти чёрный
+describe('custom colours', () => {
+  // Various accents and tints, including hard-to-read ones: yellow, pale grey, near-black
   const accents = ['#ff0000', '#ffd700', '#00ff00', '#1e90ff', '#8a2be2', '#cccccc', '#111111', '#ff69b4'];
   const tints = ['#ffffff', '#000000', '#3366ff', '#ff8800', '#22aa55', '#999999', '#ffff00', '#aa00aa'];
 
@@ -63,7 +63,7 @@ describe('свои цвета', () => {
   });
 });
 
-describe('приглушённая светлая тема', () => {
+describe('softened light theme', () => {
   const amounts = [0.1, 0.2, 0.3];
 
   it.each(THEME_PRESETS.flatMap((preset) => amounts.map((amount) => [preset.name, amount, preset.light] as const)))(
@@ -79,7 +79,7 @@ describe('приглушённая светлая тема', () => {
     }
   });
 
-  it('фоны темнеют, подложки иконок — вдвое слабее', () => {
+  it('backgrounds darken, icon plates half as much', () => {
     const light = THEME_PRESETS[0].light;
     const dimmed = dimLightPalette(light, 0.2);
     const drop = (from: string, to: string) => contrastRatio(from, '#000000') - contrastRatio(to, '#000000');
@@ -90,7 +90,7 @@ describe('приглушённая светлая тема', () => {
 });
 
 describe('paletteCss', () => {
-  it('переменные с light-dark() для каждого цвета', () => {
+  it('light-dark() variables for every colour', () => {
     const css = paletteCss(THEME_PRESETS[0]);
     expect(css).toMatch(/^:root:root \{/);
     expect(css).toContain('--surface: light-dark(#ffffff, #2c3039);');

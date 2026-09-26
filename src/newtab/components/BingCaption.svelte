@@ -1,7 +1,7 @@
 <script lang="ts">
   import type {BingImage} from '../../lib/bing';
 
-  // Подпись картинки дня Bing: что на ней и автор — условие использования картинок Bing
+  // Caption of the Bing image of the day: what's on it and the author — a condition of using Bing images
   let {image}: {image: BingImage} = $props();
 </script>
 

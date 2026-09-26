@@ -1,4 +1,4 @@
-// Хранение миниатюр закладок в IndexedDB. Без Svelte — используется и в service worker.
+// Storing bookmark thumbnails in IndexedDB. No Svelte — also used in the service worker.
 import {idbClear, idbDelete, idbGet, idbSet} from '../idb';
 
 export type ThumbnailSource = 'capture' | 'custom';

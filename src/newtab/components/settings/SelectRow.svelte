@@ -19,8 +19,8 @@
 
 <SettingRow {label} {hint}>
   {#snippet children(id)}
-    <!-- Список управляется только через value: сразу возвращаем прежний выбор, новый появится вместе
-         с изменением состояния (обработчик может отказаться, например, если не выдали разрешение) -->
+    <!-- The list is driven only by value: the previous choice is restored at once, the new one appears together
+         with the state change (the handler may refuse, e.g. if a permission wasn't granted) -->
     <select
       {id}
       class="input"

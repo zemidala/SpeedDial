@@ -8,35 +8,35 @@ import {settings} from './settings/store.svelte';
 import {fetchSiteIcon, queued} from './siteIcons';
 import {getFaviconUrl, isWebUrl} from './url';
 
-/** browser — из кэша браузера; site — с самого сайта; external — со стороннего сервиса */
+/** browser — from the browser cache; site — from the site itself; external — from a third-party service */
 export type IconSource = 'browser' | 'site' | 'external';
 
 export interface IconInfo {
   src: string;
-  /** Настоящее разрешение картинки в пикселях (растянутые картинки — по исходному размеру); SVG — VECTOR_SIZE */
+  /** Real image resolution in pixels (upscaled images — by their original size); SVG — VECTOR_SIZE */
   size: number;
   source: IconSource;
-  /** Основной цвет иконки; null, если прочитать пиксели нельзя */
+  /** Main colour of the icon; null if the pixels can't be read */
   color: string | null;
-  /** Цвет краёв иконки — для заливки области вокруг неё без шва */
+  /** Colour of the icon's edges — for seamlessly filling the area around it */
   edgeColor: string | null;
-  /** У иконки свой непрозрачный фон — её можно растянуть на всю подложку */
+  /** The icon has its own opaque background — it can be stretched over the whole plate */
   fullBleed: boolean;
 }
 
 interface CachedSiteIcon {
-  blob: Blob | null; // null — на сайте не нашлось ничего лучше обычного favicon
+  blob: Blob | null; // null — the site has nothing better than the regular favicon
   size: number;
   fetchedAt: number;
 }
 
 const BROWSER_ICON_SIZE = 64;
-const SAMPLE_SIZE = 32; // Иконку уменьшаем до 32×32 для анализа цвета
-const MAX_RESOLUTION_CHECK = 256; // Больше — растянутые картинки не встречаются, а проверка дороже
+const SAMPLE_SIZE = 32; // The icon is scaled down to 32×32 for colour analysis
+const MAX_RESOLUTION_CHECK = 256; // Upscaled images larger than this don't occur, and the check costs more
 const DAY = 24 * 60 * 60 * 1000;
 const SITE_ICON_TTL = 30 * DAY;
 const MISSING_ICON_TTL = 7 * DAY;
-const DEFAULT_ICON_THRESHOLD = 4; // Средняя разница пикселей, при которой иконка = заглушка «нет иконки»
+const DEFAULT_ICON_THRESHOLD = 4; // Average pixel difference at which an icon equals the "no icon" placeholder
 const SOURCE_CHANGE_DELAY = 800;
 
 async function loadImage(src: string): Promise<HTMLImageElement> {
@@ -49,14 +49,14 @@ async function loadImage(src: string): Promise<HTMLImageElement> {
 function readPixels(img: HTMLImageElement, size: number): Uint8ClampedArray {
   const canvas = new OffscreenCanvas(size, size);
   const context = canvas.getContext('2d', {willReadFrequently: true})!;
-  context.imageSmoothingEnabled = false; // Иначе квадраты растянутой картинки размоются и не распознаются
+  context.imageSmoothingEnabled = false; // Otherwise the squares of an upscaled image blur and go unrecognised
   context.drawImage(img, 0, 0, size, size);
   return context.getImageData(0, 0, size, size).data;
 }
 
 const samplePixels = (img: HTMLImageElement) => readPixels(img, SAMPLE_SIZE);
 
-/** Настоящее разрешение растровой картинки: растянутые favicon узнаются по одноцветным квадратам */
+/** Real resolution of a raster image: upscaled favicons are recognised by single-coloured squares */
 function measureResolution(img: HTMLImageElement): number {
   const natural = Math.min(img.naturalWidth, img.naturalHeight);
   const checked = Math.min(natural, MAX_RESOLUTION_CHECK);
@@ -66,11 +66,11 @@ function measureResolution(img: HTMLImageElement): number {
 
 interface AnalyzeOptions {
   vector?: boolean;
-  /** Заглушка источника для неизвестных сайтов — такую иконку не показываем */
+  /** The source's placeholder for unknown sites — such an icon isn't shown */
   placeholder?: Uint8ClampedArray | null;
 }
 
-/** null — картинка не загрузилась или это заглушка «нет иконки» */
+/** null — the image didn't load or it's the "no icon" placeholder */
 async function analyze(src: string, source: IconSource, {vector = false, placeholder}: AnalyzeOptions = {}): Promise<IconInfo | null> {
   try {
     const img = await loadImage(src);
@@ -83,7 +83,7 @@ async function analyze(src: string, source: IconSource, {vector = false, placeho
   }
 }
 
-// ===== Заглушки «нет иконки»: запрашиваем иконку заведомо несуществующего сайта и сравниваем с ней =====
+// ===== "No icon" placeholders: request the icon of a site that surely doesn't exist and compare with it =====
 
 let browserPlaceholder: Promise<Uint8ClampedArray | null> | null = null;
 
@@ -94,7 +94,7 @@ function getBrowserPlaceholder(): Promise<Uint8ClampedArray | null> {
   return browserPlaceholder;
 }
 
-// Обычный кэш промисов: интерфейс от него не зависит, реактивность не нужна
+// A plain promise cache: the interface doesn't depend on it, no reactivity needed
 // eslint-disable-next-line svelte/prefer-svelte-reactivity
 const externalPlaceholders = new Map<string, Promise<Uint8ClampedArray | null>>();
 
@@ -117,11 +117,11 @@ function getExternalPlaceholder(logoUrl: string): Promise<Uint8ClampedArray | nu
   return placeholder;
 }
 
-// ===== Сторонние сервисы =====
+// ===== Third-party services =====
 
 /**
- * Картинка сервиса как Blob: так её пиксели можно прочитать (оценить качество, взять цвет),
- * а из .ico — достать самую крупную версию. Сервис должен разрешать CORS, либо нужен доступ к сайтам
+ * The service's image as a Blob: this way its pixels can be read (to judge quality, take the colour),
+ * and the largest version extracted from an .ico. The service must allow CORS, or site access is needed
  */
 async function fetchImageBlob(url: string): Promise<Blob | null> {
   const response = await fetch(url, {credentials: 'omit'});
@@ -135,14 +135,14 @@ async function fetchImageBlob(url: string): Promise<Blob | null> {
   return type.startsWith('image/') ? new Blob([buffer], {type}) : null;
 }
 
-/** Иконка со стороннего сервиса; null — у сервиса её нет */
+/** Icon from a third-party service; null — the service doesn't have it */
 async function loadExternalIcon(logoUrl: string, placeholderUrl: string | null): Promise<IconInfo | null> {
   let blob: Blob | null;
   try {
     blob = await fetchImageBlob(logoUrl);
   } catch {
-    // Сервис не разрешает читать картинку, а доступа к сайтам нет: показываем как есть, без проверки качества.
-    // Считаем её не крупнее обычного favicon, чтобы не растягивать
+    // The service doesn't allow reading the image and there's no site access: show it as is, without a quality check.
+    // Treat it as no larger than a regular favicon so it isn't stretched
     try {
       const img = await loadImage(logoUrl);
       const size = Math.min(img.naturalWidth, img.naturalHeight, BROWSER_ICON_SIZE);
@@ -160,20 +160,20 @@ async function loadExternalIcon(logoUrl: string, placeholderUrl: string | null):
   return info;
 }
 
-/** Иконка одного сайта; обновляется реактивно по мере загрузки */
+/** Icon of one site; updates reactively as it loads */
 export class IconEntry {
-  /** null — иконки нет, показываем букву */
+  /** null — no icon, show a letter */
   info = $state.raw<IconInfo | null>(null);
-  /** Первая попытка завершена: можно показывать букву вместо пустой подложки */
+  /** The first attempt is done: a letter can be shown instead of an empty plate */
   loaded = $state(false);
 
-  #generation = 0; // Отбрасывает результаты загрузки, начатой до reload()
+  #generation = 0; // Drops results of a load started before reload()
 
   constructor(readonly pageUrl: string, readonly key: string) {}
 
   /**
-   * Источники по порядку: иконка с сайта (из кэша), сторонний сервис, кэш браузера.
-   * Потом, если кэш устарел, — свежая иконка с сайта; она заменяет текущую, если не хуже её
+   * Sources in order: the site icon (from the cache), a third-party service, the browser cache.
+   * Then, if the cache is stale, a fresh icon from the site; it replaces the current one unless it's worse
    */
   async load(): Promise<void> {
     const generation = this.#generation;
@@ -182,7 +182,7 @@ export class IconEntry {
     await icons.ready;
     const isWeb = isWebUrl(this.pageUrl);
 
-    // 1. Иконка с сайта из кэша
+    // 1. Site icon from the cache
     const useSiteIcons = isWeb && icons.siteIconsEnabled;
     let cached: CachedSiteIcon | undefined;
     if (useSiteIcons) {
@@ -190,7 +190,7 @@ export class IconEntry {
       if (cached?.blob) await this.#offerSiteIcon(cached.blob, isCurrent);
     }
 
-    // 2. Сторонний сервис
+    // 2. Third-party service
     const template = isWeb ? icons.logoTemplate : null;
     if (!this.info && template) {
       const {logoDevToken} = settings.current;
@@ -201,7 +201,7 @@ export class IconEntry {
       if (info) this.#setInfo(info);
     }
 
-    // 3. Кэш браузера
+    // 3. Browser cache
     if (!this.info) {
       const info = await analyze(getFaviconUrl(this.pageUrl, BROWSER_ICON_SIZE), 'browser', {
         placeholder: await getBrowserPlaceholder(),
@@ -211,7 +211,7 @@ export class IconEntry {
     }
     this.loaded = true;
 
-    // 4. Свежая иконка с сайта, если кэш устарел
+    // 4. Fresh site icon if the cache is stale
     if (!useSiteIcons) return;
     const ttl = cached?.blob ? SITE_ICON_TTL : MISSING_ICON_TTL;
     if (cached && Date.now() - cached.fetchedAt < ttl) return;
@@ -230,7 +230,7 @@ export class IconEntry {
     this.load().catch((error) => console.error('Failed to load icon', error));
   }
 
-  /** Иконка с сайта заменяет текущую, если она не хуже по качеству */
+  /** The site icon replaces the current one if it's not worse in quality */
   async #offerSiteIcon(blob: Blob, isCurrent: () => boolean): Promise<void> {
     const url = URL.createObjectURL(blob);
     const info = await analyze(url, 'site', {vector: blob.type.includes('svg')});
@@ -243,7 +243,7 @@ export class IconEntry {
   }
 
   #setInfo(info: IconInfo | null): void {
-    // Освобождаем память прежней картинки, если она была загружена как Blob
+    // Free the memory of the previous image if it was loaded as a Blob
     if (this.info?.src.startsWith('blob:') && this.info.src !== info?.src) URL.revokeObjectURL(this.info.src);
     this.info = info;
   }
@@ -254,7 +254,7 @@ export class IconEntry {
 }
 
 class IconsStore {
-  /** Загрузка иконок ждёт настроек: от них зависят источники иконок */
+  /** Icon loading waits for the settings: icon sources depend on them */
   ready: Promise<void>;
 
   #entries = new Map<string, IconEntry>();
@@ -266,23 +266,23 @@ class IconsStore {
     });
   }
 
-  /** Иконки с сайтов включены в настройках и доступ к сайтам выдан */
+  /** Site icons are enabled in the settings and site access is granted */
   get siteIconsEnabled(): boolean {
     return settings.current.siteIcons && permissions.siteAccess;
   }
 
-  /** Шаблон адреса выбранного стороннего сервиса; null — не выбран */
+  /** URL template of the chosen third-party service; null — none chosen */
   get logoTemplate(): string | null {
     const {logoService, externalLogoUrl, logoDevToken} = settings.current;
     return logoTemplate(logoService, externalLogoUrl, logoDevToken);
   }
 
   async start(settingsLoaded: Promise<unknown>): Promise<void> {
-    // Источники иконок зависят и от настроек, и от разрешений: без них первая загрузка ушла бы впустую
+    // Icon sources depend on both settings and permissions: without them the first load would be wasted
     await Promise.all([settingsLoaded.catch(() => undefined), permissions.ready]);
     this.#resolveReady();
 
-    // Источники иконок поменялись — загружаем заново. С задержкой: адрес и ключ сервиса вводят по букве
+    // Icon sources changed — reload. With a delay: the service URL and key are typed letter by letter
     let previous = this.#sourceKey();
     let timer: ReturnType<typeof setTimeout> | undefined;
     $effect.root(() => {
@@ -298,7 +298,7 @@ class IconsStore {
     });
   }
 
-  /** Иконки общие для всех страниц одного сайта */
+  /** Icons are shared by all pages of one site */
   get(pageUrl: string): IconEntry {
     const key = isWebUrl(pageUrl) ? new URL(pageUrl).origin : pageUrl;
     let entry = this.#entries.get(key);
@@ -310,7 +310,7 @@ class IconsStore {
     return entry;
   }
 
-  /** Забыть сохранённую иконку сайта и загрузить заново */
+  /** Forget the stored site icon and load it again */
   async refresh(pageUrl: string): Promise<void> {
     const entry = this.get(pageUrl);
     await idbDelete('icons', entry.key);
@@ -321,7 +321,7 @@ class IconsStore {
     for (const entry of this.#entries.values()) entry.reload();
   }
 
-  /** Удаляет все загруженные с сайтов иконки */
+  /** Removes all icons loaded from sites */
   async clearSiteIcons(): Promise<void> {
     await idbClear('icons');
     this.reloadAll();

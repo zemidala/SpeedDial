@@ -1,10 +1,10 @@
-// Сторонние сервисы иконок и логотипов. Все они узнают домены закладок, поэтому по умолчанию выключены
+// Third-party icon and logo services. All of them see bookmark domains, so they're off by default
 import type {LogoService} from './settings/schema';
 import {getHostname, isWebUrl} from './url';
 
 export interface LogoServiceInfo {
   name: string;
-  /** {{website}} — домен сайта, {{token}} — ключ доступа */
+  /** {{website}} — the site domain, {{token}} — the access key */
   template: string;
 }
 
@@ -27,7 +27,7 @@ export const LOGO_SERVICES: Record<Exclude<LogoService, 'none' | 'custom'>, Logo
   },
 };
 
-/** Шаблон адреса выбранного сервиса; null — сервис не выбран или не настроен */
+/** URL template of the chosen service; null — none chosen or not configured */
 export function logoTemplate(service: LogoService, customTemplate: string, token: string): string | null {
   if (service === 'none') return null;
   if (service === 'custom') return customTemplate.includes('{{website}}') ? customTemplate : null;
@@ -35,7 +35,7 @@ export function logoTemplate(service: LogoService, customTemplate: string, token
   return LOGO_SERVICES[service].template;
 }
 
-/** Адрес логотипа сайта по шаблону; null, если адрес не получается */
+/** Site logo URL from the template; null if no URL can be built */
 export function buildLogoUrl(template: string, pageUrl: string, token = ''): string | null {
   const host = isWebUrl(pageUrl) ? getHostname(pageUrl) : '';
   if (!host || !template.includes('{{website}}')) return null;
@@ -45,5 +45,5 @@ export function buildLogoUrl(template: string, pageUrl: string, token = ''): str
   return isWebUrl(url) ? url : null;
 }
 
-/** Домен, которого не существует: по нему узнаём заглушку, которую сервис отдаёт для неизвестных сайтов */
+/** A domain that doesn't exist: it reveals the placeholder a service returns for unknown sites */
 export const UNKNOWN_SITE_URL = 'https://speeddial-default.invalid/';

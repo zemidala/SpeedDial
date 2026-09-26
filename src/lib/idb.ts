@@ -1,12 +1,12 @@
-// Минимальная обёртка над IndexedDB. Работает и на странице, и в service worker (общий origin).
+// A minimal IndexedDB wrapper. Works both on pages and in the service worker (same origin).
 
 const DB_NAME = 'speeddial';
 const DB_VERSION = 2;
 
 export type StoreName =
-  | 'icons' // Иконки с сайтов: origin → {blob, size, fetchedAt}
-  | 'thumbnails' // Миниатюры закладок: id закладки → {blob, source, updatedAt}
-  | 'files'; // Прочие файлы, например фоновое изображение
+  | 'icons' // Icons from sites: origin → {blob, size, fetchedAt}
+  | 'thumbnails' // Bookmark thumbnails: bookmark id → {blob, source, updatedAt}
+  | 'files'; // Other files, e.g. the background image
 
 const STORES: StoreName[] = ['icons', 'thumbnails', 'files'];
 
@@ -14,9 +14,9 @@ let dbPromise: Promise<IDBDatabase> | null = null;
 let onOutdated: (() => void) | null = null;
 
 /**
- * Что делать, когда обновлённое расширение меняет структуру базы. Открытое соединение со старой
- * версией не даёт её обновить — новая вкладка ждала бы бесконечно. Соединение закрывается всегда;
- * страница ещё и перезагружается, потому что её код рассчитан на старую структуру
+ * What to do when an updated extension changes the database structure. An open connection to the old
+ * version blocks the upgrade — a new tab would wait forever. The connection is always closed;
+ * the page is also reloaded because its code expects the old structure
  */
 export function onDatabaseOutdated(callback: () => void): void {
   onOutdated = callback;
@@ -54,8 +54,8 @@ async function run<T>(
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(storeName, mode);
     const request = action(transaction.objectStore(storeName));
-    // Запись завершена, только когда транзакция зафиксирована: успешный запрос ещё можно потерять,
-    // если страницу закроют или перезагрузят раньше фиксации
+    // A write is complete only when the transaction commits: a successful request can still be lost
+    // if the page is closed or reloaded before the commit
     transaction.oncomplete = () => resolve(request.result as T);
     transaction.onerror = () => reject(transaction.error ?? request.error);
     transaction.onabort = () => reject(transaction.error ?? new Error('IndexedDB transaction aborted'));

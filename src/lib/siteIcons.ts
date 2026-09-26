@@ -1,4 +1,4 @@
-// Поиск и загрузка иконок высокого качества прямо с сайтов (нужно разрешение на доступ к сайтам)
+// Finding and loading high-quality icons directly from sites (needs permission to access sites)
 import {extractLargestIcoImage, isIco} from './ico';
 import {
   candidatesFromLinks,
@@ -16,12 +16,12 @@ const MAX_PARALLEL = 4;
 
 export interface SiteIcon {
   blob: Blob;
-  /** Сторона картинки в пикселях; для SVG — VECTOR_SIZE */
+  /** Image side in pixels; for SVG — VECTOR_SIZE */
   size: number;
 }
 
 function request(url: string): Promise<Response> {
-  // Без cookies: нам нужна только публичная разметка и картинки
+  // No cookies: we only need the public markup and images
   return fetch(url, {credentials: 'omit', signal: AbortSignal.timeout(REQUEST_TIMEOUT)});
 }
 
@@ -31,7 +31,7 @@ async function readDeclaredIcons(pageUrl: string): Promise<{candidates: IconCand
     return {candidates: [], baseUrl: response.url || pageUrl};
   }
 
-  // Скрипты страницы при разборе через DOMParser не выполняются — читаем только <link>
+  // Page scripts don't run when parsed with DOMParser — only <link> is read
   const doc = new DOMParser().parseFromString(await response.text(), 'text/html');
   const baseHref = doc.querySelector('base[href]')?.getAttribute('href');
   const baseUrl = baseHref ? new URL(baseHref, response.url).href : response.url;
@@ -53,13 +53,13 @@ async function readDeclaredIcons(pageUrl: string): Promise<{candidates: IconCand
         candidates.push(...candidatesFromManifest(await manifestResponse.json(), manifestUrl));
       }
     } catch {
-      // Манифест недоступен или некорректен — обходимся иконками из <link>
+      // The manifest is unavailable or invalid — make do with icons from <link>
     }
   }
   return {candidates, baseUrl};
 }
 
-/** Скачивает картинку и проверяет её реальный размер: объявленным размерам верить нельзя */
+/** Downloads an image and checks its real size: declared sizes can't be trusted */
 async function downloadIcon(url: string): Promise<SiteIcon | null> {
   try {
     const response = await request(url);
@@ -88,16 +88,16 @@ async function downloadIcon(url: string): Promise<SiteIcon | null> {
   }
 }
 
-/** Лучшая иконка сайта или null, если ничего крупнее обычного favicon не нашлось */
+/** The site's best icon, or null if nothing larger than the regular favicon was found */
 export async function fetchSiteIcon(pageUrl: string): Promise<SiteIcon | null> {
   let candidates: IconCandidate[] = [];
   let baseUrl = pageUrl;
   try {
     ({candidates, baseUrl} = await readDeclaredIcons(pageUrl));
   } catch {
-    // Страница недоступна — попробуем стандартные адреса
+    // The page is unavailable — try the standard paths
   }
-  // Многие сайты кладут иконки по стандартным адресам, не объявляя их
+  // Many sites put icons at standard paths without declaring them
   for (const {path, size, penalty} of WELL_KNOWN_ICONS) {
     candidates.push({url: new URL(path, baseUrl).href, size, penalty});
   }
@@ -109,7 +109,7 @@ export async function fetchSiteIcon(pageUrl: string): Promise<SiteIcon | null> {
   return null;
 }
 
-// Очередь: одновременно не больше MAX_PARALLEL сайтов, чтобы не забивать сеть при открытии страницы
+// Queue: at most MAX_PARALLEL sites at a time so the network isn't flooded when the page opens
 let active = 0;
 const waiting: Array<() => void> = [];
 
@@ -117,7 +117,7 @@ export async function queued<T>(task: () => Promise<T>): Promise<T> {
   if (active < MAX_PARALLEL) {
     active++;
   } else {
-    await new Promise<void>((resolve) => waiting.push(resolve)); // Слот передаётся напрямую
+    await new Promise<void>((resolve) => waiting.push(resolve)); // The slot is handed over directly
   }
   try {
     return await task();

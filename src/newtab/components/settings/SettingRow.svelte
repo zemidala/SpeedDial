@@ -1,13 +1,13 @@
 <script lang="ts">
   import type {Snippet} from 'svelte';
 
-  // Строка настроек: подпись с пояснением слева, элемент управления справа.
-  // children получает id — его нужно отдать полю ввода, чтобы подпись была с ним связана.
-  // Кнопкам id не передаём: подпись заменила бы им название
+  // A settings row: a label with a hint on the left, the control on the right.
+  // children receives an id — pass it to the input so the label is linked to it.
+  // Buttons don't get the id: the label would replace their name
   let {label, hint, stacked = false, children}: {
     label: string;
     hint?: string;
-    /** Элемент управления под подписью на всю ширину (для многострочных полей) */
+    /** The control below the label at full width (for multi-line fields) */
     stacked?: boolean;
     children: Snippet<[string]>;
   } = $props();

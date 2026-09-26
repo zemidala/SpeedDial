@@ -1,4 +1,4 @@
-// Фон страницы: своё изображение (хранится локально в IndexedDB) или картинка дня Bing
+// Page background: a custom image (stored locally in IndexedDB) or the Bing image of the day
 import {type BingImage, loadBingImage} from './bing';
 import {idbDelete, idbGet, idbSet} from './idb';
 import {resizeImage} from './images';
@@ -8,9 +8,9 @@ const MAX_WIDTH = 3840;
 const MAX_HEIGHT = 2160;
 
 class BackgroundStore {
-  /** object URL своего изображения или null, если оно не выбрано */
+  /** Object URL of the custom image, or null if none is chosen */
   imageUrl = $state<string | null>(null);
-  /** Картинка дня Bing; загружается, только когда выбрана как фон */
+  /** Bing image of the day; loaded only when it's the chosen background */
   bing = $state.raw<BingImage | null>(null);
 
   #bingLoading: Promise<void> | null = null;
@@ -31,14 +31,14 @@ class BackgroundStore {
     this.#show(null);
   }
 
-  /** Загружает картинку дня Bing один раз за открытие страницы */
+  /** Loads the Bing image of the day once per page load */
   loadBing(): Promise<void> {
     this.#bingLoading ??= loadBingImage()
       .then((image) => {
         this.bing = image;
       })
       .catch((error) => {
-        this.#bingLoading = null; // Позволяем попробовать снова (например, после выдачи разрешения)
+        this.#bingLoading = null; // Allow another try (e.g. after the permission is granted)
         throw error;
       });
     return this.#bingLoading;

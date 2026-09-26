@@ -1,7 +1,7 @@
-// Разбор .ico: файл содержит несколько картинок разного размера, берём самую крупную
+// Parsing .ico: the file holds several images of different sizes; take the largest
 
 export interface IcoImage {
-  /** Сторона картинки в пикселях */
+  /** Image side in pixels */
   size: number;
   data: Uint8Array<ArrayBuffer>;
   type: 'image/png' | 'image/x-icon';
@@ -15,7 +15,7 @@ function isPng(bytes: Uint8Array): boolean {
   return PNG_SIGNATURE.every((byte, i) => bytes[i] === byte);
 }
 
-/** Размер из заголовка PNG (IHDR); запись в ICO хранит размер в одном байте, 0 означает «256 и больше» */
+/** Size from the PNG header (IHDR); an ICO entry stores the size in one byte, 0 means "256 or more" */
 function pngSize(bytes: Uint8Array): number {
   if (bytes.length < 24) return 0;
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
@@ -28,7 +28,7 @@ export function isIco(buffer: ArrayBuffer): boolean {
   return view.getUint16(0, true) === 0 && view.getUint16(2, true) === 1 && view.getUint16(4, true) > 0;
 }
 
-/** Самая крупная картинка из .ico; null, если файл повреждён */
+/** The largest image of an .ico; null if the file is corrupted */
 export function extractLargestIcoImage(buffer: ArrayBuffer): IcoImage | null {
   if (!isIco(buffer)) return null;
   const view = new DataView(buffer);
@@ -57,13 +57,13 @@ export function extractLargestIcoImage(buffer: ArrayBuffer): IcoImage | null {
   const data = new Uint8Array(buffer, best.dataOffset, best.dataSize);
   if (isPng(data)) return {size: best.size, data: data.slice(), type: 'image/png'};
 
-  // Картинка в формате BMP: собираем .ico из одной этой записи, чтобы браузер показал именно её
+  // A BMP image: build an .ico from just this entry so the browser shows exactly it
   const single = new Uint8Array(HEADER_SIZE + ENTRY_SIZE + best.dataSize);
   const singleView = new DataView(single.buffer);
-  singleView.setUint16(2, 1, true); // Тип: иконка
-  singleView.setUint16(4, 1, true); // Одна запись
+  singleView.setUint16(2, 1, true); // Type: icon
+  singleView.setUint16(4, 1, true); // One entry
   single.set(new Uint8Array(buffer, best.entryOffset, ENTRY_SIZE), HEADER_SIZE);
-  singleView.setUint32(HEADER_SIZE + 12, HEADER_SIZE + ENTRY_SIZE, true); // Новое смещение данных
+  singleView.setUint32(HEADER_SIZE + 12, HEADER_SIZE + ENTRY_SIZE, true); // New data offset
   single.set(data, HEADER_SIZE + ENTRY_SIZE);
   return {size: best.size, data: single, type: 'image/x-icon'};
 }

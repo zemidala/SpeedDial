@@ -1,4 +1,4 @@
-// Список сервисов в настройках редактируется как текст: по строке «Название | адрес»
+// The service list in the settings is edited as text: one "Name | URL" per line
 import type {ServiceLink} from './settings/schema';
 import {normalizeUrl} from './url';
 
@@ -6,7 +6,7 @@ export function formatServices(services: ServiceLink[]): string {
   return services.map(({title, url}) => `${title} | ${url}`).join('\n');
 }
 
-/** Разбирает текст; строки без корректного адреса пропускаются */
+/** Parses the text; lines without a valid URL are skipped */
 export function parseServices(text: string): ServiceLink[] {
   const services: ServiceLink[] = [];
   for (const line of text.split('\n')) {

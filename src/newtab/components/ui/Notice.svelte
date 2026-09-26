@@ -3,8 +3,8 @@
   import {hideNotice, notice, runNoticeAction} from '../../../lib/notice.svelte';
   import Icon from './Icon.svelte';
 
-  // Уведомление об ошибке в углу экрана. Показывается в верхнем открытом модальном окне
-  // (или на странице, если окон нет): всё вне модального окна недоступно для кликов
+  // Error notification in the corner of the screen. Shown in the topmost open modal dialog
+  // (or on the page if there are none): everything outside a modal dialog can't be clicked
 </script>
 
 {#if notice.message}

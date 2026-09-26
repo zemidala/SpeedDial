@@ -1,4 +1,4 @@
-// Выбранная в настройках тема оформления
+// The theme chosen in the settings
 import type {Settings} from '../settings/schema';
 import {customPreset, dimLightPalette, type ThemePreset} from './palette';
 import {DEFAULT_THEME_PRESET, THEME_PRESETS} from './presets';
@@ -7,12 +7,12 @@ const DEFAULT_PRESET = THEME_PRESETS.find((preset) => preset.id === DEFAULT_THEM
 
 type ThemeSettings = Pick<Settings, 'themePreset' | 'customAccent' | 'customTint' | 'lightDimming'>;
 
-/** Тема с учётом приглушения светлого варианта */
+/** Theme with the light variant softened */
 export function withDimming(preset: ThemePreset, lightDimming: number): ThemePreset {
   return {...preset, light: dimLightPalette(preset.light, lightDimming / 100)};
 }
 
-/** Выбранная в настройках тема — с приглушённым светлым вариантом */
+/** The theme chosen in the settings — with the softened light variant */
 export function resolvePreset(settings: ThemeSettings): ThemePreset {
   const preset = settings.themePreset === 'custom'
     ? customPreset(settings.customAccent, settings.customTint)
@@ -20,7 +20,7 @@ export function resolvePreset(settings: ThemeSettings): ThemePreset {
   return withDimming(preset, settings.lightDimming);
 }
 
-/** Ключ в localStorage: CSS палитры для theme-init.js — чтобы тема применялась до первой отрисовки */
+/** localStorage key: palette CSS for theme-init.js — so the theme applies before first paint */
 export const PALETTE_CACHE_KEY = 'theme-palette-css';
-/** id элемента style с палитрой; тот же использует theme-init.js */
+/** id of the style element with the palette; theme-init.js uses the same one */
 export const PALETTE_STYLE_ID = 'theme-palette';

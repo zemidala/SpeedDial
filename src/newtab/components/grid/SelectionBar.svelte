@@ -6,7 +6,7 @@
   import {requestDeleteMany, requestOpenAll, ui} from '../../../lib/ui.svelte';
   import Icon from '../ui/Icon.svelte';
 
-  // Панель действий над выделенными плитками — внизу страницы, пока что-то выделено
+  // Action bar for the selected tiles — at the bottom of the page while something is selected
   let {nodes}: {nodes: BookmarkNode[]} = $props();
 
   const hasBookmarks = $derived(nodes.some((node) => node.url));
@@ -51,7 +51,7 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
-    /* С left: 50% ширина по умолчанию — лишь половина окна; пусть будет по содержимому */
+    /* With left: 50% the default width is only half the window; size it by content instead */
     width: max-content;
     max-width: calc(100vw - 32px);
     padding: 8px 8px 8px 16px;

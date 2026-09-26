@@ -1,9 +1,9 @@
-// Готовые темы оформления. У каждой светлый и тёмный вариант; цвета — из официальных палитр,
-// местами затемнены или осветлены до читаемого контраста (проверяется в presets.test.ts)
+// Built-in themes. Each has a light and a dark variant; colours come from the official palettes,
+// darkened or lightened in places to a readable contrast (checked in presets.test.ts)
 import type {ThemePalette, ThemePreset} from './palette';
 
-// Общие для светлых и тёмных вариантов полупрозрачные цвета
-// Рамки заметные, как в настройках Edge и Оперы: панели и поля читаются как отдельные элементы
+// Translucent colours shared by the light and dark variants
+// Visible borders, as in the Edge and Opera settings: panels and fields read as separate elements
 const LIGHT_EFFECTS = {
   cell: 'rgb(255 255 255 / 0.6)',
   border: 'rgb(0 0 0 / 0.14)',
@@ -21,9 +21,9 @@ const DARK_EFFECTS = {
 export const THEME_PRESETS: ThemePreset[] = [
   {
     id: 'standard',
-    name: 'Стандартная',
-    // По образцу светлой и тёмной темы Edge: фон, панели и поля — три отчётливых тона,
-    // основной текст почти чёрный или почти белый, второстепенный — не блёклый
+    name: 'Standard',
+    // Modelled on Edge's light and dark themes: page, panels and fields are three distinct tones,
+    // main text is near-black or near-white, secondary text isn't washed out
     light: {
       ...LIGHT_EFFECTS,
       pageFrom: '#f3f4f6',

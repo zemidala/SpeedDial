@@ -8,15 +8,15 @@
     size?: 'small' | 'large';
     onclose: () => void;
     children: Snippet;
-    /** Кнопки внизу окна */
+    /** Buttons at the bottom of the dialog */
     footer?: Snippet;
   } = $props();
 
   const titleId = $props.id();
   let dialog: HTMLDialogElement;
-  let level = $state(0); // Номер этого окна среди открытых; уведомления показывает верхнее
+  let level = $state(0); // This dialog's number among the open ones; notifications are shown by the topmost
 
-  // Нативный элемент dialog: фокус внутри окна, закрытие по Esc, остальная страница недоступна
+  // Native dialog element: focus stays inside, Esc closes it, the rest of the page is inert
   onMount(() => {
     dialog.showModal();
     level = ++modals.depth;
@@ -63,7 +63,7 @@
   }
 
   .modal--large {
-    width: min(720px, 94vw);
+    width: min(840px, 94vw);
   }
 
   .modal::backdrop {

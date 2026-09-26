@@ -6,7 +6,7 @@
 
   let options = $state.raw<FolderOption[]>([]);
 
-  // Список папок обновляется вместе с закладками
+  // The folder list updates together with the bookmarks
   $effect(() => {
     void bookmarks.items;
     let cancelled = false;

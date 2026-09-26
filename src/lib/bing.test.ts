@@ -15,7 +15,7 @@ describe('bingMarket', () => {
 });
 
 describe('bingExpiration', () => {
-  it('дата публикации в UTC + сутки + 10 минут', () => {
+  it('publication date in UTC + one day + 10 minutes', () => {
     expect(bingExpiration('202609250700')).toBe(Date.UTC(2026, 8, 26, 7, 10));
   });
 });
@@ -30,7 +30,7 @@ describe('toBingImage', () => {
     copyrightlink: '/search?q=озеро',
   };
 
-  it('Full HD или UHD, ссылка на описание — абсолютная', () => {
+  it('Full HD or UHD, absolute description link', () => {
     expect(toBingImage(api, 'ru-RU', false)).toEqual({
       url: 'https://www.bing.com/th?id=OHR.Lake_RU-RU123_1920x1080.jpg&rf=LaDigue_1920x1080.jpg',
       title: 'Озеро',
@@ -43,7 +43,7 @@ describe('toBingImage', () => {
     expect(toBingImage(api, 'ru-RU', true).url).toBe('https://www.bing.com/th?id=OHR.Lake_RU-RU123_UHD.jpg');
   });
 
-  it('без подписи и ссылки', () => {
+  it('without a caption and link', () => {
     const image = toBingImage({url: '/a.jpg', urlbase: '/a', fullstartdate: 'bad'}, 'en-US', false);
     expect(image).toMatchObject({title: '', copyright: '', link: null});
     expect(image.expiresAt).toBeGreaterThan(Date.now());

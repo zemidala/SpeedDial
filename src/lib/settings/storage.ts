@@ -1,12 +1,12 @@
-// Чтение и запись настроек в chrome.storage. Без Svelte — используется и в service worker.
+// Reading and writing settings in chrome.storage. No Svelte — also used in the service worker.
 import {sanitizeSettings, type Settings, splitSettings} from './schema';
 
-const SHARED_KEY = 'settings'; // Общие настройки: в sync, если синхронизация включена, иначе в local
-const LOCAL_KEY = 'localSettings'; // Настройки только этого устройства, всегда в local
+const SHARED_KEY = 'settings'; // Shared settings: in sync if sync is on, otherwise in local
+const LOCAL_KEY = 'localSettings'; // Settings of this device only, always in local
 
 export interface StoredSettings {
   settings: Settings;
-  /** Время последнего изменения (мс); 0 — настройки ещё не сохранялись. Побеждает более свежая версия */
+  /** Time of the last change (ms); 0 — settings were never saved. The newer version wins */
   updatedAt: number;
 }
 
@@ -36,14 +36,14 @@ export async function saveSettings(settings: Settings, updatedAt: number): Promi
   await area.set({[SHARED_KEY]: {...shared, updatedAt}});
 }
 
-/** Вызывает callback, когда настройки изменили в другой вкладке, на другом устройстве или в service worker */
+/** Calls callback when settings change in another tab, on another device or in the service worker */
 export function onSettingsChanged(callback: () => void): void {
   chrome.storage.onChanged.addListener((changes, area) => {
     if ((area === 'sync' || area === 'local') && (SHARED_KEY in changes || LOCAL_KEY in changes)) callback();
   });
 }
 
-/** Удаляет настройки расширения из облака браузера */
+/** Removes the extension's settings from the browser's sync */
 export function clearSyncedData(): Promise<void> {
   return chrome.storage.sync.clear();
 }

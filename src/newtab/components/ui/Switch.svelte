@@ -3,14 +3,14 @@
     id?: string;
     checked: boolean;
     disabled?: boolean;
-    /** Может отказаться менять значение (например, если не выдали разрешение) — состояние задаёт checked */
+    /** May refuse to change the value (e.g. if a permission wasn't granted) — checked defines the state */
     onchange: (checked: boolean) => void;
   } = $props();
 
   function handleChange(event: Event & {currentTarget: HTMLInputElement}) {
     const requested = event.currentTarget.checked;
-    // Переключатель управляется только через checked: сразу возвращаем прежнее положение,
-    // а новое появится, когда изменится состояние
+    // The switch is driven only by checked: the previous position is restored at once,
+    // and the new one appears when the state changes
     event.currentTarget.checked = checked;
     onchange(requested);
   }

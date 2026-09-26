@@ -1,10 +1,10 @@
-// Список папок для выпадающих меню: дерево в плоском виде с отступами и количеством закладок
+// Folder list for dropdowns: the tree flattened with indentation and bookmark counts
 
 export interface FolderOption {
   id: string;
   title: string;
   depth: number;
-  /** Закладок непосредственно в папке, без вложенных */
+  /** Bookmarks directly in the folder, without nested ones */
   bookmarkCount: number;
 }
 
@@ -15,7 +15,7 @@ interface TreeNode {
   children?: TreeNode[];
 }
 
-/** Папки дерева в порядке обхода; корень (без названия) не включается */
+/** Folders of the tree in traversal order; the (untitled) root isn't included */
 export function flattenFolders(root: TreeNode): FolderOption[] {
   const result: FolderOption[] = [];
   const visit = (node: TreeNode, depth: number) => {
@@ -34,7 +34,7 @@ export function flattenFolders(root: TreeNode): FolderOption[] {
   return result;
 }
 
-/** Все закладки папки; с includeSubfolders — и из вложенных папок */
+/** All bookmarks of a folder; with includeSubfolders — also from nested folders */
 export function collectBookmarks<T extends TreeNode>(folder: T, includeSubfolders: boolean): T[] {
   const result: T[] = [];
   for (const child of (folder.children ?? []) as T[]) {

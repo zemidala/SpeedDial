@@ -1,4 +1,4 @@
-// Картинка дня Bing для фона страницы. Нужно разрешение на доступ к www.bing.com
+// Bing image of the day for the page background. Needs permission to access www.bing.com
 import {t} from './i18n/index.svelte';
 
 
@@ -6,9 +6,9 @@ export const BING_ORIGIN = 'https://www.bing.com';
 
 const CACHE_KEY = 'bingImage'; // chrome.storage.local
 const DEFAULT_MARKET = 'en-US';
-// Регионы, для которых у Bing есть своя картинка дня и подписи на местном языке
+// Regions for which Bing has its own image of the day with captions in the local language
 const MARKETS = ['ru-RU', 'en-US', 'en-GB', 'en-CA', 'en-AU', 'en-IN', 'de-DE', 'fr-FR', 'es-ES', 'it-IT', 'pt-BR', 'ja-JP', 'zh-CN'];
-// Картинка обновляется раз в сутки; запас на случай, если Bing опубликует её чуть позже
+// The image changes once a day; a margin in case Bing publishes it a bit later
 const REFRESH_MARGIN = 10 * 60 * 1000;
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -16,15 +16,15 @@ export interface BingImage {
   url: string;
   title: string;
   copyright: string;
-  /** Страница с описанием картинки */
+  /** Page describing the image */
   link: string | null;
-  /** Когда запрашивать новую картинку, мс */
+  /** When to request a new image, ms */
   expiresAt: number;
   market: string;
   uhd: boolean;
 }
 
-/** Картинка из ответа HPImageArchive.aspx?format=js */
+/** Image from the HPImageArchive.aspx?format=js response */
 export interface BingApiImage {
   url: string;
   urlbase: string;
@@ -34,7 +34,7 @@ export interface BingApiImage {
   copyrightlink?: string;
 }
 
-/** Регион Bing по языку браузера: точное совпадение, затем тот же язык, иначе en-US */
+/** Bing region by browser language: exact match, then the same language, otherwise en-US */
 export function bingMarket(language: string): string {
   const exact = MARKETS.find((market) => market.toLowerCase() === language.toLowerCase());
   if (exact) return exact;
@@ -42,7 +42,7 @@ export function bingMarket(language: string): string {
   return MARKETS.find((market) => market.startsWith(`${base}-`)) ?? DEFAULT_MARKET;
 }
 
-/** Время смены картинки: дата публикации (yyyyMMddHHmm, UTC) + сутки + запас */
+/** When the image changes: publication date (yyyyMMddHHmm, UTC) + one day + margin */
 export function bingExpiration(fullStartDate: string): number {
   const match = /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})$/.exec(fullStartDate);
   if (!match) return Date.now() + DAY;
@@ -55,7 +55,7 @@ export function toBingImage(api: BingApiImage, market: string, uhd: boolean): Bi
   try {
     link = api.copyrightlink ? new URL(api.copyrightlink, BING_ORIGIN).href : null;
   } catch {
-    // Некорректная ссылка — показываем подпись без неё
+    // Invalid link — show the caption without it
   }
   return {
     url: uhd ? `${BING_ORIGIN}${api.urlbase}_UHD.jpg` : `${BING_ORIGIN}${api.url}`,
@@ -68,7 +68,7 @@ export function toBingImage(api: BingApiImage, market: string, uhd: boolean): Bi
   };
 }
 
-/** Экран больше Full HD — стоит загружать картинку в UHD (около 4K) */
+/** The screen is larger than Full HD — worth loading the UHD image (about 4K) */
 function wantsUhd(): boolean {
   const scale = globalThis.devicePixelRatio || 1;
   return screen.width * scale > 1920 || screen.height * scale > 1080;
@@ -82,7 +82,7 @@ async function hasUhd(urlBase: string): Promise<boolean> {
   }
 }
 
-/** Картинка дня: из кэша, пока она актуальна, иначе с Bing */
+/** Image of the day: from the cache while it's current, otherwise from Bing */
 export async function loadBingImage(): Promise<BingImage> {
   const market = bingMarket(navigator.language);
   const uhd = wantsUhd();

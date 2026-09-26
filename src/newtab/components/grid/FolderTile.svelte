@@ -11,7 +11,7 @@
 
   let {folder, preview}: {folder: BookmarkNode; preview: BookmarkNode[]} = $props();
 
-  // Пустые ячейки дополняют сетку миниатюр до полного размера
+  // Empty cells pad the preview grid to its full size
   const emptyCells = $derived(Math.max(0, FOLDER_PREVIEW_SIZE - preview.length));
   const dropInto = $derived(dragDrop.target?.id === folder.id);
 </script>
@@ -32,7 +32,7 @@
             {#if item.url}
               <SiteIcon entry={icons.get(item.url)} appearance="cell"/>
             {:else}
-              <!-- Подпапка — значок на всю ячейку, чтобы сразу отличалась от сайтов -->
+              <!-- A subfolder — the icon fills the cell so it stands out from sites right away -->
               <Icon name="folder" class="folder-preview__folder-icon"/>
             {/if}
           </span>
@@ -75,7 +75,7 @@
     background: none;
   }
 
-  /* Подпапка — плотная заливка акцентом и рамка: сразу видно, что это не сайт */
+  /* A subfolder — a dense accent fill and a border: clearly not a site */
   .folder-preview__cell--folder {
     background: color-mix(in oklab, var(--accent) 28%, var(--cell-bg));
     color: var(--accent);
@@ -89,7 +89,7 @@
     stroke-width: 2;
   }
 
-  /* Повышенная контрастность: у каждой ячейки рамка, подпапка — в полный цвет акцента */
+  /* High contrast: every cell has a border, a subfolder uses the full accent colour */
   :global(:root[data-contrast='high']) .folder-preview__cell:not(.folder-preview__cell--empty) {
     box-shadow: inset 0 0 0 1px var(--border);
   }

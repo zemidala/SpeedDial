@@ -1,4 +1,4 @@
-// Dropbox: приложение с доступом только к своей папке (Apps/SpeedDial). Вход с PKCE, продление по refresh-токену
+// Dropbox: an app that can only access its own folder (Apps/SpeedDial). Sign-in with PKCE, refresh via refresh token
 import {t} from '../../i18n/index.svelte';
 import {authorize, pkcePair, redirectUrl, requestToken} from '../oauth';
 import {apiFetch, type CloudClient, type RemoteFile, sortBackups} from '../provider';
@@ -9,7 +9,7 @@ const TOKEN_URL = 'https://api.dropboxapi.com/oauth2/token';
 const API_URL = 'https://api.dropboxapi.com/2';
 const CONTENT_URL = 'https://content.dropboxapi.com/2';
 
-/** JSON для заголовка Dropbox-API-Arg: в заголовке допустимы только ASCII-символы */
+/** JSON for the Dropbox-API-Arg header: only ASCII is allowed in headers */
 export function headerJson(value: unknown): string {
   return JSON.stringify(value).replace(/[\u007f-￿]/g, (char) => `\\u${char.charCodeAt(0).toString(16).padStart(4, '0')}`);
 }
@@ -25,7 +25,7 @@ export class DropboxClient implements CloudClient {
   constructor(private readonly token: string) {}
 
   async ensureFolder(): Promise<void> {
-    // Папку приложения Dropbox создаёт сам при первой записи
+    // Dropbox creates the app folder itself on the first write
   }
 
   #rpc(path: string, body: unknown, allowedStatuses: number[] = []): Promise<Response> {
@@ -38,7 +38,7 @@ export class DropboxClient implements CloudClient {
 
   async list(): Promise<RemoteFile[]> {
     const response = await this.#rpc('/files/list_folder', {path: ''}, [409]);
-    // 409 — папки приложения ещё нет: копий не было
+    // 409 — the app folder doesn't exist yet: there were no backups
     if (response.status === 409) return [];
     const data = await response.json() as {entries?: DropboxEntry[]};
     return sortBackups((data.entries ?? []).filter((entry) => entry['.tag'] === 'file').map((entry) => ({
@@ -86,7 +86,7 @@ export function dropbox(clientId: string): OAuthProvider {
       url.searchParams.set('response_type', 'code');
       url.searchParams.set('code_challenge', challenge);
       url.searchParams.set('code_challenge_method', 'S256');
-      // offline — refresh-токен для автоматических копий без повторного входа
+      // offline — a refresh token for automatic backups without signing in again
       url.searchParams.set('token_access_type', 'offline');
       const code = (await authorize(url, true)).get('code');
       if (!code) throw new Error(t.cloudErrors.noAccessGranted('Dropbox'));

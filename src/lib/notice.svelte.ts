@@ -1,15 +1,15 @@
-// Уведомление в углу экрана; одновременно показывается одно
+// A notification in the corner of the screen; one at a time
 
 export type NoticeKind = 'error' | 'info';
 
-/** Кнопка в уведомлении, например «Отменить» */
+/** A button in the notification, e.g. "Undo" */
 export interface NoticeAction {
   label: string;
   run: () => Promise<unknown> | void;
 }
 
-const INFO_DURATION = 3000; // Мс; ошибки висят, пока их не закроют
-const ACTION_DURATION = 8000; // Уведомление с кнопкой висит дольше — чтобы успеть нажать
+const INFO_DURATION = 3000; // Ms; errors stay until closed
+const ACTION_DURATION = 8000; // A notification with a button stays longer — to have time to press it
 
 export const notice = $state<{message: string | null; kind: NoticeKind; action: NoticeAction | null}>({
   message: null,
@@ -27,7 +27,7 @@ export function showNotice(message: string, kind: NoticeKind = 'error', action: 
   if (kind === 'info') hideTimer = setTimeout(hideNotice, action ? ACTION_DURATION : INFO_DURATION);
 }
 
-/** Выполняет действие уведомления и закрывает его; ошибка действия показывается вместо него */
+/** Runs the notification's action and closes it; an action error is shown in its place */
 export async function runNoticeAction(): Promise<void> {
   const action = notice.action;
   hideNotice();

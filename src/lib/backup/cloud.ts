@@ -1,5 +1,5 @@
-// Копии в облаке: подключение, запуск и состояние. Без Svelte — автоматические копии делает service worker.
-// Данные подключения хранятся только на этом устройстве (chrome.storage.local) и в облако браузера не попадают
+// Cloud backups: connection, running and status. No Svelte — automatic backups run in the service worker.
+// Connection details stay on this device (chrome.storage.local) and never reach the browser's sync
 import {t} from '../i18n/index.svelte';
 import {type Backup, backupFileName, backupFingerprint, createBackup} from './backup';
 import {isFresh, type OAuthTokens} from './oauth';
@@ -10,32 +10,32 @@ import {serverOrigin, type WebDavConfig, WebDavClient} from './webdav';
 const CONFIG_KEY = 'cloudBackup';
 const STATUS_KEY = 'cloudBackupStatus';
 
-/** Сколько последних копий хранить в облаке */
+/** How many latest backups to keep in the cloud */
 export const KEEP_BACKUPS = 10;
-/** Будильник автоматической копии: через минуту после последнего изменения */
+/** Alarm for the automatic backup: a minute after the last change */
 export const AUTO_BACKUP_ALARM = 'cloud-backup';
 const AUTO_BACKUP_DELAY_MINUTES = 1;
 
 interface CloudOptions {
-  /** Сохранять копию автоматически после изменений */
+  /** Back up automatically after changes */
   auto: boolean;
-  /** Добавлять в копию миниатюры и фоновое изображение */
+  /** Include thumbnails and the background image */
   includeImages: boolean;
 }
 
 export type CloudConnection =
   | ({provider: 'webdav'} & WebDavConfig)
-  /** account — email или имя для показа */
+  /** account — email or a display name */
   | {provider: OAuthProviderId; account: string; tokens: OAuthTokens};
 
 export type CloudConfig = CloudConnection & CloudOptions;
 
 export interface CloudStatus {
-  /** Время последней успешной копии, мс; 0 — копий ещё не было */
+  /** Time of the last successful backup, ms; 0 — no backups yet */
   lastBackupAt: number;
-  /** Отпечаток последней выгруженной копии: без изменений повторно не выгружаем */
+  /** Fingerprint of the last uploaded backup: unchanged data isn't uploaded again */
   lastFingerprint: string;
-  /** Текст последней ошибки; пустая строка — ошибок нет */
+  /** Text of the last error; empty — no errors */
   lastError: string;
 }
 
@@ -66,26 +66,26 @@ async function updateStatus(changes: Partial<CloudStatus>): Promise<void> {
   await chrome.storage.local.set({[STATUS_KEY]: {...await loadCloudStatus(), ...changes}});
 }
 
-/** Вызывает callback, когда меняются подключение или состояние копий — в любой вкладке или в service worker */
+/** Calls callback when the connection or backup status changes — in any tab or in the service worker */
 export function onCloudChanged(callback: () => void): void {
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area === 'local' && (CONFIG_KEY in changes || STATUS_KEY in changes)) callback();
   });
 }
 
-/** Адреса, к которым нужен доступ для подключения */
+/** Origins the connection needs access to */
 export function connectionOrigins(connection: CloudConnection): string[] {
   return connection.provider === 'webdav' ? [serverOrigin(connection.url)] : OAUTH_PROVIDERS[connection.provider].origins;
 }
 
-/** Название облака для показа: «Google Диск», «dav.example.com» */
+/** Cloud name for display: "Google Drive", "dav.example.com" */
 export function connectionLabel(connection: CloudConnection): string {
   return connection.provider === 'webdav' ? new URL(connection.url).host : OAUTH_PROVIDERS[connection.provider].label;
 }
 
 /**
- * Клиент для подключения. Проверяет доступ к адресам облака и при необходимости продлевает токен
- * (новый токен сохраняется). Бросает понятную ошибку, если нужно подключиться заново
+ * Client for the connection. Checks access to the cloud origins and refreshes the token if needed
+ * (the new token is saved). Throws a clear error if the user must reconnect
  */
 export async function cloudClient(config: CloudConfig): Promise<CloudClient> {
   if (!await chrome.permissions.contains({origins: connectionOrigins(config)})) {
@@ -107,7 +107,7 @@ export async function cloudClient(config: CloudConfig): Promise<CloudClient> {
   return provider.client(tokens.accessToken);
 }
 
-/** Удаляет старые копии сверх KEEP_BACKUPS */
+/** Removes old backups beyond KEEP_BACKUPS */
 async function pruneBackups(client: CloudClient): Promise<void> {
   const files = (await client.list()).filter((file) => file.name.startsWith('speeddial-'));
   for (const file of files.slice(KEEP_BACKUPS)) await client.remove(file.name);
@@ -116,8 +116,8 @@ async function pruneBackups(client: CloudClient): Promise<void> {
 export type BackupOutcome = 'saved' | 'unchanged';
 
 /**
- * Делает копию и выгружает её в облако. Если с прошлой копии ничего не изменилось, не выгружает
- * (кроме force — «Сохранить копию сейчас»). Ошибку записывает в состояние и бросает дальше
+ * Creates a backup and uploads it. If nothing changed since the last backup, it isn't uploaded
+ * (unless force — "Back up now"). Errors are stored in the status and rethrown
  */
 export async function runCloudBackup({force}: {force: boolean}): Promise<BackupOutcome> {
   const config = await loadCloudConfig();
@@ -139,7 +139,7 @@ export async function runCloudBackup({force}: {force: boolean}): Promise<BackupO
   }
 }
 
-/** Откладывает автоматическую копию: частые изменения подряд дают одну копию */
+/** Postpones the automatic backup: a burst of changes produces one backup */
 export async function scheduleAutoBackup(): Promise<void> {
   const config = await loadCloudConfig();
   if (config?.auto) await chrome.alarms.create(AUTO_BACKUP_ALARM, {delayInMinutes: AUTO_BACKUP_DELAY_MINUTES});

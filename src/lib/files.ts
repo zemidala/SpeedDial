@@ -1,6 +1,6 @@
-// Выбор файла пользователем и сохранение файла на диск
+// Letting the user pick a file and saving a file to disk
 
-/** Открывает окно выбора файла; вызывать из обработчика клика. null — пользователь передумал */
+/** Opens a file picker; call from a click handler. null — the user changed their mind */
 export function pickFile(accept: string): Promise<File | null> {
   return new Promise((resolve) => {
     const input = document.createElement('input');
@@ -21,7 +21,7 @@ export function downloadBlob(fileName: string, blob: Blob): void {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-/** Первая картинка из буфера обмена; нужно разрешение clipboardRead */
+/** The first image from the clipboard; needs the clipboardRead permission */
 export async function readClipboardImage(): Promise<Blob | null> {
   for (const item of await navigator.clipboard.read()) {
     const type = item.types.find((t) => t.startsWith('image/'));

@@ -5,7 +5,7 @@
   import type {FolderRef} from '../../../lib/ui.svelte';
   import Modal from '../ui/Modal.svelte';
 
-  // Навсегда упорядочивает содержимое папки в браузере
+  // Permanently sorts the folder's contents in the browser
   let {folder, onclose}: {folder: FolderRef; onclose: () => void} = $props();
 
   const formId = $props.id();

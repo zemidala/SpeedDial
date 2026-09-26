@@ -2,7 +2,7 @@ import {describe, expect, it} from 'vitest';
 import {normalizeServerUrl, parsePropfind, serverOrigin} from './webdav';
 
 describe('WebDAV', () => {
-  it('разбирает ответ Яндекс.Диска (префикс d:)', () => {
+  it('parses a Yandex Disk response (d: prefix)', () => {
     const xml = `<?xml version='1.0' encoding='UTF-8'?>
 <d:multistatus xmlns:d="DAV:">
   <d:response><d:href>/SpeedDial/</d:href><d:propstat><d:status>HTTP/1.1 200 OK</d:status><d:prop>
@@ -17,7 +17,7 @@ describe('WebDAV', () => {
     ]);
   });
 
-  it('разбирает ответ Nextcloud (префикс D:, закодированные имена, лишние файлы)', () => {
+  it('parses a Nextcloud response (D: prefix, encoded names, extra files)', () => {
     const xml = `<?xml version="1.0"?>
 <D:multistatus xmlns:D="DAV:" xmlns:oc="http://owncloud.org/ns">
   <D:response><D:href>/remote.php/dav/files/user/SpeedDial/</D:href>
@@ -32,13 +32,13 @@ describe('WebDAV', () => {
     expect(parsePropfind(xml)).toEqual([{name: 'копия & 1.json', modified: 0, size: 10}]);
   });
 
-  it('разбирает ответ без префикса пространства имён', () => {
+  it('parses a response without a namespace prefix', () => {
     const xml = `<multistatus xmlns="DAV:"><response><href>/dav/SpeedDial/a.json</href>
       <propstat><prop><resourcetype/><getcontentlength>5</getcontentlength></prop></propstat></response></multistatus>`;
     expect(parsePropfind(xml)).toEqual([{name: 'a.json', modified: 0, size: 5}]);
   });
 
-  it('адрес сервера', () => {
+  it('server URL', () => {
     expect(normalizeServerUrl(' https://webdav.yandex.ru ')).toBe('https://webdav.yandex.ru/');
     expect(normalizeServerUrl('https://cloud.example.com/remote.php/dav/files/user?x=1#y'))
       .toBe('https://cloud.example.com/remote.php/dav/files/user/');

@@ -1,5 +1,5 @@
-// Резервная копия SpeedDial: настройки, закладки с порядком и (по желанию) миниатюры и фон.
-// Без Svelte — используется и в service worker (автоматические копии)
+// SpeedDial backup: settings, bookmarks with their order and (optionally) thumbnails and background.
+// No Svelte — also used by the service worker (automatic backups)
 import {t} from '../i18n/index.svelte';
 import {idbGet, idbSet} from '../idb';
 import {LOCAL_KEYS, type Settings, splitSettings} from '../settings/schema';
@@ -8,24 +8,24 @@ import {getThumbnail, saveThumbnail, type ThumbnailSource} from '../thumbnails/s
 
 export const BACKUP_FORMAT = 'speeddial-backup';
 export const BACKUP_VERSION = 1;
-/** Ключ фонового изображения в хранилище files — тот же, что у background.svelte.ts */
+/** Key of the background image in the files store — the same as in background.svelte.ts */
 export const BACKGROUND_FILE_KEY = 'background';
 
 export interface BackupImage {
   type: string;
-  /** Содержимое в base64 */
+  /** Contents in base64 */
   data: string;
 }
 
 export interface BackupNode {
   title: string;
-  /** Нет у папок */
+  /** Absent for folders */
   url?: string;
   children?: BackupNode[];
   thumbnail?: BackupImage & {source: ThumbnailSource};
 }
 
-/** Корневая папка браузера: «Панель закладок», «Другие закладки»… */
+/** A browser root folder: bookmarks bar, other bookmarks… */
 export interface BackupRoot {
   id: string;
   title: string;
@@ -43,7 +43,7 @@ export interface Backup {
 
 export type RestoreMode = 'merge' | 'replace';
 
-/** Нужная часть chrome.bookmarks — в тестах подменяется */
+/** The part of chrome.bookmarks we need — replaced in tests */
 export interface BookmarksApi {
   getTree(): Promise<chrome.bookmarks.BookmarkTreeNode[]>;
   getChildren(id: string): Promise<chrome.bookmarks.BookmarkTreeNode[]>;
@@ -51,7 +51,7 @@ export interface BookmarksApi {
   removeTree(id: string): Promise<void>;
 }
 
-// ===== base64 без FileReader: его нет в service worker =====
+// ===== base64 without FileReader: the service worker doesn't have it =====
 
 export async function blobToImage(blob: Blob): Promise<BackupImage> {
   const bytes = new Uint8Array(await blob.arrayBuffer());
@@ -70,7 +70,7 @@ export function imageToBlob(image: BackupImage): Blob {
   return new Blob([bytes], {type: image.type});
 }
 
-// ===== Создание копии =====
+// ===== Creating a backup =====
 
 async function toBackupNode(node: chrome.bookmarks.BookmarkTreeNode, withImages: boolean): Promise<BackupNode> {
   const result: BackupNode = {title: node.title};
@@ -112,7 +112,7 @@ export async function createBackup(
   return backup;
 }
 
-/** Отпечаток содержимого без времени создания: одинаковые копии подряд не выгружаются */
+/** Fingerprint of the contents without the creation time: identical consecutive backups aren't uploaded */
 export async function backupFingerprint(backup: Backup): Promise<string> {
   const content = {...backup, createdAt: ''};
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(content)));
@@ -135,38 +135,38 @@ export function parseBackup(text: string): Backup {
   return {...backup, settings: backup.settings ?? {}} as Backup;
 }
 
-/** Настройки из копии поверх текущих; настройки этого устройства сохраняются */
+/** Settings from the backup over the current ones; device-only settings are kept */
 export function settingsFromBackup(backup: Backup, current: Settings): Record<string, unknown> {
   const restored: Record<string, unknown> = {...backup.settings};
   for (const key of LOCAL_KEYS) restored[key] = current[key];
   return restored;
 }
 
-// ===== Восстановление закладок =====
+// ===== Restoring bookmarks =====
 
 export interface RestoreResult {
-  /** Созданные закладки и папки */
+  /** Created bookmarks and folders */
   created: number;
-  /** Восстановленные миниатюры */
+  /** Restored thumbnails */
   thumbnails: number;
 }
 
-/** Место в браузере для корневой папки из копии: по id, иначе по порядку */
+/** Where a backup root folder goes in the browser: by id, otherwise by position */
 function matchRoot(roots: chrome.bookmarks.BookmarkTreeNode[], backupRoot: BackupRoot, index: number) {
   return roots.find((root) => root.id === backupRoot.id) ?? roots[index];
 }
 
-/** Закладка совпадает по адресу, папка — по названию */
+/** Bookmarks match by URL, folders by name */
 function sameNode(existing: chrome.bookmarks.BookmarkTreeNode, node: BackupNode): boolean {
   if (node.url !== undefined) return existing.url === node.url;
   return existing.url === undefined && existing.title === node.title;
 }
 
 /**
- * Восстанавливает закладки из копии.
- * merge — добавляет недостающее (закладки по адресу, папки по названию), ничего не удаляя;
- * replace — содержимое корневых папок становится точно таким, как в копии.
- * saveImage сохраняет миниатюру для созданной или найденной закладки
+ * Restores bookmarks from a backup.
+ * merge — adds what's missing (bookmarks by URL, folders by name) and deletes nothing;
+ * replace — root folder contents become exactly as in the backup.
+ * saveImage stores the thumbnail of a created or matched bookmark
  */
 export async function restoreBookmarks(
   backup: Backup,
@@ -216,14 +216,14 @@ export async function restoreBookmarks(
   return result;
 }
 
-/** Миниатюра из копии; своя миниатюра закладки не перезаписывается */
+/** Thumbnail from the backup; a bookmark's own thumbnail isn't overwritten */
 async function saveThumbnailIfMissing(id: string, thumbnail: NonNullable<BackupNode['thumbnail']>): Promise<boolean> {
   if (await getThumbnail(id).catch(() => undefined)) return false;
   await saveThumbnail(id, imageToBlob(thumbnail), thumbnail.source);
   return true;
 }
 
-/** Фоновое изображение из копии */
+/** Background image from the backup */
 export async function restoreBackground(backup: Backup): Promise<boolean> {
   if (!backup.background) return false;
   await idbSet('files', BACKGROUND_FILE_KEY, imageToBlob(backup.background));
@@ -231,7 +231,7 @@ export async function restoreBackground(backup: Backup): Promise<boolean> {
 }
 
 export function backupFileName(now = new Date()): string {
-  // 2026-09-26T12:30:05.123Z → speeddial-2026-09-26_12-30-05.json (двоеточия в именах файлов недопустимы)
+  // 2026-09-26T12:30:05.123Z → speeddial-2026-09-26_12-30-05.json (colons aren't allowed in file names)
   const stamp = now.toISOString().slice(0, 19).replace('T', '_').replaceAll(':', '-');
   return `speeddial-${stamp}.json`;
 }

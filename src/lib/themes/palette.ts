@@ -1,31 +1,31 @@
-// Палитры оформления: набор цветов для светлого или тёмного режима и сборка их в CSS-переменные
+// Themes: a set of colours for light or dark mode and turning them into CSS variables
 import {ensureContrast, mixColors} from '../color';
 
-/** Цвета одного режима. Все, кроме border, shadow, shadowRaised и cell, — в формате #rrggbb */
+/** Colours of one mode. All except border, shadow, shadowRaised and cell are #rrggbb */
 export interface ThemePalette {
-  /** Фон страницы — градиент от pageFrom к pageTo */
+  /** Page background — a gradient from pageFrom to pageTo */
   pageFrom: string;
   pageTo: string;
-  /** Панели: крошки, поиск, меню, окна */
+  /** Panels: breadcrumbs, search, menus, dialogs */
   surface: string;
   surfaceMuted: string;
   surfaceHover: string;
   text: string;
-  /** Подписи и пояснения */
+  /** Captions and hints */
   textMuted: string;
-  /** Ссылки, основные кнопки, переключатели, подсветка при перетаскивании */
+  /** Links, primary buttons, switches, drag highlight */
   accent: string;
   accentHover: string;
-  /** Текст на акцентном фоне */
+  /** Text on the accent background */
   accentText: string;
   danger: string;
   dangerText: string;
-  /** Плитка закладки и плитка папки */
+  /** Bookmark tile and folder tile */
   tile: string;
   folder: string;
-  /** Ячейки миниатюр на плитке папки (обычно полупрозрачные) */
+  /** Preview cells on a folder tile (usually translucent) */
   cell: string;
-  /** Подложка иконок сайтов — светлая даже в тёмных палитрах, иначе тёмные логотипы теряются */
+  /** Plate behind site icons — light even in dark palettes, otherwise dark logos get lost */
   plate: string;
   border: string;
   shadow: string;
@@ -39,7 +39,7 @@ export interface ThemePreset {
   dark: ThemePalette;
 }
 
-// Имена CSS-переменных для полей палитры
+// CSS variable names for palette fields
 const CSS_VARIABLES: Record<keyof ThemePalette, string> = {
   pageFrom: '--page-bg-from',
   pageTo: '--page-bg-to',
@@ -63,9 +63,9 @@ const CSS_VARIABLES: Record<keyof ThemePalette, string> = {
 };
 
 /**
- * CSS с цветами палитры: light-dark() выбирает вариант по текущему режиму, поэтому смена светлой
- * и тёмной темы (в том числе системной) не требует JavaScript. :root:root перекрывает цвета
- * по умолчанию из theme.css независимо от порядка подключения стилей
+ * CSS with palette colours: light-dark() picks the variant for the current mode, so switching light
+ * and dark (including the system setting) needs no JavaScript. :root:root overrides the default colours
+ * from theme.css regardless of stylesheet order
  */
 export function paletteCss(preset: Pick<ThemePreset, 'light' | 'dark'>): string {
   const lines = (Object.keys(CSS_VARIABLES) as Array<keyof ThemePalette>)
@@ -73,19 +73,19 @@ export function paletteCss(preset: Pick<ThemePreset, 'light' | 'dark'>): string 
   return `:root:root {\n${lines.join('\n')}\n}`;
 }
 
-const MIN_CONTRAST = 4.5; // WCAG AA для обычного текста
+const MIN_CONTRAST = 4.5; // WCAG AA for normal text
 
-// Тёмно-серый, к которому приглушаются светлые фоны
+// Dark grey that light backgrounds are softened towards
 const DIM_BASE = '#23272e';
-// Доля акцента темы в цвете приглушения: фоны получают лёгкий оттенок темы, как тоновые поверхности
-// в Material 3, — светлая тема становится мягче, но не «грязно-серой» и сохраняет характер
+// Share of the theme accent in the softening colour: backgrounds get a slight tint of the theme, like tonal surfaces
+// in Material 3, — the light theme becomes softer but not "dirty grey" and keeps its character
 const DIM_ACCENT_SHARE = 0.25;
 
 /**
- * Приглушённая светлая палитра: фоны смешиваются с тёмным оттенком акцента на amount (0–1), чтобы белое
- * не слепило. Иерархия сохраняется: фон страницы остаётся темнее плиток и панелей. Подложки иконок
- * приглушаются вдвое слабее — иконки остаются яркими. Текст, ссылки и подписи при необходимости темнеют,
- * чтобы контраст со всеми фонами остался не ниже WCAG AA
+ * Softened light palette: backgrounds are mixed with a dark shade of the accent by amount (0–1) so white
+ * doesn't glare. The hierarchy stays: the page background remains darker than tiles and panels. Icon plates
+ * are softened half as much — icons stay bright. Text, links and captions darken if needed
+ * so the contrast with all backgrounds stays at least WCAG AA
  */
 export function dimLightPalette(palette: ThemePalette, amount: number): ThemePalette {
   if (amount <= 0) return palette;
@@ -121,27 +121,27 @@ export function dimLightPalette(palette: ThemePalette, amount: number): ThemePal
 }
 
 /**
- * «Свои цвета»: светлая и тёмная палитры из акцента и оттенка фона. Нейтральные цвета — белый
- * или почти чёрный с примесью оттенка; текст и акцент при необходимости сдвигаются до читаемого контраста
+ * "Custom colours": light and dark palettes from an accent and a background tint. Neutral colours are white
+ * or near-black with a touch of the tint; text and accent shift to readable contrast if needed
  */
 export function customPreset(accent: string, tint: string): ThemePreset {
   const lightSurface = mixColors('#ffffff', tint, 0.03);
   const lightTile = mixColors('#ffffff', tint, 0.05);
   const lightFolder = mixColors('#ffffff', accent, 0.14);
   const lightText = ensureContrast(mixColors('#16181c', tint, 0.15), mixColors('#ffffff', tint, 0.16), MIN_CONTRAST);
-  // Акцент читается и как ссылка на панели, и как фон кнопки с белой надписью
+  // The accent reads both as a link on a panel and as a button background with white text
   const lightAccent = ensureContrast(ensureContrast(accent, mixColors(lightSurface, tint, 0.1), MIN_CONTRAST), '#ffffff', MIN_CONTRAST);
 
   const darkSurface = mixColors('#1e2025', tint, 0.1);
   const darkTile = mixColors('#23262c', tint, 0.1);
   const darkFolder = mixColors(darkTile, accent, 0.16);
   const darkText = ensureContrast(mixColors('#f1f2f4', tint, 0.08), mixColors(darkSurface, tint, 0.1), MIN_CONTRAST);
-  // Акцент читается и как ссылка на панели, и как фон кнопки с тёмной надписью
+  // The accent reads both as a link on a panel and as a button background with dark text
   const darkAccent = ensureContrast(ensureContrast(accent, mixColors(darkSurface, '#ffffff', 0.06), MIN_CONTRAST), '#16181c', MIN_CONTRAST);
 
   return {
     id: 'custom',
-    name: 'Свои цвета',
+    name: 'Custom colours',
     light: {
       pageFrom: mixColors('#ffffff', tint, 0.08),
       pageTo: mixColors('#ffffff', tint, 0.16),

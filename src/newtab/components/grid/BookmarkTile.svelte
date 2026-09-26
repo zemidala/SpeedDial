@@ -20,15 +20,15 @@
   const hasThumbnail = $derived(Boolean(thumbnail.url));
   const tint = $derived(iconTint && !hasThumbnail ? icon.info?.color : null);
 
-  // В режиме «на весь блок» область заливается цветом краёв иконки — иконка сливается с плиткой
+  // In "fill" mode the area is filled with the icon's edge colour — the icon blends into the tile
   const fillColor = $derived.by(() => {
     if (iconStyle !== 'fill' || hasThumbnail) return null;
     if (icon.info) return icon.info.edgeColor;
     return icon.loaded ? hashColor(siteName(url)) : null;
   });
 
-  // Веб-ссылки браузер открывает сам (включая Ctrl+клик и среднюю кнопку).
-  // Адреса вроде edge:// и file:// ссылкой со страницы расширения не открыть — только через chrome.tabs.
+  // The browser opens web links itself (including Ctrl+click and the middle button).
+  // Addresses like edge:// and file:// can't be opened by a link from an extension page — only via chrome.tabs.
   function open(event: MouseEvent, inNewTab: boolean) {
     if (isWebUrl(url)) return;
     event.preventDefault();

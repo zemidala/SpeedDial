@@ -2,7 +2,7 @@ import {resizeImage, THUMBNAIL_HEIGHT, THUMBNAIL_WIDTH} from '../images';
 import {type CaptureItem, type CaptureProgress, onMessage, requestCaptureStatus, sendMessage} from '../messages';
 import {clearThumbnails, deleteThumbnail, getThumbnail, saveThumbnail, type StoredThumbnail} from './storage';
 
-/** Миниатюра одной закладки; url — object URL картинки или null, если миниатюры нет */
+/** Thumbnail of one bookmark; url — object URL of the image, or null if there's none */
 export class ThumbnailEntry {
   url = $state<string | null>(null);
 
@@ -21,7 +21,7 @@ export class ThumbnailEntry {
 }
 
 class ThumbnailsStore {
-  /** Ход создания миниатюр в service worker; null — ничего не создаётся */
+  /** Thumbnail creation progress in the service worker; null — nothing is being created */
   progress = $state<CaptureProgress | null>(null);
 
   #entries = new Map<string, ThumbnailEntry>();
@@ -34,7 +34,7 @@ class ThumbnailsStore {
         this.progress = message.done < message.total ? {done: message.done, total: message.total} : null;
       }
     });
-    // Съёмка могла начаться до открытия этой вкладки — тогда кнопка сразу предлагает её остановить
+    // Capturing may have started before this tab opened — then the button offers to stop it right away
     requestCaptureStatus()
       .then((status) => {
         if (status && !this.progress) this.progress = status;
@@ -52,20 +52,20 @@ class ThumbnailsStore {
     return entry;
   }
 
-  /** Снимки страниц делает service worker; нужен доступ к сайтам */
+  /** Page screenshots are taken by the service worker; site access is required */
   capture(items: CaptureItem[]): Promise<void> {
     if (items.length === 0) return Promise.resolve();
     this.progress = {done: 0, total: items.length};
     return sendMessage({type: 'capture-thumbnails', items});
   }
 
-  /** Останавливает создание миниатюр; готовые сохраняются */
+  /** Stops creating thumbnails; finished ones are kept */
   cancelCapture(): Promise<void> {
     this.progress = null;
     return sendMessage({type: 'cancel-capture'});
   }
 
-  /** Своя картинка вместо снимка страницы */
+  /** A custom image instead of a page screenshot */
   async setCustom(bookmarkId: string, image: Blob): Promise<void> {
     const blob = await resizeImage(image, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
     await saveThumbnail(bookmarkId, blob, 'custom');
@@ -77,7 +77,7 @@ class ThumbnailsStore {
     await this.#changed([bookmarkId]);
   }
 
-  /** Возвращает миниатюры восстановленных закладок: старый id → новый */
+  /** Brings back thumbnails of restored bookmarks: old id → new id */
   async restore(saved: Map<string, StoredThumbnail>, ids: Map<string, string>): Promise<void> {
     const restored: string[] = [];
     for (const [oldId, thumbnail] of saved) {
@@ -89,7 +89,7 @@ class ThumbnailsStore {
     if (restored.length > 0) await this.#changed(restored);
   }
 
-  /** Перечитывает все миниатюры — например, после восстановления копии */
+  /** Reloads all thumbnails — e.g. after restoring a backup */
   reloadAll(): Promise<void> {
     return this.#changed([]);
   }
@@ -99,7 +99,7 @@ class ThumbnailsStore {
     await this.#changed([]);
   }
 
-  /** Обновляет миниатюры в этой вкладке и сообщает остальным */
+  /** Updates thumbnails in this tab and notifies the others */
   async #changed(ids: string[]): Promise<void> {
     this.#reload(ids);
     await sendMessage({type: 'thumbnails-changed', ids});

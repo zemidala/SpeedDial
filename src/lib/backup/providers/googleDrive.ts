@@ -1,5 +1,5 @@
-// Google Диск: копии в скрытой папке приложения (appDataFolder) — среди файлов пользователя их не видно,
-// а приложение не видит ничего, кроме своих файлов
+// Google Drive: backups live in the hidden app folder (appDataFolder) — invisible among the user's files,
+// and the app sees nothing but its own files
 import {t} from '../../i18n/index.svelte';
 import {authorize, type OAuthTokens, redirectUrl} from '../oauth';
 import {apiFetch, type CloudClient, type RemoteFile, sortBackups} from '../provider';
@@ -22,7 +22,7 @@ export class GoogleDriveClient implements CloudClient {
   constructor(private readonly token: string) {}
 
   async ensureFolder(): Promise<void> {
-    // Папка приложения есть всегда
+    // The app folder always exists
   }
 
   async #files(): Promise<DriveFile[]> {
@@ -49,7 +49,7 @@ export class GoogleDriveClient implements CloudClient {
     return (await apiFetch(`${FILES_URL}/${id}?alt=media`, this.token)).text();
   }
 
-  /** Загрузка в два шага (resumable): у простой загрузки с описанием файла ограничение 5 МБ */
+  /** Two-step (resumable) upload: a simple upload with file metadata is limited to 5 MB */
   async write(name: string, content: string): Promise<void> {
     const start = await apiFetch(`${UPLOAD_URL}?uploadType=resumable`, this.token, {
       method: 'POST',
@@ -67,7 +67,7 @@ export class GoogleDriveClient implements CloudClient {
   }
 }
 
-/** У Google нет продления без секрета приложения, поэтому новый токен берём молчаливым входом (prompt=none) */
+/** Google has no refresh without an app secret, so a new token comes from a silent sign-in (prompt=none) */
 async function requestAccess(clientId: string, interactive: boolean, account?: string): Promise<OAuthTokens> {
   const url = new URL(AUTH_URL);
   url.searchParams.set('client_id', clientId);

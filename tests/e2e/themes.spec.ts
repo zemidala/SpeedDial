@@ -2,7 +2,7 @@ import type {Page} from '@playwright/test';
 import {expect, openSettings, seed, test, tile} from './fixtures';
 
 test.beforeEach(async ({newtab}) => {
-  // Точные цвета тем проверяем без приглушения светлой темы; само приглушение — в отдельном тесте
+  // Exact theme colours are checked without light theme softening; the softening itself has its own test
   await newtab.evaluate(() => chrome.storage.sync.set({settings: {lightDimming: 0}}));
   await newtab.reload();
   await seed(newtab, [
@@ -15,7 +15,7 @@ test.beforeEach(async ({newtab}) => {
 const style = (page: Page, selector: string, property: string) =>
   () => page.locator(selector).first().evaluate((el, property) => getComputedStyle(el).getPropertyValue(property), property);
 
-test('тема оформления красит панели, плитки и папки в обоих режимах', async ({newtab}) => {
+test('the theme colours panels, tiles and folders in both modes', async ({newtab}) => {
   await newtab.emulateMedia({colorScheme: 'light'});
   const dialog = await openSettings(newtab);
   const nord = dialog.getByRole('radio', {name: 'Nord'});
@@ -23,19 +23,19 @@ test('тема оформления красит панели, плитки и �
   await expect(nord).toHaveAttribute('aria-checked', 'true');
   await dialog.getByRole('button', {name: 'Готово'}).click();
 
-  // Светлый вариант Nord
+  // Light variant of Nord
   await expect.poll(style(newtab, '.breadcrumbs', 'background-color')).toBe('rgb(248, 249, 251)');
   await expect.poll(style(newtab, '.tile--folder .tile__card', 'background-color')).toBe('rgb(221, 230, 240)');
   await expect.poll(style(newtab, '.breadcrumbs__item', 'color')).toBe('rgb(75, 107, 148)');
 
-  // Тёмный вариант — сам, при смене режима системы
+  // The dark variant — automatically, when the system mode changes
   await newtab.emulateMedia({colorScheme: 'dark'});
   await expect.poll(style(newtab, '.breadcrumbs', 'background-color')).toBe('rgb(59, 66, 82)');
   await expect.poll(style(newtab, '.tile--folder .tile__card', 'background-color')).toBe('rgb(57, 74, 94)');
   await expect.poll(style(newtab, 'body', 'color')).toBe('rgb(236, 239, 244)');
 });
 
-test('приглушение светлой темы: фоны мягче, текст читается, тёмная тема не меняется', async ({newtab}) => {
+test('softening the light theme: gentler backgrounds, readable text, the dark theme unchanged', async ({newtab}) => {
   const luminance = style(newtab, '.breadcrumbs', 'background-color');
   const brightness = async () => (await luminance()).match(/\d+/g)!.slice(0, 3).map(Number).reduce((a, b) => a + b, 0);
   const textContrast = () => newtab.evaluate(() => {
@@ -57,12 +57,12 @@ test('приглушение светлой темы: фоны мягче, те�
   await expect.poll(brightness).toBeLessThan(3 * 230);
   expect(await textContrast()).toBeGreaterThanOrEqual(4.5);
 
-  // Тёмная тема не меняется
+  // The dark theme doesn't change
   await newtab.emulateMedia({colorScheme: 'dark'});
   await expect.poll(luminance).toBe('rgb(44, 48, 57)');
 });
 
-test('превью тем показывают вариант для текущего режима', async ({newtab}) => {
+test('theme previews show the variant for the current mode', async ({newtab}) => {
   const dialog = await openSettings(newtab);
   const catppuccinBar = dialog.getByRole('radio', {name: 'Catppuccin'}).locator('.theme-card__bar');
 
@@ -71,18 +71,18 @@ test('превью тем показывают вариант для текущ�
   await newtab.emulateMedia({colorScheme: 'dark'});
   await expect(catppuccinBar).toHaveCSS('background-color', 'rgb(49, 50, 68)'); // Mocha
 
-  // Явно выбранный режим тоже учитывается
+  // An explicitly chosen mode is respected too
   await dialog.getByLabel('Светлая или тёмная').selectOption('light');
   await expect(catppuccinBar).toHaveCSS('background-color', 'rgb(239, 241, 245)');
 });
 
-test('свои цвета: акцент и оттенок фона, читаемые в обоих режимах', async ({newtab}) => {
+test('custom colours: accent and background tint readable in both modes', async ({newtab}) => {
   await newtab.emulateMedia({colorScheme: 'light'});
   const dialog = await openSettings(newtab);
   await expect(dialog.getByLabel('Акцент')).toHaveCount(0);
   await dialog.getByRole('radio', {name: 'Свои цвета'}).click();
 
-  // Ярко-жёлтый акцент на светлом фоне нечитаем — палитра сама затемнит его для ссылок и кнопок
+  // A bright yellow accent is unreadable on a light background — the palette darkens it for links and buttons
   await dialog.getByLabel('Акцент').fill('#ffd700');
   await dialog.getByLabel('Оттенок фона').fill('#2e8b57');
   await dialog.getByRole('button', {name: 'Готово'}).click();
@@ -103,7 +103,7 @@ test('свои цвета: акцент и оттенок фона, читаем
   await expect.poll(contrast).toBeGreaterThanOrEqual(4.5);
 });
 
-test('тема применяется до первой отрисовки', async ({context, newtab}) => {
+test('the theme applies before the first paint', async ({context, newtab}) => {
   const dialog = await openSettings(newtab);
   await dialog.getByRole('radio', {name: 'Gruvbox'}).click();
   await dialog.getByRole('button', {name: 'Готово'}).click();

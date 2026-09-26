@@ -1,4 +1,4 @@
-// OneDrive: копии в папке приложения (Приложения/SpeedDial). Вход через Microsoft с PKCE
+// OneDrive: backups live in the app folder (Apps/SpeedDial). Sign-in via Microsoft with PKCE
 import {t} from '../../i18n/index.svelte';
 import {authorize, type OAuthTokens, pkcePair, redirectUrl, requestToken} from '../oauth';
 import {apiFetch, type CloudClient, type RemoteFile, sortBackups} from '../provider';
@@ -20,7 +20,7 @@ export class OneDriveClient implements CloudClient {
   constructor(private readonly token: string) {}
 
   async ensureFolder(): Promise<void> {
-    // Папка приложения создаётся при первом обращении
+    // The app folder is created on first access
   }
 
   #item(name: string): string {
@@ -38,8 +38,8 @@ export class OneDriveClient implements CloudClient {
   }
 
   /**
-   * Содержимое — по готовой ссылке на скачивание: запрос /content отвечает переадресацией
-   * на другой домен, а туда нельзя передавать токен
+   * Contents come from a ready download link: /content answers with a redirect
+   * to another domain, and the token must not be sent there
    */
   async read(name: string): Promise<string> {
     const item = await (await apiFetch(`${this.#item(name)}?$select=@microsoft.graph.downloadUrl`, this.token)).json() as
@@ -99,7 +99,7 @@ export function oneDrive(clientId: string): OAuthProvider {
         {mail?: string; userPrincipalName?: string};
       return {tokens, account: me.mail ?? me.userPrincipalName ?? 'OneDrive'};
     },
-    /** refresh-токен приложения в браузере живёт сутки; когда он истёк — молчаливый вход */
+    /** An in-browser app's refresh token lives for a day; once it expires — silent sign-in */
     async refresh(tokens, account) {
       if (tokens.refreshToken) {
         try {

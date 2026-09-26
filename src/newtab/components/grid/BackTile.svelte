@@ -5,7 +5,7 @@
   import Icon from '../ui/Icon.svelte';
   import Tile from './Tile.svelte';
 
-  // На плитку «Назад» можно перетащить закладку — она переместится в родительскую папку
+  // A bookmark can be dropped on the Back tile — it moves to the parent folder
   let {folderId}: {folderId: string} = $props();
 </script>
 

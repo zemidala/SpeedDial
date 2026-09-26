@@ -13,7 +13,7 @@
   const value = $derived(settings.current[key]);
   const isDefault = $derived(value === DEFAULT_SETTINGS[key]);
 
-  // Для палитры нужен конкретный цвет, даже когда выбран цвет «по теме» — берём его из темы оформления
+  // The palette needs a concrete colour even when "from theme" is chosen — take it from the theme
   const pickerValue = $derived.by(() => {
     if (value) return value;
     const preset = resolvePreset(settings.current);

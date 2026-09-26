@@ -21,13 +21,13 @@
   import FolderTile from './FolderTile.svelte';
   import SelectionBar from './SelectionBar.svelte';
 
-  const REORDER_DURATION = 200; // Мс; плитки плавно расступаются при перетаскивании
+  const REORDER_DURATION = 200; // Ms; tiles smoothly make room while dragging
 
   const reducedMotion = new MediaQuery('(prefers-reduced-motion: reduce)');
 
   const items = $derived.by((): BookmarkNode[] => {
     if (search.active) return search.results;
-    // Во время перетаскивания — порядок «вживую»
+    // While dragging — the "live" order
     const preview = dragDrop.previewIds;
     if (preview) {
       const byId = new Map(bookmarks.items.map((item) => [item.id, item]));
@@ -37,13 +37,13 @@
     return sortNodes(bookmarks.items, settings.current.sortOrder, settings.current.typeOrder);
   });
 
-  // Пришёл обновлённый список из браузера — временный порядок перетаскивания больше не нужен
+  // An updated list arrived from the browser — the temporary drag order isn't needed anymore
   $effect(() => {
     void bookmarks.items;
     dragDrop.settle();
   });
 
-  // «Назад» — только во вложенных папках: из «Панели избранного» и других корневых папок ведут крошки
+  // Back only in nested folders: breadcrumbs lead out of the bookmarks bar and other root folders
   const parentFolderId = $derived.by(() => {
     const parent = bookmarks.parentFolderId;
     if (search.active || !settings.current.showBackTile || parent === ROOT_FOLDER_ID) return null;
@@ -60,27 +60,27 @@
     return null;
   });
 
-  // ===== Выделение =====
+  // ===== Selection =====
   const itemIds = $derived(items.map((item) => item.id));
   const selectedNodes = $derived(items.filter((item) => selection.has(item.id)));
 
-  // Другая папка или другой поиск — выделение сбрасывается
-  // (изменения выделения — в untrack: иначе эффект зависел бы от выделения, которое сам меняет)
+  // Another folder or another search — the selection resets
+  // (selection changes are in untrack: otherwise the effect would depend on the selection it changes itself)
   $effect(() => {
     void bookmarks.folderId;
     void search.query;
     untrack(() => selection.clear());
   });
 
-  // Удалённые и перенесённые плитки из выделения убираем
+  // Removed and moved tiles are dropped from the selection
   $effect(() => {
     const ids = itemIds;
     untrack(() => selection.retain(ids));
   });
 
   /**
-   * Клик по плитке при выделении отмечает её, а не открывает: Shift — диапазон, обычный клик — одна плитка.
-   * Ловим до обработчиков плиток. Ctrl+клик и средняя кнопка по-прежнему открывают в новой вкладке
+   * While selecting, a click on a tile marks it instead of opening: Shift — a range, a plain click — one tile.
+   * Caught before the tiles' handlers. Ctrl+click and the middle button still open in a new tab
    */
   function onClickCapture(event: MouseEvent) {
     if (event.ctrlKey || event.metaKey || event.altKey || event.button !== 0) return;
@@ -101,11 +101,11 @@
 
   let section: HTMLElement;
 
-  // Все плитки по порядку, включая «Назад» и «Добавить»
+  // All tiles in order, including Back and Add
   const tileElements = () => [...section.querySelectorAll<HTMLElement>('.tile')];
 
-  // После удаления с клавиатуры фокус переходит на плитку, вставшую на место удалённой, — можно удалять подряд.
-  // Ждём, пока удалённая закладка пропадёт из списка: браузер сообщает об этом не сразу
+  // After deleting with the keyboard, focus moves to the tile that took the deleted one's place — delete in a row.
+  // Wait until the deleted bookmark leaves the list: the browser reports it with a delay
   let focusAfterDelete = $state<{id: string; index: number} | null>(null);
 
   $effect(() => {
@@ -122,13 +122,13 @@
   async function deleteFocused(tile: HTMLElement, node: BookmarkNode) {
     const index = tileElements().indexOf(tile);
     const deleting = requestDelete(node);
-    // С подтверждением фокусом управляет окно
+    // With a confirmation the dialog manages focus
     if (!deleting) return;
     await deleting;
     focusAfterDelete = {id: node.id, index};
   }
 
-  // Стрелки, Home и End переводят фокус по плиткам; Delete удаляет, F2 — редактирует
+  // Arrows, Home and End move focus across tiles; Delete deletes, F2 edits
   function onTileKeydown(event: KeyboardEvent) {
     if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
     const tile = (event.target as Element).closest<HTMLElement>('.tile');
@@ -145,7 +145,7 @@
     const node = items.find((item) => item.id === tile.dataset.bookmarkId);
     if (!node) return;
     if (event.key === ' ') {
-      // Пробел отмечает плитку в фокусе
+      // Space marks the focused tile
       event.preventDefault();
       selection.toggle(node.id);
     } else if (event.key === 'Delete' && selection.has(node.id) && selectedNodes.length > 1) {
@@ -165,10 +165,10 @@
     }
   }
 
-  // Alt+1…9 открывает первые девять плиток — закладки и папки
+  // Alt+1…9 opens the first nine tiles — bookmarks and folders
   function onWindowKeydown(event: KeyboardEvent) {
     if (modals.depth === 0 && !(event.target as Element).closest('input, textarea, select, [contenteditable]')) {
-      // Ctrl+A — выделить все плитки, Esc — снять выделение
+      // Ctrl+A — select all tiles, Esc — clear the selection
       if ((event.ctrlKey || event.metaKey) && !event.altKey && event.code === 'KeyA' && items.length > 0) {
         event.preventDefault();
         selection.selectAll(itemIds);
@@ -181,7 +181,7 @@
     }
     onTileKeydown(event);
     if (event.defaultPrevented || !event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || modals.depth > 0) return;
-    // По коду клавиши, а не символу: работает в любой раскладке
+    // By key code, not character: works in any keyboard layout
     const digit = /^Digit([1-9])$/.exec(event.code);
     const tile = digit && section.querySelectorAll<HTMLElement>('.tile[data-bookmark-id]')[Number(digit[1]) - 1];
     if (!tile) return;
@@ -207,7 +207,7 @@
   {#each items as item, slot (item.id)}
     {@const indicator = dragDrop.indicator?.id === item.id ? dragDrop.indicator : null}
     {@const selected = selection.has(item.id)}
-    <!-- Ячейка сетки: по ячейкам определяется место при перетаскивании, в них же анимируется перестановка -->
+    <!-- Grid cell: cells define the position while dragging, and the reorder is animated in them -->
     <div
       class="bookmark-grid__cell"
       class:bookmark-grid__cell--selected={selected}
@@ -223,7 +223,7 @@
       {:else}
         <FolderTile folder={item} preview={bookmarks.previews[item.id] ?? []}/>
       {/if}
-      <!-- Галочка выделения: видна при наведении и пока что-то выделено. С клавиатуры — пробел на плитке -->
+      <!-- Selection check mark: visible on hover and while something is selected. Keyboard — Space on the tile -->
       <button
         type="button"
         class="bookmark-grid__check"
@@ -254,7 +254,7 @@
 <style>
   .bookmark-grid {
     display: grid;
-    /* Столько колонок, сколько задано в настройках, но на узком экране плитки не уже 120px */
+    /* As many columns as set in the settings, but tiles are no narrower than 120px on a narrow screen */
     grid-template-columns: repeat(
       auto-fill,
       minmax(max(120px, (100% - (var(--columns) - 1) * var(--gap)) / var(--columns)), 1fr)
@@ -269,8 +269,8 @@
     min-width: 0;
   }
 
-  /* ===== Выделение ===== */
-  /* Белое кольцо на тёмной полупрозрачной подложке с тенью — заметно на любой плитке и любом фоне */
+  /* ===== Selection ===== */
+  /* A white ring on a dark translucent plate with a shadow — visible on any tile and any background */
   .bookmark-grid__check {
     position: absolute;
     top: 6px;
@@ -292,7 +292,7 @@
     transition: opacity 0.15s, background-color 0.15s;
   }
 
-  /* Название над плиткой — кружок на карточке, а не на строке названия */
+  /* Name above the tile — the circle sits on the card, not on the name line */
   .bookmark-grid__cell:has(:global(.tile--title-top-outside)) .bookmark-grid__check {
     top: 30px;
   }
@@ -303,7 +303,7 @@
     opacity: 1;
   }
 
-  /* Наведение — подсказка галочкой */
+  /* Hover — a hint with the check mark */
   .bookmark-grid__check:hover {
     background: rgb(0 0 0 / 0.6);
     color: rgb(255 255 255 / 0.85);
@@ -320,17 +320,17 @@
     outline-offset: 2px;
   }
 
-  /* При выделении клик отмечает плитку — курсор это подсказывает */
+  /* While selecting, a click marks the tile — the cursor hints at it */
   .bookmark-grid--selecting :global(.tile[data-bookmark-id]) {
     cursor: default;
   }
 
-  /* Перетаскивают группу — остальные выделенные плитки полупрозрачны, как и перетаскиваемая */
+  /* A group is dragged — the other selected tiles are translucent, like the dragged one */
   .bookmark-grid__cell--group-dragging {
     opacity: 0.4;
   }
 
-  /* Линия-вставка в промежутке между плитками: сюда встанет перетаскиваемая плитка */
+  /* Insertion line in the gap between tiles: the dragged tile lands here */
   .bookmark-grid__cell--insert-before::before,
   .bookmark-grid__cell--insert-after::after {
     position: absolute;
@@ -353,7 +353,7 @@
     right: calc(var(--gap) / -2 - 2px);
   }
 
-  /* У края папки линия «вырастает» за время ожидания: задержите курсор — плитка встанет рядом */
+  /* At a folder's edge the line "grows" while waiting: hold the pointer — the tile lands next to it */
   .bookmark-grid__cell--insert-pending::before,
   .bookmark-grid__cell--insert-pending::after {
     animation: insert-grow var(--insert-delay) ease-out both;

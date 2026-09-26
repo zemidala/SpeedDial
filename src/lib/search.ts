@@ -1,7 +1,7 @@
 import {t} from './i18n/index.svelte';
 import type {SearchEngine} from './settings/schema';
 
-/** Название поисковой системы на языке интерфейса */
+/** Search engine name in the interface language */
 export function searchEngineName(engine: SearchEngine): string {
   switch (engine) {
     case 'google':
@@ -17,7 +17,7 @@ export function searchEngineName(engine: SearchEngine): string {
   }
 }
 
-// %s заменяется закодированным запросом
+// %s is replaced with the encoded query
 const SEARCH_URLS: Record<Exclude<SearchEngine, 'custom'>, string> = {
   google: 'https://www.google.com/search?q=%s',
   yandex: 'https://yandex.ru/search/?text=%s',
@@ -25,7 +25,7 @@ const SEARCH_URLS: Record<Exclude<SearchEngine, 'custom'>, string> = {
   duckduckgo: 'https://duckduckgo.com/?q=%s',
 };
 
-/** Адрес страницы результатов; свой шаблон без %s или с неверной схемой заменяется на Google */
+/** Results page URL; a custom template without %s or with a wrong scheme falls back to Google */
 export function buildSearchUrl(engine: SearchEngine, query: string, customUrl = ''): string {
   const valid = /^https?:\/\/.+%s/i.test(customUrl);
   const template = engine === 'custom' ? (valid ? customUrl : SEARCH_URLS.google) : SEARCH_URLS[engine];

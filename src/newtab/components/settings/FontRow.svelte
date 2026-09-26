@@ -5,12 +5,13 @@
   import {settings} from '../../../lib/settings/store.svelte';
   import SettingRow from './SettingRow.svelte';
 
-  // Выбор шрифта из установленных; под названием — пример текста этим шрифтом, как в настройках Edge
+  // Font picker with installed fonts; below it a sample line set in the chosen font, as in Edge's font settings.
+  // Everything is wrapped in one block so the group's row dividers don't separate the sample from the picker
   const CUSTOM = '__custom__';
 
   let fonts = $state.raw<string[]>([]);
   let status = $state('');
-  /** «Другой…» выбран вручную — поле ввода видно, даже пока оно пустое */
+  /** "Other…" was picked explicitly — keep the input visible even while it's empty */
   let customChosen = $state(false);
 
   onMount(() => {
@@ -34,45 +35,47 @@
   }
 </script>
 
-<SettingRow label={t.view.font}>
-  {#snippet children(id)}
-    <select {id} class="input" value={selected} onchange={(event) => choose(event.currentTarget.value)}>
-      <option value={SYSTEM_FONT}>{t.view.fontSystem}</option>
-      {#each fonts as font (font)}
-        <option value={font} style:font-family={fontStack(font)}>{font}</option>
-      {/each}
-      <option value={CUSTOM}>{t.view.fontCustom}</option>
-    </select>
-  {/snippet}
-</SettingRow>
-<p class="font-row__sample" style:font-family={settings.current.fontFamily}>{t.view.fontSample}</p>
-
-{#if selected === CUSTOM}
-  <SettingRow label={t.view.fontCustomName}>
+<div class="font-row">
+  <SettingRow label={t.view.font}>
     {#snippet children(id)}
-      <input
-        {id}
-        class="input"
-        type="text"
-        placeholder="Segoe UI, system-ui, sans-serif"
-        value={settings.current.fontFamily}
-        oninput={(event) => settings.update({fontFamily: event.currentTarget.value})}
-      >
+      <select {id} class="input" value={selected} onchange={(event) => choose(event.currentTarget.value)}>
+        <option value={SYSTEM_FONT}>{t.view.fontSystem}</option>
+        {#each fonts as font (font)}
+          <option value={font} style:font-family={fontStack(font)}>{font}</option>
+        {/each}
+        <option value={CUSTOM}>{t.view.fontCustom}</option>
+      </select>
     {/snippet}
   </SettingRow>
-{/if}
+  <p class="font-row__sample" style:font-family={settings.current.fontFamily}>{t.view.fontSample}</p>
 
-{#if canListSystemFonts()}
-  <div class="font-row__actions">
-    <button type="button" class="button" onclick={loadSystemFonts}>{t.view.allFonts}</button>
-    {#if status}
-      <span class="font-row__status" role="status">{status}</span>
-    {/if}
-  </div>
-{/if}
+  {#if selected === CUSTOM}
+    <SettingRow label={t.view.fontCustomName}>
+      {#snippet children(id)}
+        <input
+          {id}
+          class="input"
+          type="text"
+          placeholder="Segoe UI, system-ui, sans-serif"
+          value={settings.current.fontFamily}
+          oninput={(event) => settings.update({fontFamily: event.currentTarget.value})}
+        >
+      {/snippet}
+    </SettingRow>
+  {/if}
+
+  {#if canListSystemFonts()}
+    <div class="font-row__actions">
+      <button type="button" class="button" onclick={loadSystemFonts}>{t.view.allFonts}</button>
+      {#if status}
+        <span class="font-row__status" role="status">{status}</span>
+      {/if}
+    </div>
+  {/if}
+</div>
 
 <style>
-  /* Пример и кнопка — в колонке элементов управления, под списком шрифтов */
+  /* The sample and the button sit in the controls column, under the font list */
   .font-row__sample,
   .font-row__actions {
     margin-left: calc(50% + 12px);

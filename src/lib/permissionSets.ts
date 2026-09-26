@@ -1,10 +1,10 @@
-// Необязательные разрешения расширения. Без Svelte — используются и в service worker
+// Optional permissions of the extension. No Svelte — also used in the service worker
 
-/** Доступ к сайтам: иконки с сайтов и снимки страниц для миниатюр */
+/** Access to sites: icons from sites and page screenshots for thumbnails */
 export const SITE_ACCESS: chrome.permissions.Permissions = {origins: ['<all_urls>']};
 
-/** Доступ только к Bing: фон «Картинка дня» */
+/** Access to Bing only: the "Image of the day" background */
 export const BING_ACCESS: chrome.permissions.Permissions = {origins: ['https://www.bing.com/*']};
 
-/** Чтение буфера обмена: вставка картинки-миниатюры из буфера */
+/** Reading the clipboard: pasting a thumbnail image from the clipboard */
 export const CLIPBOARD_ACCESS: chrome.permissions.Permissions = {permissions: ['clipboardRead']};

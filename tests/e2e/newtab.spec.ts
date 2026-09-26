@@ -13,16 +13,16 @@ test.beforeEach(async ({newtab}) => {
   ]);
 });
 
-test('показывает закладки и папки без перезагрузки страницы', async ({newtab}) => {
+test('shows bookmarks and folders without reloading the page', async ({newtab}) => {
   await expect(tile(newtab, 'Example')).toBeVisible();
   await expect(tile(newtab, 'Example')).toHaveAttribute('href', 'https://example.com/');
 
-  // Миниатюры папки: закладка и значок вложенной папки
+  // Folder previews: a bookmark and a subfolder icon
   const folder = tile(newtab, 'Работа');
   await expect(folder.locator('.folder-preview [title="Docs"]')).toBeVisible();
   await expect(folder.locator('.folder-preview [title="Архив"] svg')).toBeVisible();
 
-  // Значок подпапки и иконка сайта растянуты почти на всю ячейку, одинаково
+  // The subfolder icon and the site icon fill almost the whole cell, equally
   const subfolder = folder.locator('.folder-preview [title="Архив"]');
   const subfolderCell = (await subfolder.boundingBox())!;
   const subfolderIcon = (await subfolder.locator('svg').boundingBox())!;
@@ -34,9 +34,9 @@ test('показывает закладки и папки без перезаг�
   expect(siteIcon.height).toBeGreaterThan(siteCell.height * 0.6);
 });
 
-test('плитка папки — кнопка без адреса; Ctrl+клик открывает папку в новой вкладке', async ({context, newtab}) => {
+test('a folder tile is a button without a URL; Ctrl+click opens the folder in a new tab', async ({context, newtab}) => {
   const folder = tile(newtab, 'Работа');
-  // Не ссылка: браузер не показывает при наведении адрес chrome-extension://…
+  // Not a link: the browser doesn't show chrome-extension://… on hover
   await expect(folder).not.toHaveAttribute('href');
 
   const opened = context.waitForEvent('page');
@@ -44,37 +44,37 @@ test('плитка папки — кнопка без адреса; Ctrl+кли�
   const page = await opened;
   await expect(page).toHaveURL(/newtab\.html#folder=\d+$/);
   await expect(tile(page, 'Docs')).toBeVisible();
-  // Сама вкладка осталась в прежней папке
+  // The tab itself stayed in the same folder
   await expect(tile(newtab, 'Example')).toBeVisible();
 });
 
-test('навигация по папкам и хлебным крошкам', async ({newtab}) => {
+test('navigating folders and breadcrumbs', async ({newtab}) => {
   await tile(newtab, 'Работа').click();
   await expect(tile(newtab, 'Docs')).toBeVisible();
   await expect(newtab).toHaveURL(/#folder=\d+$/);
 
-  // Название панели закладок зависит от языка браузера
+  // The bookmarks bar name depends on the browser language
   const [bar] = await newtab.evaluate(() => chrome.bookmarks.get('1'));
   const crumbs = newtab.getByRole('navigation', {name: 'Путь к папке'});
   await expect(crumbs.locator('.breadcrumbs__item')).toHaveText(['Главная', bar.title, 'Работа']);
-  // Папки пути — кнопки: браузер не показывает при наведении адрес chrome-extension://…
+  // Path folders are buttons: the browser doesn't show chrome-extension://… on hover
   await expect(crumbs.locator('a')).toHaveCount(0);
 
-  // Перезагрузка оставляет в той же папке
+  // A reload keeps the same folder
   await newtab.reload();
   await expect(tile(newtab, 'Docs')).toBeVisible();
 
-  // Кнопка «Назад» браузера
+  // The browser's Back button
   await newtab.goBack();
   await expect(tile(newtab, 'Example')).toBeVisible();
 
-  // «Главная» — корень: видны системные папки, пустых крошек нет
+  // "Home" is the root: system folders are shown, no empty breadcrumbs
   await crumbs.getByRole('button', {name: 'Главная'}).click();
   await expect(tile(newtab, bar.title)).toBeVisible();
   await expect(crumbs.locator('.breadcrumbs__item')).toHaveCount(1);
 });
 
-test('добавляет закладку в открытую папку через контекстное меню', async ({newtab}) => {
+test('adds a bookmark to the open folder via the context menu', async ({newtab}) => {
   await tile(newtab, 'Работа').click();
   await expect(tile(newtab, 'Docs')).toBeVisible();
 
@@ -94,7 +94,7 @@ test('добавляет закладку в открытую папку чер�
   expect(children.map((node) => node.url)).toContain('https://github.com/');
 });
 
-test('показывает ошибку при неверном адресе', async ({newtab}) => {
+test('shows an error for an invalid URL', async ({newtab}) => {
   await newtab.locator('main').click({button: 'right', position: {x: 5, y: 5}});
   await newtab.getByRole('menuitem', {name: 'Новая закладка…'}).click();
 
@@ -107,7 +107,7 @@ test('показывает ошибку при неверном адресе', a
   await expect(dialog).toBeHidden();
 });
 
-test('изменяет закладку', async ({newtab}) => {
+test('edits a bookmark', async ({newtab}) => {
   await tile(newtab, 'Example').click({button: 'right'});
   await newtab.getByRole('menuitem', {name: 'Редактировать…'}).click();
 
@@ -121,7 +121,7 @@ test('изменяет закладку', async ({newtab}) => {
   await expect(tile(newtab, 'Example')).toHaveCount(0);
 });
 
-test('переименовывает папку без поля адреса', async ({newtab}) => {
+test('renames a folder without a URL field', async ({newtab}) => {
   await tile(newtab, 'Работа').click({button: 'right'});
   await newtab.getByRole('menuitem', {name: 'Редактировать…'}).click();
 
@@ -133,8 +133,8 @@ test('переименовывает папку без поля адреса', a
   await expect(tile(newtab, 'Проекты')).toBeVisible();
 });
 
-test('удаляет папку после подтверждения', async ({newtab}) => {
-  const settings = await openSettings(newtab, 'Расширенные');
+test('deletes a folder after confirmation', async ({newtab}) => {
+  const settings = await openSettings(newtab, 'Общие');
   await settings.getByLabel('Спрашивать подтверждение при удалении').check();
   await settings.getByRole('button', {name: 'Готово'}).click();
 
@@ -154,7 +154,7 @@ test('удаляет папку после подтверждения', async ({
   expect(titles).toEqual(['Example']);
 });
 
-test('удаление без вопроса и отмена из уведомления', async ({newtab}) => {
+test('deleting without a question and undoing from the notification', async ({newtab}) => {
   await tile(newtab, 'Работа').click({button: 'right'});
   await newtab.getByRole('menuitem', {name: 'Удалить', exact: true}).click();
   await expect(tile(newtab, 'Работа')).toHaveCount(0);
@@ -164,7 +164,7 @@ test('удаление без вопроса и отмена из уведомл
   await notice.getByRole('button', {name: 'Отменить'}).click();
   await expect(notice).toHaveCount(0);
 
-  // Папка вернулась на прежнее место вместе с содержимым
+  // The folder is back at its old place with its contents
   await expect(tile(newtab, 'Работа')).toBeVisible();
   const children = await getChildren(newtab, '1');
   expect(children.map((node) => node.title)).toEqual(['Example', 'Работа']);
@@ -175,13 +175,13 @@ test('удаление без вопроса и отмена из уведомл
   ]);
 });
 
-test('в полях настроек остаётся стандартное меню браузера', async ({newtab}) => {
+test('settings fields keep the browser\'s standard menu', async ({newtab}) => {
   await openSettings(newtab);
   await newtab.getByLabel('Шрифт', {exact: true}).click({button: 'right'});
   await expect(newtab.getByRole('menu')).toHaveCount(0);
 });
 
-test('настройки применяются сразу и сохраняются', async ({newtab}) => {
+test('settings apply immediately and are saved', async ({newtab}) => {
   await expect(tile(newtab, 'Example')).toBeVisible();
   const grid = newtab.getByRole('region', {name: 'Закладки'});
   const columnCount = () => grid.evaluate((el) => getComputedStyle(el).gridTemplateColumns.split(' ').length);
@@ -196,7 +196,7 @@ test('настройки применяются сразу и сохраняют
   await dialog.getByRole('button', {name: 'Готово'}).click();
   await expect(dialog).toBeHidden();
 
-  // Ждём отложенную запись в chrome.storage.sync и проверяем после перезагрузки
+  // Wait for the delayed write to chrome.storage.sync and check after a reload
   await expect.poll(() => newtab.evaluate(async () => (await chrome.storage.sync.get('settings')).settings))
     .toMatchObject({columns: 3, fontFamily: '"Georgia", system-ui, sans-serif'});
   await newtab.evaluate(() => localStorage.clear());
@@ -205,7 +205,7 @@ test('настройки применяются сразу и сохраняют
   await expect.poll(columnCount).toBe(3);
 });
 
-test('веб-закладка открывается в текущей вкладке', async ({context, newtab}) => {
+test('a web bookmark opens in the current tab', async ({context, newtab}) => {
   await context.route('https://example.com/**', (route) => route.fulfill({body: '<title>Example page</title>'}));
   await tile(newtab, 'Example').click();
   await expect(newtab).toHaveURL('https://example.com/');

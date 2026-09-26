@@ -1,16 +1,16 @@
-// Схема настроек: типы, значения по умолчанию и проверка данных из хранилища и импорта
+// Settings schema: types, defaults and validation of data from storage and imports
 import {en} from '../i18n/en';
 import {ru} from '../i18n/ru';
 import {DEFAULT_THEME_PRESET, THEME_PRESET_IDS} from '../themes/presets';
 
-/** auto — язык браузера, если на него есть перевод, иначе английский */
+/** auto — the browser language if there's a translation for it, otherwise English */
 export const LANGUAGE_SETTINGS = ['auto', 'en', 'ru'] as const;
 export const THEMES = ['auto', 'light', 'dark'] as const;
-/** auto — повышенная, если в системе включена высокая контрастность (prefers-contrast: more) */
+/** auto — high if the system has high contrast enabled (prefers-contrast: more) */
 export const CONTRASTS = ['auto', 'normal', 'high'] as const;
-/** Размер текста всей страницы — как «Размер шрифта» в настройках браузера */
+/** Text size of the whole page — like "Font size" in the browser settings */
 export const FONT_SIZES = ['xs', 's', 'm', 'l', 'xl'] as const;
-/** Размер названий плиток */
+/** Tile name size */
 export const TITLE_SIZES = ['s', 'm', 'l'] as const;
 export const BACKGROUNDS = ['none', 'color', 'image', 'bing'] as const;
 export const ICON_STYLES = ['plate', 'fill'] as const;
@@ -39,34 +39,34 @@ export interface ServiceLink {
 }
 
 export interface Settings {
-  // ===== Вид =====
+  // ===== Appearance =====
   language: LanguageSetting;
   columns: number;
-  /** Ширина области закладок, % ширины окна */
+  /** Width of the bookmarks area, % of the window width */
   containerWidth: number;
-  /** Светлый или тёмный режим */
+  /** Light or dark mode */
   theme: Theme;
-  /** Контрастность рамок, ячеек и второстепенного текста */
+  /** Contrast of borders, cells and secondary text */
   contrast: Contrast;
-  /** Тема оформления (набор цветов); custom — палитра из customAccent и customTint */
+  /** Theme (set of colours); custom — a palette from customAccent and customTint */
   themePreset: string;
   customAccent: string;
-  /** Оттенок фона для своей палитры */
+  /** Background tint for the custom palette */
   customTint: string;
-  /** Насколько приглушить светлые фоны, % (0 — как в теме) */
+  /** How much to soften light backgrounds, % (0 — as in the theme) */
   lightDimming: number;
   verticalCenter: boolean;
-  /** plate — иконка на подложке; fill — иконка заполняет область плитки */
+  /** plate — icon on a plate; fill — the icon fills the tile area */
   iconStyle: IconStyle;
-  /** Размер иконки, % высоты области под иконку */
+  /** Icon size, % of the icon area height */
   iconScale: number;
-  /** Подкрашивать плитку основным цветом иконки */
+  /** Tint the tile with the icon's main colour */
   iconTint: boolean;
-  /** Сторонний сервис иконок — запасной источник, если на самом сайте крупной иконки нет */
+  /** Third-party icon service — a fallback when the site itself has no large icon */
   logoService: LogoService;
-  /** Свой шаблон адреса для logoService = custom; {{website}} заменяется доменом сайта */
+  /** Custom URL template for logoService = custom; {{website}} is replaced with the site domain */
   externalLogoUrl: string;
-  /** Ключ доступа к logo.dev */
+  /** logo.dev access key */
   logoDevToken: string;
   showToolbar: boolean;
   autofocusSearch: boolean;
@@ -74,16 +74,16 @@ export interface Settings {
   showBackTile: boolean;
   showAddTile: boolean;
   showTitles: boolean;
-  /** Где название: сверху или снизу, внутри плитки или под/над ней */
+  /** Where the name goes: top or bottom, inside the tile or below/above it */
   titlePosition: TitlePosition;
   showTitleIcons: boolean;
   background: Background;
   backgroundColor: string;
-  /** Размытие фоновой картинки, px */
+  /** Background image blur, px */
   backgroundBlur: number;
-  /** Затемнение фоновой картинки, % */
+  /** Background image dimming, % */
   backgroundDim: number;
-  /** Пустая строка — цвет из текущей темы */
+  /** Empty string — colour from the current theme */
   tileColor: string;
   folderColor: string;
   fontFamily: string;
@@ -91,22 +91,22 @@ export interface Settings {
   titleSize: TitleSize;
   boldTitles: boolean;
 
-  // ===== Общие =====
-  /** Папка, которая открывается в новой вкладке. Не синхронизируется: у папок разные id на разных устройствах */
+  // ===== General =====
+  /** Folder opened in a new tab. Not synced: folders have different ids on different devices */
   defaultFolderId: string;
   rememberLastFolder: boolean;
   searchEngine: SearchEngine;
-  /** Адрес поиска для searchEngine = custom; %s заменяется запросом */
+  /** Search URL for searchEngine = custom; %s is replaced with the query */
   customSearchUrl: string;
   showServices: boolean;
   services: ServiceLink[];
-  /** Миниатюры сайтов на плитке папки вместо значка папки */
+  /** Site previews on a folder tile instead of a folder icon */
   folderPreview: boolean;
-  /** Загружать крупные иконки прямо с сайтов */
+  /** Load large icons directly from sites */
   siteIcons: boolean;
   showThumbnailRefresh: boolean;
   captureOnCreate: boolean;
-  /** Задержка перед снимком страницы, секунды */
+  /** Delay before a page screenshot, seconds */
   captureDelay: number;
   refreshIncludesSubfolders: boolean;
   openInNewTab: boolean;
@@ -116,10 +116,10 @@ export interface Settings {
   typeOrder: TypeOrder;
   browserContextMenu: boolean;
   closeTabAfterAdd: boolean;
-  /** Не синхронизируется: определяет, где хранятся остальные настройки */
+  /** Not synced: decides where the other settings are stored */
   syncEnabled: boolean;
 
-  // ===== Расширенные =====
+  // ===== Advanced =====
   confirmDelete: boolean;
   customCss: string;
 }
@@ -129,12 +129,12 @@ type KeysOfType<T, V> = {[K in keyof T]: T[K] extends V ? K : never}[keyof T];
 export type BooleanSettingKey = KeysOfType<Settings, boolean>;
 export type ColorSettingKey = 'tileColor' | 'folderColor' | 'backgroundColor' | 'customAccent' | 'customTint';
 
-/** Настройки, которые хранятся только на этом устройстве */
+/** Settings stored only on this device */
 export const LOCAL_KEYS = ['defaultFolderId', 'syncEnabled'] as const satisfies ReadonlyArray<keyof Settings>;
 
-export const MAX_CUSTOM_CSS_LENGTH = 5000; // chrome.storage.sync ограничивает запись 8 КБ
+export const MAX_CUSTOM_CSS_LENGTH = 5000; // chrome.storage.sync limits an item to 8 KB
 
-/** Сервисы по умолчанию — для языка браузера: русскому пользователю Яндекс, остальным Outlook и Википедия */
+/** Default services for the browser language: Yandex for Russian users, Outlook and Wikipedia for others */
 function defaultServices(): ServiceLink[] {
   const ui = globalThis.chrome?.i18n?.getUILanguage?.() ?? globalThis.navigator?.language ?? 'en';
   return (ui.toLowerCase().startsWith('ru') ? ru : en).general.defaultServices;
@@ -199,12 +199,12 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = {
   closeTabAfterAdd: false,
   syncEnabled: true,
 
-  // Удаление можно отменить из уведомления, поэтому по умолчанию без лишнего вопроса
+  // Deletion can be undone from the notification, so there's no extra question by default
   confirmDelete: false,
   customCss: '',
 };
 
-// Допустимые значения: перечисления и диапазоны чисел
+// Allowed values: enums and number ranges
 const ENUMS: Partial<Record<keyof Settings, readonly string[]>> = {
   language: LANGUAGE_SETTINGS,
   theme: THEMES,
@@ -265,7 +265,7 @@ function sanitizeValue<K extends keyof Settings>(key: K, value: unknown): Settin
   return value as Settings[K];
 }
 
-/** Полные корректные настройки из произвольных данных: неизвестное отбрасывается, недостающее — по умолчанию */
+/** Complete valid settings from arbitrary data: unknown values are dropped, missing ones take defaults */
 export function sanitizeSettings(raw: unknown): Settings {
   const source = typeof raw === 'object' && raw !== null ? raw as Record<string, unknown> : {};
   const result = {...DEFAULT_SETTINGS} as Settings;
@@ -273,12 +273,12 @@ export function sanitizeSettings(raw: unknown): Settings {
     const value = sanitizeValue(key, source[key]);
     if (value !== undefined) (result as unknown as Record<string, unknown>)[key] = value;
   }
-  // Раньше был только переключатель «Внешние логотипы» со своим адресом
+  // There used to be only an "External logos" switch with its own URL
   if (source.logoService === undefined && source.externalLogos === true) result.logoService = 'custom';
   return result;
 }
 
-/** Разделяет настройки на общие (синхронизируемые) и локальные */
+/** Splits settings into shared (synced) and local ones */
 export function splitSettings(settings: Settings): {shared: Partial<Settings>; local: Partial<Settings>} {
   const shared: Partial<Settings> = {...settings};
   const local: Partial<Settings> = {};

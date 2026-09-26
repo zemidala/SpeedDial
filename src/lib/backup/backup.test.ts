@@ -10,7 +10,7 @@ interface Seed {
   children?: Seed[];
 }
 
-/** Закладки в памяти с тем же поведением, что у chrome.bookmarks, в нужной нам части */
+/** In-memory bookmarks behaving like chrome.bookmarks in the parts we need */
 function fakeBookmarks(bar: Seed[], other: Seed[] = []): BookmarksApi & {titles(id: string): unknown[]} {
   let nextId = 10;
   const nodes = new Map<string, Node>();
@@ -58,8 +58,8 @@ async function backupOf(api: BookmarksApi): Promise<Backup> {
   return createBackup({includeImages: false}, api, {...DEFAULT_SETTINGS, columns: 7}, new Date('2026-09-26T10:00:00Z'));
 }
 
-describe('резервная копия', () => {
-  it('сохраняет дерево закладок с порядком и общие настройки', async () => {
+describe('backup', () => {
+  it('saves the bookmark tree with its order and the shared settings', async () => {
     const api = fakeBookmarks([
       {title: 'Альфа', url: 'https://alpha.example/'},
       {title: 'Папка', children: [{title: 'Внутри', url: 'https://inside.example/'}]},
@@ -74,12 +74,12 @@ describe('резервная копия', () => {
       {id: '2', title: 'Другие закладки', children: [{title: 'Прочее', url: 'https://other.example/'}]},
     ]);
     expect(backup.settings.columns).toBe(7);
-    // Настройки этого устройства в копию не попадают
+    // Device-only settings aren't included in the backup
     expect(backup.settings).not.toHaveProperty('defaultFolderId');
     expect(parseBackup(JSON.stringify(backup))).toEqual(backup);
   });
 
-  it('отпечаток не зависит от времени создания', async () => {
+  it('fingerprint ignores the creation time', async () => {
     const api = fakeBookmarks([{title: 'Альфа', url: 'https://alpha.example/'}]);
     const first = await backupOf(api);
     const later = {...first, createdAt: '2030-01-01T00:00:00.000Z'};
@@ -89,7 +89,7 @@ describe('резервная копия', () => {
     expect(await backupFingerprint(await backupOf(api))).not.toBe(await backupFingerprint(first));
   });
 
-  it('«добавить недостающие» ничего не удаляет и не дублирует', async () => {
+  it('"add missing" deletes nothing and adds no duplicates', async () => {
     const source = fakeBookmarks([
       {title: 'Альфа', url: 'https://alpha.example/'},
       {title: 'Папка', children: [
@@ -114,11 +114,11 @@ describe('резервная копия', () => {
       'Бета',
     ]);
     expect(result.created).toBe(2);
-    // Повторное объединение ничего не добавляет
+    // Merging again adds nothing
     expect((await restoreBookmarks(backup, 'merge', target, noImages)).created).toBe(0);
   });
 
-  it('«восстановить полностью» делает корневые папки точно как в копии', async () => {
+  it('"restore everything" makes root folders exactly as in the backup', async () => {
     const backup = await backupOf(fakeBookmarks(
       [{title: 'Папка', children: [{title: 'Внутри', url: 'https://inside.example/'}]}, {title: 'Альфа', url: 'https://alpha.example/'}],
       [{title: 'Прочее', url: 'https://other.example/'}],
@@ -130,7 +130,7 @@ describe('резервная копия', () => {
     expect(target.titles('2')).toEqual(['Прочее']);
   });
 
-  it('миниатюры восстанавливаются для созданных и найденных закладок', async () => {
+  it('thumbnails are restored for created and matched bookmarks', async () => {
     const thumbnail = {type: 'image/jpeg', data: 'AAEC', source: 'custom' as const};
     const backup: Backup = {
       ...await backupOf(fakeBookmarks([])),
@@ -149,7 +149,7 @@ describe('резервная копия', () => {
     expect(result).toEqual({created: 1, thumbnails: 2});
   });
 
-  it('картинки в base64 и обратно без потерь', async () => {
+  it('images round-trip through base64 losslessly', async () => {
     const bytes = new Uint8Array(100_000).map((_, i) => (i * 7) % 256);
     const image = await blobToImage(new Blob([bytes], {type: 'image/png'}));
     const restored = imageToBlob(image);
@@ -157,20 +157,20 @@ describe('резервная копия', () => {
     expect(new Uint8Array(await restored.arrayBuffer())).toEqual(bytes);
   });
 
-  it('чужой или повреждённый файл не принимается', () => {
+  it('rejects foreign or corrupted files', () => {
     expect(() => parseBackup('не json')).toThrow('это не JSON');
     expect(() => parseBackup('{"format":"speeddial-settings"}')).toThrow('Это не резервная копия SpeedDial');
     expect(() => parseBackup('{"format":"speeddial-backup","version":99,"roots":[]}')).toThrow('более новой версией');
   });
 
-  it('настройки устройства при восстановлении не меняются', async () => {
+  it('device settings stay unchanged on restore', async () => {
     const backup = await backupOf(fakeBookmarks([]));
     const current = {...DEFAULT_SETTINGS, defaultFolderId: '42', syncEnabled: false};
     const restored = settingsFromBackup(backup, current);
     expect(restored).toMatchObject({columns: 7, defaultFolderId: '42', syncEnabled: false});
   });
 
-  it('имя файла копии', () => {
+  it('backup file name', () => {
     expect(backupFileName(new Date('2026-09-26T12:30:05.123Z'))).toBe('speeddial-2026-09-26_12-30-05.json');
   });
 });

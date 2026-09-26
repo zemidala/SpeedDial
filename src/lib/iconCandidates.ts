@@ -1,19 +1,19 @@
-// Выбор лучшей иконки сайта среди объявленных в <link> и web manifest
+// Choosing the best site icon among those declared in <link> and the web manifest
 
-export const VECTOR_SIZE = 512; // SVG масштабируется без потерь — считаем его очень большим
-export const MIN_USEFUL_SIZE = 48; // Меньше — встроенная иконка браузера не хуже
+export const VECTOR_SIZE = 512; // SVG scales losslessly — treat it as very large
+export const MIN_USEFUL_SIZE = 48; // Smaller — the browser's built-in icon is just as good
 
 export interface IconCandidate {
   url: string;
   size: number;
-  /** Чем больше, тем позже пробуем: maskable, .ico неизвестного размера, догадка без объявления */
+  /** The larger, the later we try it: maskable, .ico of unknown size, an undeclared guess */
   penalty?: number;
 }
 
-// Настоящий размер .ico станет известен только после разбора файла — пробуем после объявленных
+// The real size of an .ico is known only after parsing the file — try it after declared ones
 const ICO_PENALTY = 0.8;
 
-/** Адреса, по которым сайты часто кладут иконки, не объявляя их в разметке */
+/** Paths where sites often put icons without declaring them in the markup */
 export const WELL_KNOWN_ICONS: ReadonlyArray<{path: string; size: number; penalty: number}> = [
   {path: '/favicon.svg', size: VECTOR_SIZE, penalty: 0.5},
   {path: '/android-chrome-512x512.png', size: 512, penalty: 0.5},
@@ -37,7 +37,7 @@ function isIcoFile(href: string, type?: string | null): boolean {
   return type === 'image/x-icon' || type === 'image/vnd.microsoft.icon' || /\.ico(\?|#|$)/i.test(href);
 }
 
-/** Наибольший размер из атрибута sizes ("16x16 32x32", "any"); 0, если не указан */
+/** Largest size from the sizes attribute ("16x16 32x32", "any"); 0 if not given */
 export function parseSizes(sizes: string | null | undefined): number {
   if (!sizes) return 0;
   let best = 0;
@@ -49,7 +49,7 @@ export function parseSizes(sizes: string | null | undefined): number {
   return best;
 }
 
-/** Иконки из <link rel="icon" | "apple-touch-icon" ...>; адреса — относительно baseUrl */
+/** Icons from <link rel="icon" | "apple-touch-icon" ...>; URLs relative to baseUrl */
 export function candidatesFromLinks(links: LinkIcon[], baseUrl: string): IconCandidate[] {
   const result: IconCandidate[] = [];
   for (const {rel, href, sizes, type} of links) {
@@ -70,7 +70,7 @@ export function candidatesFromLinks(links: LinkIcon[], baseUrl: string): IconCan
     } else if (isSvg(href, type)) {
       result.push({url, size: VECTOR_SIZE});
     } else if (isTouch) {
-      result.push({url, size: 180}); // Размер apple-touch-icon по умолчанию
+      result.push({url, size: 180}); // Default apple-touch-icon size
     } else if (isIcoFile(href, type)) {
       result.push({url, size: MIN_USEFUL_SIZE, penalty: ICO_PENALTY});
     } else {
@@ -87,7 +87,7 @@ interface ManifestIcon {
   purpose?: unknown;
 }
 
-/** Иконки из web manifest; адреса — относительно адреса самого манифеста */
+/** Icons from the web manifest; URLs relative to the manifest's own URL */
 export function candidatesFromManifest(manifest: unknown, manifestUrl: string): IconCandidate[] {
   const icons = (manifest as {icons?: unknown})?.icons;
   if (!Array.isArray(icons)) return [];
@@ -100,19 +100,19 @@ export function candidatesFromManifest(manifest: unknown, manifestUrl: string): 
       || (isSvg(icon.src, type) ? VECTOR_SIZE : 0);
     if (!size) continue;
 
-    // Maskable-иконки рассчитаны на обрезку по кругу и имеют большие поля — берём, если нет других
+    // Maskable icons are meant to be cropped to a circle and have large margins — take them only if there's nothing else
     const purposes = typeof icon.purpose === 'string' ? icon.purpose.split(/\s+/) : ['any'];
     const penalty = purposes.includes('any') ? 0 : 1;
     try {
       result.push({url: new URL(icon.src, manifestUrl).href, size, penalty});
     } catch {
-      // Некорректный адрес — пропускаем
+      // Invalid URL — skip it
     }
   }
   return result;
 }
 
-/** Полезные кандидаты от лучшего к худшему, без повторов */
+/** Useful candidates from best to worst, without duplicates */
 export function rankCandidates(candidates: IconCandidate[]): IconCandidate[] {
   const seen = new Set<string>();
   return candidates

@@ -1,4 +1,4 @@
-// Сообщения между страницей новой вкладки и service worker
+// Messages between the new tab page and the service worker
 
 export interface CaptureItem {
   id: string;
@@ -6,15 +6,15 @@ export interface CaptureItem {
 }
 
 export type RuntimeMessage =
-  /** Страница → service worker: сделать снимки страниц для миниатюр */
+  /** Page → service worker: take page screenshots for thumbnails */
   | {type: 'capture-thumbnails'; items: CaptureItem[]}
-  /** Страница → service worker: остановить создание миниатюр, включая очередь */
+  /** Page → service worker: stop creating thumbnails, including the queue */
   | {type: 'cancel-capture'}
-  /** Страница → service worker: идёт ли сейчас съёмка (ответ — CaptureProgress или null) */
+  /** Page → service worker: is a capture running (reply — CaptureProgress or null) */
   | {type: 'capture-status'}
-  /** Всем: миниатюры изменились; пустой ids — изменились все */
+  /** To everyone: thumbnails changed; empty ids — all changed */
   | {type: 'thumbnails-changed'; ids: string[]}
-  /** Service worker → страницам: ход создания миниатюр */
+  /** Service worker → pages: thumbnail creation progress */
   | {type: 'capture-progress'; done: number; total: number};
 
 export interface CaptureProgress {
@@ -22,7 +22,7 @@ export interface CaptureProgress {
   total: number;
 }
 
-/** Ход съёмки в service worker — страница, открытая посреди съёмки, узнаёт о ней сразу */
+/** Capture progress in the service worker — a page opened mid-capture learns about it right away */
 export async function requestCaptureStatus(): Promise<CaptureProgress | null> {
   const status: unknown = await chrome.runtime.sendMessage({type: 'capture-status'} satisfies RuntimeMessage)
     .catch(() => null);
@@ -30,7 +30,7 @@ export async function requestCaptureStatus(): Promise<CaptureProgress | null> {
 }
 
 export function sendMessage(message: RuntimeMessage): Promise<void> {
-  // Если слушателей нет (например, открыта одна вкладка), браузер возвращает ошибку — это нормально
+  // With no listeners (e.g. only one tab is open) the browser returns an error — that's fine
   return chrome.runtime.sendMessage(message).catch(() => undefined);
 }
 
