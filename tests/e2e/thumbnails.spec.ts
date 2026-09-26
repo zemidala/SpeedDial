@@ -157,3 +157,62 @@ test('a thumbnail is removed together with its bookmark', async ({newtab}) => {
     };
   }), id!)).toBe(true);
 });
+
+test.describe('automatic thumbnails', () => {
+  test.beforeEach(async ({context}) => {
+    await context.route('https://auto.example/**', (route) => route.fulfill({
+      contentType: 'text/html',
+      body: '<body style="margin:0;background:#e02000"><h1>Auto</h1></body>',
+    }));
+  });
+
+  test('opening a bookmarked site makes its thumbnail', async ({context, newtab}) => {
+    await seed(newtab, [
+      {title: 'Auto', url: 'https://auto.example/page'},
+      {title: 'Copy', url: 'http://www.auto.example/page/'},
+      {title: 'Other', url: 'https://auto.example/other'},
+    ]);
+    await expect(tile(newtab, 'Auto')).toBeVisible();
+
+    const site = await context.newPage();
+    await site.goto('https://auto.example/page#section');
+
+    // Both bookmarks of the page get the screenshot; the tab isn't opened anywhere else
+    await expect(thumbnailOf(newtab, 'Auto')).toBeVisible({timeout: 15_000});
+    await expect(thumbnailOf(newtab, 'Copy')).toBeVisible();
+    await expect(thumbnailOf(newtab, 'Other')).toHaveCount(0);
+    expect(await newtab.evaluate(async () => (await chrome.windows.getAll()).length)).toBe(1);
+
+    const color = await thumbnailOf(newtab, 'Auto').evaluate(async (img: HTMLImageElement) => {
+      const canvas = new OffscreenCanvas(1, 1);
+      const context = canvas.getContext('2d')!;
+      context.drawImage(img, img.naturalWidth - 1, img.naturalHeight - 1, 1, 1, 0, 0, 1, 1);
+      return [...context.getImageData(0, 0, 1, 1).data.slice(0, 3)];
+    });
+    expect(color[0]).toBeGreaterThan(180); // Red channel of #e02000
+    // The usual thumbnail proportions whatever the window shape
+    const ratio = await thumbnailOf(newtab, 'Auto').evaluate((img: HTMLImageElement) => img.naturalWidth / img.naturalHeight);
+    expect(ratio).toBeCloseTo(1.6, 1);
+  });
+
+  test('a custom image is kept; nothing happens when turned off', async ({context, newtab}) => {
+    await seed(newtab, [
+      {title: 'Auto', url: 'https://auto.example/'},
+      {title: 'Off', url: 'https://auto.example/off'},
+    ]);
+    const iconDialog = await chooseImage(newtab, 'Auto', '#00ff00');
+    await iconDialog.getByRole('button', {name: 'Готово'}).click();
+    const custom = await thumbnailOf(newtab, 'Auto').getAttribute('src');
+
+    const dialog = await openSettings(newtab, 'Общие');
+    await dialog.getByLabel('Автоматические миниатюры').selectOption('Выключены');
+    await dialog.getByRole('button', {name: 'Готово'}).click();
+
+    const site = await context.newPage();
+    await site.goto('https://auto.example/');
+    await site.goto('https://auto.example/off');
+    await site.waitForTimeout(3000);
+    await expect(thumbnailOf(newtab, 'Auto')).toHaveAttribute('src', custom!);
+    await expect(thumbnailOf(newtab, 'Off')).toHaveCount(0);
+  });
+});

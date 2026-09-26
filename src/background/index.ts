@@ -4,6 +4,7 @@ import {WELCOME_PAGE} from '../lib/links';
 import {onMessage, type RuntimeMessage, sendMessage} from '../lib/messages';
 import {loadSettings, onSettingsChanged} from '../lib/settings/storage';
 import {deleteThumbnail} from '../lib/thumbnails/storage';
+import {autoCapture, forgetBookmarkIndex} from './autoCapture';
 import {cancelCapture, captureStatus, captureThumbnails} from './capture';
 import {setupContextMenu, syncContextMenu} from './contextMenu';
 
@@ -73,6 +74,18 @@ chrome.bookmarks.onRemoved.addListener((_id, {node}) => {
 const onDataChanged = () => {
   scheduleAutoBackup().catch((error) => console.error('Failed to schedule backup', error));
 };
+
+// Automatic thumbnails: a bookmarked page that finished loading in the active tab, or a tab switched to
+const tryAutoCapture = (tabId: number) => {
+  autoCapture(tabId).then((saved) => saved && onDataChanged(), () => undefined);
+};
+chrome.tabs.onUpdated.addListener((tabId, change) => {
+  if (change.status === 'complete') tryAutoCapture(tabId);
+});
+chrome.tabs.onActivated.addListener(({tabId}) => tryAutoCapture(tabId));
+chrome.bookmarks.onCreated.addListener(forgetBookmarkIndex);
+chrome.bookmarks.onRemoved.addListener(forgetBookmarkIndex);
+chrome.bookmarks.onChanged.addListener(forgetBookmarkIndex);
 chrome.bookmarks.onCreated.addListener(onDataChanged);
 chrome.bookmarks.onRemoved.addListener(onDataChanged);
 chrome.bookmarks.onChanged.addListener(onDataChanged);

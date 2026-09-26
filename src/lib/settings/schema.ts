@@ -19,6 +19,8 @@ export const LOGO_SERVICE_IDS = ['none', 'google', 'duckduckgo', 'iconhorse', 'l
 export const SEARCH_ENGINES = ['google', 'yandex', 'bing', 'duckduckgo', 'custom'] as const;
 export const SORT_ORDERS = ['none', 'title', 'url', 'dateAdded'] as const;
 export const TYPE_ORDERS = ['none', 'foldersFirst', 'bookmarksFirst'] as const;
+/** Screenshots of bookmarked pages while browsing: none, only for bookmarks without a thumbnail, or also refreshing old ones */
+export const AUTO_CAPTURES = ['off', 'missing', 'stale'] as const;
 
 export type LanguageSetting = (typeof LANGUAGE_SETTINGS)[number];
 export type Theme = (typeof THEMES)[number];
@@ -32,6 +34,7 @@ export type LogoService = (typeof LOGO_SERVICE_IDS)[number];
 export type SearchEngine = (typeof SEARCH_ENGINES)[number];
 export type SortOrder = (typeof SORT_ORDERS)[number];
 export type TypeOrder = (typeof TYPE_ORDERS)[number];
+export type AutoCapture = (typeof AUTO_CAPTURES)[number];
 
 export interface ServiceLink {
   title: string;
@@ -111,6 +114,7 @@ export interface Settings {
   siteIcons: boolean;
   showThumbnailRefresh: boolean;
   captureOnCreate: boolean;
+  autoCapture: AutoCapture;
   /** Delay before a page screenshot, seconds */
   captureDelay: number;
   refreshIncludesSubfolders: boolean;
@@ -196,6 +200,7 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = {
   siteIcons: false,
   showThumbnailRefresh: true,
   captureOnCreate: false,
+  autoCapture: 'missing',
   captureDelay: 0.5,
   refreshIncludesSubfolders: false,
   openInNewTab: false,
@@ -227,6 +232,7 @@ const ENUMS: Partial<Record<keyof Settings, readonly string[]>> = {
   searchEngine: SEARCH_ENGINES,
   sortOrder: SORT_ORDERS,
   typeOrder: TYPE_ORDERS,
+  autoCapture: AUTO_CAPTURES,
 };
 
 export const RANGES = {

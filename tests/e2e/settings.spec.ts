@@ -169,6 +169,15 @@ test('a permission request error is visible on the page', async ({context, newta
   await expect(notice).toHaveCount(0);
 });
 
+test('automatic thumbnails point out the missing site access', async ({newtab}) => {
+  const dialog = await openSettings(newtab, 'Общие');
+  await expect(dialog.getByLabel('Автоматические миниатюры')).toHaveValue('missing');
+  await expect(dialog.getByText('Нужен доступ к сайтам')).toBeVisible();
+
+  await dialog.getByLabel('Автоматические миниатюры').selectOption('Выключены');
+  await expect(dialog.getByText('Нужен доступ к сайтам')).toHaveCount(0);
+});
+
 test('"Bing image of the day" background with caption and cache', async ({context, newtab}) => {
   let apiRequests = 0;
   const image = await makePng(newtab, 64, '#205080');

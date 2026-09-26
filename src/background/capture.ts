@@ -34,6 +34,11 @@ let currentWindowId: number | undefined;
 // Progress of the current batch; null — nothing is being captured
 let progress: CaptureProgress | null = null;
 
+/** The window opened for a screenshot — automatic thumbnails leave its tab alone */
+export function isCaptureWindow(windowId: number): boolean {
+  return windowId === currentWindowId;
+}
+
 export function captureStatus(): CaptureProgress | null {
   return progress;
 }

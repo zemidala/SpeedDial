@@ -6,7 +6,10 @@
   import {permissions} from '../../../lib/permissions.svelte';
   import {searchEngineName} from '../../../lib/search';
   import {formatServices, parseServices} from '../../../lib/services';
+  import {SITE_ACCESS} from '../../../lib/permissionSets';
   import {
+    AUTO_CAPTURES,
+    type AutoCapture,
     SEARCH_ENGINES,
     type SearchEngine,
     SORT_ORDERS,
@@ -47,6 +50,12 @@
     if (enabled && !(await permissions.request(VIRTUAL_FOLDER_PERMISSIONS[id]))) return;
     if (!enabled) await permissions.remove(VIRTUAL_FOLDER_PERMISSIONS[id]);
     settings.update({[key]: enabled});
+  }
+
+  /** Screenshots need access to sites — asked right in the change handler, while it still counts as a gesture */
+  async function changeAutoCapture(mode: AutoCapture) {
+    if (mode !== 'off' && !permissions.siteAccess && !(await permissions.request(SITE_ACCESS))) return;
+    settings.update({autoCapture: mode});
   }
 
   // Services are edited as text and saved when the field loses focus
@@ -141,6 +150,18 @@
 </SettingsGroup>
 
 <SettingsGroup title={t.settings.groups.thumbnails}>
+  <SelectRow
+    label={t.general.autoCapture}
+    hint={t.general.autoCaptureHint}
+    value={current.autoCapture}
+    options={AUTO_CAPTURES.map((mode) => ({value: mode, label: t.general.autoCaptureModes[mode]}))}
+    onchange={(value) => changeAutoCapture(value as AutoCapture)}
+  />
+  {#if current.autoCapture !== 'off' && !permissions.siteAccess}
+    <SettingRow label={t.general.autoCaptureAccess} hint={t.general.autoCaptureAccessHint}>
+      <button type="button" class="button" onclick={() => permissions.request(SITE_ACCESS)}>{t.common.allow}</button>
+    </SettingRow>
+  {/if}
   <SwitchRow
     key="showThumbnailRefresh"
     label={t.general.showThumbnailRefresh}
