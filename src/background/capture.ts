@@ -1,6 +1,6 @@
 // Снимки страниц для миниатюр: страница открывается в отдельном окне, снимается и окно закрывается
 import {resizeImage, THUMBNAIL_HEIGHT, THUMBNAIL_WIDTH} from '../lib/images';
-import {type CaptureItem, sendMessage} from '../lib/messages';
+import {type CaptureItem, type CaptureProgress, sendMessage} from '../lib/messages';
 import {loadSettings} from '../lib/settings/storage';
 import {saveThumbnail} from '../lib/thumbnails/storage';
 
@@ -30,10 +30,17 @@ function waitForLoad(tabId: number): Promise<void> {
 // Номер «сеанса» съёмки: отмена увеличивает его, и начатые раньше снимки прекращаются
 let generation = 0;
 let currentWindowId: number | undefined;
+// Ход текущей партии снимков; null — съёмки нет
+let progress: CaptureProgress | null = null;
+
+export function captureStatus(): CaptureProgress | null {
+  return progress;
+}
 
 /** Останавливает создание миниатюр: текущий снимок и всю очередь */
 export function cancelCapture(): void {
   generation++;
+  progress = null;
   if (currentWindowId !== undefined) chrome.windows.remove(currentWindowId).catch(() => undefined);
 }
 
@@ -72,6 +79,7 @@ export function captureThumbnails(items: CaptureItem[]): Promise<void> {
     const total = items.length;
     const {captureDelay} = await loadSettings();
     let done = 0;
+    progress = {done, total};
     for (const {id, url} of items) {
       if (isCancelled()) break;
       try {
@@ -84,8 +92,10 @@ export function captureThumbnails(items: CaptureItem[]): Promise<void> {
         if (!isCancelled()) console.error('Failed to capture', url, error);
       }
       if (isCancelled()) break;
-      await sendMessage({type: 'capture-progress', done: ++done, total});
+      progress = {done: ++done, total};
+      await sendMessage({type: 'capture-progress', done, total});
     }
+    progress = null;
     // После отмены сообщаем, что всё закончено, — индикатор на страницах исчезнет
     if (isCancelled()) await sendMessage({type: 'capture-progress', done: total, total});
   });

@@ -80,6 +80,10 @@ test('создание миниатюр останавливается повт�
   const stop = newtab.getByRole('button', {name: 'Остановить создание миниатюр'});
   await expect(stop).toHaveText('0/2');
 
+  // Вкладка, открытая посреди съёмки, тоже предлагает её остановить
+  await newtab.reload();
+  await expect(stop).toHaveText('0/2');
+
   // Отказались останавливать — съёмка продолжается
   await stop.click();
   await newtab.getByRole('dialog', {name: 'Остановить создание миниатюр?'}).getByRole('button', {name: 'Отмена'}).click();

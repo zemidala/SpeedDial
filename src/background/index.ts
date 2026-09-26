@@ -1,7 +1,7 @@
-import {onMessage, sendMessage} from '../lib/messages';
+import {onMessage, type RuntimeMessage, sendMessage} from '../lib/messages';
 import {onSettingsChanged} from '../lib/settings/storage';
 import {deleteThumbnail} from '../lib/thumbnails/storage';
-import {cancelCapture, captureThumbnails} from './capture';
+import {cancelCapture, captureStatus, captureThumbnails} from './capture';
 import {setupContextMenu, syncContextMenu} from './contextMenu';
 
 // Клик по значку расширения открывает новую вкладку, то есть SpeedDial
@@ -24,6 +24,13 @@ onMessage((message) => {
   } else if (message.type === 'cancel-capture') {
     cancelCapture();
   }
+});
+
+// На запрос хода съёмки отвечаем сразу; остальные сообщения ответа не ждут
+chrome.runtime.onMessage.addListener((message: RuntimeMessage, _sender, sendResponse) => {
+  if (message.type !== 'capture-status') return false;
+  sendResponse(captureStatus());
+  return false;
 });
 
 // Миниатюры удалённых закладок больше не нужны; у папки удаляются и миниатюры вложенных закладок

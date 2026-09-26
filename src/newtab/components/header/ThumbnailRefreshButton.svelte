@@ -41,15 +41,84 @@
 
 <button
   type="button"
-  class="icon-button"
+  class="icon-button refresh-button"
   class:icon-button--active={running}
   aria-label={running ? 'Остановить создание миниатюр' : 'Обновить миниатюры'}
-  title={running ? 'Остановить создание миниатюр' : 'Обновить миниатюры'}
+  title={thumbnails.progress
+    ? `Создаются миниатюры: ${thumbnails.progress.done} из ${thumbnails.progress.total}. Нажмите, чтобы остановить`
+    : 'Обновить миниатюры'}
   {onclick}
 >
   {#if thumbnails.progress}
-    {thumbnails.progress.done}/{thumbnails.progress.total}
+    <!-- Кольцо заполняется по мере готовности снимков -->
+    <svg class="refresh-button__ring" viewBox="0 0 40 40" aria-hidden="true">
+      <circle class="refresh-button__track" cx="20" cy="20" r="18.5"/>
+      <circle
+        class="refresh-button__bar"
+        cx="20"
+        cy="20"
+        r="18.5"
+        pathLength="100"
+        stroke-dasharray="{Math.max(4, (thumbnails.progress.done / thumbnails.progress.total) * 100)} 100"
+      />
+    </svg>
+    <Icon name="stop" size={16} class="refresh-button__stop"/>
+    <span class="refresh-button__count">{thumbnails.progress.done}/{thumbnails.progress.total}</span>
   {:else}
     <Icon name="refresh"/>
   {/if}
 </button>
+
+<style>
+  .refresh-button {
+    position: relative;
+  }
+
+  .refresh-button__ring {
+    position: absolute;
+    inset: -1px;
+    width: calc(100% + 2px);
+    height: calc(100% + 2px);
+    transform: rotate(-90deg);
+    pointer-events: none;
+  }
+
+  .refresh-button__track,
+  .refresh-button__bar {
+    fill: none;
+    stroke-width: 3;
+  }
+
+  .refresh-button__track {
+    stroke: transparent;
+  }
+
+  .refresh-button__bar {
+    stroke: var(--accent);
+    stroke-linecap: round;
+    transition: stroke-dasharray 0.3s ease;
+  }
+
+  .refresh-button :global(.refresh-button__stop) {
+    fill: currentColor;
+  }
+
+  .refresh-button:hover :global(.refresh-button__stop) {
+    color: var(--danger);
+  }
+
+  .refresh-button__count {
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    padding: 0 5px;
+    border-radius: 8px;
+    background: var(--accent);
+    color: var(--accent-text);
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 15px;
+    white-space: nowrap;
+    transform: translateX(-50%);
+  }
+</style>

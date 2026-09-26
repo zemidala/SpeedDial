@@ -1,5 +1,5 @@
 import {resizeImage, THUMBNAIL_HEIGHT, THUMBNAIL_WIDTH} from '../images';
-import {type CaptureItem, onMessage, sendMessage} from '../messages';
+import {type CaptureItem, type CaptureProgress, onMessage, requestCaptureStatus, sendMessage} from '../messages';
 import {clearThumbnails, deleteThumbnail, getThumbnail, saveThumbnail} from './storage';
 
 /** Миниатюра одной закладки; url — object URL картинки или null, если миниатюры нет */
@@ -22,7 +22,7 @@ export class ThumbnailEntry {
 
 class ThumbnailsStore {
   /** Ход создания миниатюр в service worker; null — ничего не создаётся */
-  progress = $state<{done: number; total: number} | null>(null);
+  progress = $state<CaptureProgress | null>(null);
 
   #entries = new Map<string, ThumbnailEntry>();
 
@@ -34,6 +34,12 @@ class ThumbnailsStore {
         this.progress = message.done < message.total ? {done: message.done, total: message.total} : null;
       }
     });
+    // Съёмка могла начаться до открытия этой вкладки — тогда кнопка сразу предлагает её остановить
+    requestCaptureStatus()
+      .then((status) => {
+        if (status && !this.progress) this.progress = status;
+      })
+      .catch((error) => console.error('Failed to get capture status', error));
   }
 
   get(bookmarkId: string): ThumbnailEntry {
