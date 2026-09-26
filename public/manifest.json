@@ -13,9 +13,11 @@
     "type": "module"
   },
   "permissions": [
+    "alarms",
     "bookmarks",
     "contextMenus",
     "favicon",
+    "identity",
     "storage"
   ],
   "optional_permissions": [

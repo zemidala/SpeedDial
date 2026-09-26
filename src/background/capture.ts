@@ -74,6 +74,8 @@ let queue: Promise<void> = Promise.resolve();
 export function captureThumbnails(items: CaptureItem[]): Promise<void> {
   const batchGeneration = generation;
   const isCancelled = () => batchGeneration !== generation;
+  // Съёмка считается идущей сразу, а не когда партия дойдёт до очереди: вкладка, открытая в этот момент, должна знать о ней
+  progress ??= {done: 0, total: items.length};
 
   queue = queue.then(async () => {
     const total = items.length;

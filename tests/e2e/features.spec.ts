@@ -221,17 +221,6 @@ test('выбор папки в панели поиска', async ({newtab}) => {
   await expect(tile(newtab, 'Гамма')).toBeVisible();
 });
 
-test('удаление без подтверждения', async ({newtab}) => {
-  const dialog = await openSettings(newtab, 'Расширенные');
-  await dialog.getByLabel('Не спрашивать подтверждения при удалении').check();
-  await dialog.getByRole('button', {name: 'Готово'}).click();
-
-  await tile(newtab, 'Бета').click({button: 'right'});
-  await newtab.getByRole('menuitem', {name: 'Удалить…'}).click();
-  await expect(tile(newtab, 'Бета')).toHaveCount(0);
-  await expect(newtab.getByRole('dialog')).toHaveCount(0);
-});
-
 test('меню сервисов редактируется в настройках', async ({newtab}) => {
   const dialog = await openSettings(newtab, 'Общие');
   await dialog.getByLabel('Сервисы', {exact: true}).fill('Почта | mail.example.com\nнекорректная строка с пробелом\nwiki.example.org');

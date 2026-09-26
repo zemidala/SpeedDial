@@ -62,6 +62,10 @@ export interface Settings {
   showTitleIcons: boolean;
   background: Background;
   backgroundColor: string;
+  /** Размытие фоновой картинки, px */
+  backgroundBlur: number;
+  /** Затемнение фоновой картинки, % */
+  backgroundDim: number;
   /** Пустая строка — цвет из текущей темы */
   tileColor: string;
   folderColor: string;
@@ -147,6 +151,8 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = {
   showTitleIcons: false,
   background: 'none',
   backgroundColor: '#1f2933',
+  backgroundBlur: 0,
+  backgroundDim: 0,
   tileColor: '',
   folderColor: '',
   fontFamily: 'Segoe UI, system-ui, sans-serif',
@@ -172,7 +178,8 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = {
   closeTabAfterAdd: false,
   syncEnabled: true,
 
-  confirmDelete: true,
+  // Удаление можно отменить из уведомления, поэтому по умолчанию без лишнего вопроса
+  confirmDelete: false,
   customCss: '',
 };
 
@@ -193,6 +200,8 @@ export const RANGES = {
   columns: {min: 1, max: 12, step: 1},
   containerWidth: {min: 40, max: 100, step: 1},
   lightDimming: {min: 0, max: 30, step: 5},
+  backgroundBlur: {min: 0, max: 20, step: 1},
+  backgroundDim: {min: 0, max: 70, step: 5},
   iconScale: {min: 20, max: 100, step: 5},
   captureDelay: {min: 0, max: 10, step: 0.5},
 } as const satisfies Partial<Record<keyof Settings, {min: number; max: number; step: number}>>;

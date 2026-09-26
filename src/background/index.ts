@@ -1,3 +1,4 @@
+import {AUTO_BACKUP_ALARM, runCloudBackup, scheduleAutoBackup} from '../lib/backup/cloud';
 import {onMessage, type RuntimeMessage, sendMessage} from '../lib/messages';
 import {onSettingsChanged} from '../lib/settings/storage';
 import {deleteThumbnail} from '../lib/thumbnails/storage';
@@ -20,7 +21,9 @@ onSettingsChanged(refreshContextMenu);
 
 onMessage((message) => {
   if (message.type === 'capture-thumbnails') {
-    captureThumbnails(message.items).catch((error) => console.error('Failed to capture thumbnails', error));
+    captureThumbnails(message.items)
+      .then(() => scheduleAutoBackup())
+      .catch((error) => console.error('Failed to capture thumbnails', error));
   } else if (message.type === 'cancel-capture') {
     cancelCapture();
   }
@@ -44,4 +47,22 @@ chrome.bookmarks.onRemoved.addListener((_id, {node}) => {
   Promise.all(ids.map((id) => deleteThumbnail(id).catch(() => undefined)))
     .then(() => sendMessage({type: 'thumbnails-changed', ids}))
     .catch((error) => console.error('Failed to delete thumbnails', error));
+});
+
+// Автоматическая копия в облако: через минуту после изменений закладок, настроек или миниатюр
+const onDataChanged = () => {
+  scheduleAutoBackup().catch((error) => console.error('Failed to schedule backup', error));
+};
+chrome.bookmarks.onCreated.addListener(onDataChanged);
+chrome.bookmarks.onRemoved.addListener(onDataChanged);
+chrome.bookmarks.onChanged.addListener(onDataChanged);
+chrome.bookmarks.onMoved.addListener(onDataChanged);
+chrome.bookmarks.onChildrenReordered.addListener(onDataChanged);
+onSettingsChanged(onDataChanged);
+onMessage((message) => {
+  if (message.type === 'thumbnails-changed') onDataChanged();
+});
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name !== AUTO_BACKUP_ALARM) return;
+  runCloudBackup({force: false}).catch((error) => console.error('Automatic backup failed', error));
 });

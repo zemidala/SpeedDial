@@ -45,9 +45,10 @@
 </script>
 
 <SwitchRow
-  label="Не спрашивать подтверждения при удалении"
-  checked={!current.confirmDelete}
-  onchange={(skip) => settings.update({confirmDelete: !skip})}
+  label="Спрашивать подтверждение при удалении"
+  hint="Без подтверждения удаление можно отменить в уведомлении"
+  checked={current.confirmDelete}
+  onchange={(confirmDelete) => settings.update({confirmDelete})}
 />
 
 <SettingRow label="Очистить локальные миниатюры" hint="Снимки страниц и выбранные картинки закладок">

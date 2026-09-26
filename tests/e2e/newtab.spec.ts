@@ -134,6 +134,10 @@ test('переименовывает папку без поля адреса', a
 });
 
 test('удаляет папку после подтверждения', async ({newtab}) => {
+  const settings = await openSettings(newtab, 'Расширенные');
+  await settings.getByLabel('Спрашивать подтверждение при удалении').check();
+  await settings.getByRole('button', {name: 'Готово'}).click();
+
   await tile(newtab, 'Работа').click({button: 'right'});
   await newtab.getByRole('menuitem', {name: 'Удалить…'}).click();
 
@@ -148,6 +152,27 @@ test('удаляет папку после подтверждения', async ({
   await expect(tile(newtab, 'Работа')).toHaveCount(0);
   const titles = (await getChildren(newtab, '1')).map((node) => node.title);
   expect(titles).toEqual(['Example']);
+});
+
+test('удаление без вопроса и отмена из уведомления', async ({newtab}) => {
+  await tile(newtab, 'Работа').click({button: 'right'});
+  await newtab.getByRole('menuitem', {name: 'Удалить', exact: true}).click();
+  await expect(tile(newtab, 'Работа')).toHaveCount(0);
+  await expect(newtab.getByRole('dialog')).toHaveCount(0);
+
+  const notice = newtab.getByRole('status').filter({hasText: 'Папка «Работа» удалена'});
+  await notice.getByRole('button', {name: 'Отменить'}).click();
+  await expect(notice).toHaveCount(0);
+
+  // Папка вернулась на прежнее место вместе с содержимым
+  await expect(tile(newtab, 'Работа')).toBeVisible();
+  const children = await getChildren(newtab, '1');
+  expect(children.map((node) => node.title)).toEqual(['Example', 'Работа']);
+  const restored = await getChildren(newtab, children[1].id);
+  expect(restored.map((node) => [node.title, node.url ?? null])).toEqual([
+    ['Docs', 'https://docs.example.com/'],
+    ['Архив', null],
+  ]);
 });
 
 test('в полях настроек остаётся стандартное меню браузера', async ({newtab}) => {

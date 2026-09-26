@@ -80,7 +80,8 @@ test('создание миниатюр останавливается повт�
   const stop = newtab.getByRole('button', {name: 'Остановить создание миниатюр'});
   await expect(stop).toHaveText('0/2');
 
-  // Вкладка, открытая посреди съёмки, тоже предлагает её остановить
+  // Вкладка, открытая посреди съёмки, тоже предлагает её остановить. Ждём окно для снимка: съёмка уже идёт
+  await expect.poll(() => newtab.evaluate(async () => (await chrome.windows.getAll()).length)).toBe(2);
   await newtab.reload();
   await expect(stop).toHaveText('0/2');
 
@@ -124,6 +125,21 @@ test('своя картинка вместо снимка; очистка мин
   await newtab.getByRole('dialog', {name: 'Очистить миниатюры?'}).getByRole('button', {name: 'Очистить'}).click();
   await expect(dialog.getByRole('status')).toHaveText('Миниатюры удалены');
   await expect(thumbnailOf(newtab, 'Shot')).toHaveCount(0);
+});
+
+test('отмена удаления возвращает и миниатюры', async ({newtab}) => {
+  await tile(newtab, 'Папка').click();
+  const iconDialog = await chooseImage(newtab, 'Inner', '#ff00ff');
+  await iconDialog.getByRole('button', {name: 'Готово'}).click();
+  await newtab.getByRole('navigation', {name: 'Путь к папке'}).getByRole('button', {name: 'Панель закладок'}).click();
+
+  await tile(newtab, 'Папка').click({button: 'right'});
+  await newtab.getByRole('menuitem', {name: 'Удалить', exact: true}).click();
+  await expect(tile(newtab, 'Папка')).toHaveCount(0);
+  await newtab.getByRole('button', {name: 'Отменить'}).click();
+
+  await tile(newtab, 'Папка').click();
+  await expect(thumbnailOf(newtab, 'Inner')).toBeVisible();
 });
 
 test('миниатюра удаляется вместе с закладкой', async ({newtab}) => {

@@ -1,6 +1,6 @@
 import {resizeImage, THUMBNAIL_HEIGHT, THUMBNAIL_WIDTH} from '../images';
 import {type CaptureItem, type CaptureProgress, onMessage, requestCaptureStatus, sendMessage} from '../messages';
-import {clearThumbnails, deleteThumbnail, getThumbnail, saveThumbnail} from './storage';
+import {clearThumbnails, deleteThumbnail, getThumbnail, saveThumbnail, type StoredThumbnail} from './storage';
 
 /** Миниатюра одной закладки; url — object URL картинки или null, если миниатюры нет */
 export class ThumbnailEntry {
@@ -75,6 +75,23 @@ class ThumbnailsStore {
   async remove(bookmarkId: string): Promise<void> {
     await deleteThumbnail(bookmarkId);
     await this.#changed([bookmarkId]);
+  }
+
+  /** Возвращает миниатюры восстановленных закладок: старый id → новый */
+  async restore(saved: Map<string, StoredThumbnail>, ids: Map<string, string>): Promise<void> {
+    const restored: string[] = [];
+    for (const [oldId, thumbnail] of saved) {
+      const newId = ids.get(oldId);
+      if (!newId) continue;
+      await saveThumbnail(newId, thumbnail.blob, thumbnail.source);
+      restored.push(newId);
+    }
+    if (restored.length > 0) await this.#changed(restored);
+  }
+
+  /** Перечитывает все миниатюры — например, после восстановления копии */
+  reloadAll(): Promise<void> {
+    return this.#changed([]);
   }
 
   async clearAll(): Promise<void> {

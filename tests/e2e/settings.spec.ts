@@ -1,4 +1,5 @@
 import {readFileSync} from 'node:fs';
+import type {Page} from '@playwright/test';
 import {expect, grantPermissions, makePng, openSettings, seed, test, tile} from './fixtures';
 
 test.beforeEach(async ({newtab}) => {
@@ -159,16 +160,20 @@ test('фон «Картинка дня Bing» с подписью и кэшем'
   await dialog.getByLabel('Фон', {exact: true}).selectOption('bing');
   await dialog.getByRole('button', {name: 'Готово'}).click();
 
-  await expect(newtab.locator('body')).toHaveCSS('background-image', 'url("https://www.bing.com/th?id=OHR.Test_1920x1080.jpg")');
+  await expect.poll(backgroundLayer(newtab, 'background-image')).toContain('url("https://www.bing.com/th?id=OHR.Test_1920x1080.jpg")');
   const caption = newtab.getByRole('link', {name: 'Горное озеро'});
   await expect(caption).toHaveAttribute('href', 'https://www.bing.com/search?q=lake');
   await expect(newtab.getByText('Озеро в горах (© Фотограф)')).toBeVisible();
 
   // Пока картинка актуальна, Bing повторно не запрашивается
   await newtab.reload();
-  await expect(newtab.locator('body')).toHaveCSS('background-image', /OHR\.Test/);
+  await expect.poll(backgroundLayer(newtab, 'background-image')).toMatch(/OHR\.Test/);
   expect(apiRequests).toBe(1);
 });
+
+/** Свойство слоя с фоновой картинкой (псевдоэлемент body) */
+const backgroundLayer = (page: Page, property: string) =>
+  () => page.evaluate((property) => getComputedStyle(document.body, '::before').getPropertyValue(property), property);
 
 test('фоновое изображение', async ({newtab}) => {
   const dialog = await openSettings(newtab);
@@ -178,7 +183,14 @@ test('фоновое изображение', async ({newtab}) => {
   await (await chooser).setFiles({name: 'bg.png', mimeType: 'image/png', buffer: await makePng(newtab, 64, '#123456')});
 
   await expect(newtab.locator('body')).toHaveClass(/page--background-image/);
-  await expect(newtab.locator('body')).toHaveCSS('background-image', /^url\("blob:/);
+  await expect.poll(backgroundLayer(newtab, 'background-image')).toMatch(/url\("blob:/);
+
+  // Размытие и затемнение — только у слоя с картинкой, плитки остаются чёткими
+  await dialog.getByLabel('Размытие фона').fill('8');
+  await dialog.getByLabel('Затемнение фона').fill('40');
+  await expect.poll(backgroundLayer(newtab, 'filter')).toBe('blur(8px)');
+  await expect.poll(backgroundLayer(newtab, 'background-image')).toContain('rgba(0, 0, 0, 0.4)');
+  await expect(newtab.locator('.app')).toHaveCSS('filter', 'none');
 
   await dialog.getByRole('button', {name: 'Убрать'}).click();
   await expect(newtab.locator('body')).not.toHaveClass(/page--background-image/);

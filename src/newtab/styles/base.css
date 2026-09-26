@@ -21,7 +21,23 @@ body.page--background-color {
 }
 
 body.page--background-image {
-  background: var(--page-background-color) var(--page-background-image) center / cover no-repeat fixed;
+  background: var(--page-background-color);
+}
+
+/*
+ * Картинка — отдельным слоем под страницей: размывается только она, а не плитки.
+ * Слой чуть больше окна, чтобы размытые края не просвечивали; затемнение — полупрозрачным чёрным поверх
+ */
+body.page--background-image::before {
+  position: fixed;
+  inset: calc(var(--page-background-blur, 0px) * -2);
+  z-index: -1;
+  background:
+    linear-gradient(rgb(0 0 0 / var(--page-background-dim, 0)), rgb(0 0 0 / var(--page-background-dim, 0))),
+    var(--page-background-image) center / cover no-repeat;
+  filter: blur(var(--page-background-blur, 0px));
+  content: '';
+  pointer-events: none;
 }
 
 button,

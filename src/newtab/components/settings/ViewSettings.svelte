@@ -216,3 +216,7 @@
     <button type="button" class="button" onclick={() => permissions.request(BING_ACCESS)}>Разрешить</button>
   </SettingRow>
 {/if}
+{#if current.background === 'image' || current.background === 'bing'}
+  <RangeRow key="backgroundBlur" label="Размытие фона" hint="Плитки и текст лучше читаются на спокойном фоне" unit=" px"/>
+  <RangeRow key="backgroundDim" label="Затемнение фона" unit="%"/>
+{/if}

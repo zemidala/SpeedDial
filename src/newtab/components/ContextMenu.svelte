@@ -125,7 +125,7 @@
     entries.push(
       sortEntry(node.url ? currentFolder() : {id: node.id, title: node.title}),
       'separator',
-      {label: 'Удалить…', icon: 'trash', action: () => requestDelete(node)},
+      {label: settings.current.confirmDelete ? 'Удалить…' : 'Удалить', icon: 'trash', action: () => requestDelete(node)},
       'separator',
       refreshEntry,
     );
@@ -150,15 +150,38 @@
     return entries;
   }
 
+  // Элемент, на который вернётся фокус, если меню закрыть клавишей Esc
+  let returnFocus: HTMLElement | null = null;
+
   function onContextMenu(event: MouseEvent) {
     menu = null;
     const target = event.target as Element;
     if (target.closest(NATIVE_MENU_SELECTOR)) return;
     event.preventDefault();
 
+    let {clientX: x, clientY: y} = event;
+    // Меню с клавиатуры (Shift+F10, клавиша меню) открывается у плитки в фокусе, а не там, где мышь
+    const tile = target.closest<HTMLElement>('.tile');
+    if (tile && tile === document.activeElement) {
+      const box = tile.getBoundingClientRect();
+      if (x < box.left || x > box.right || y < box.top || y > box.bottom) {
+        x = box.left + box.width / 2;
+        y = box.top + box.height / 2;
+      }
+    }
+    returnFocus = document.activeElement instanceof HTMLElement && document.activeElement !== document.body
+      ? document.activeElement
+      : null;
+
     const id = target.closest<HTMLElement>('[data-bookmark-id]')?.dataset.bookmarkId;
     const node = [...bookmarks.items, ...search.results].find((item) => item.id === id);
-    menu = {x: event.clientX, y: event.clientY, entries: node ? tileEntries(node) : pageEntries()};
+    menu = {x, y, entries: node ? tileEntries(node) : pageEntries()};
+  }
+
+  function onWindowKeydown(event: KeyboardEvent) {
+    if (event.key !== 'Escape' || !menu) return;
+    close();
+    returnFocus?.focus();
   }
 
   function run(item: MenuItem) {
@@ -202,7 +225,7 @@
 <svelte:window
   oncontextmenu={onContextMenu}
   onclick={(event) => menu && !element?.contains(event.target as Node) && close()}
-  onkeydown={(event) => event.key === 'Escape' && close()}
+  onkeydown={onWindowKeydown}
   onblur={close}
   onresize={close}
 />

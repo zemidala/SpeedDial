@@ -1,13 +1,17 @@
 <script lang="ts">
+  import {tick} from 'svelte';
   import {flip} from 'svelte/animate';
   import {MediaQuery} from 'svelte/reactivity';
   import {type BookmarkNode, bookmarks} from '../../../lib/bookmarks.svelte';
   import {ROOT_FOLDER_ID} from '../../../lib/constants';
   import {dragDrop, FOLDER_EDGE_DELAY} from '../../../lib/dragDrop.svelte';
+  import {isGridKey, neighbourIndex} from '../../../lib/gridKeyboard';
+  import {showNotice} from '../../../lib/notice.svelte';
   import {SEARCH_ENGINE_NAMES} from '../../../lib/search';
   import {search} from '../../../lib/search.svelte';
   import {settings} from '../../../lib/settings/store.svelte';
   import {sortNodes} from '../../../lib/sorting';
+  import {modals, requestDelete, ui} from '../../../lib/ui.svelte';
   import AddTile from './AddTile.svelte';
   import BackTile from './BackTile.svelte';
   import BookmarkTile from './BookmarkTile.svelte';
@@ -51,9 +55,81 @@
     if (bookmarks.loaded && !showAddTile) return 'Здесь пока пусто. Нажмите правой кнопкой мыши, чтобы добавить закладку.';
     return null;
   });
+
+  let section: HTMLElement;
+
+  // Все плитки по порядку, включая «Назад» и «Добавить»
+  const tileElements = () => [...section.querySelectorAll<HTMLElement>('.tile')];
+
+  // После удаления с клавиатуры фокус переходит на плитку, вставшую на место удалённой, — можно удалять подряд.
+  // Ждём, пока удалённая закладка пропадёт из списка: браузер сообщает об этом не сразу
+  let focusAfterDelete = $state<{id: string; index: number} | null>(null);
+
+  $effect(() => {
+    const pending = focusAfterDelete;
+    const current = items;
+    if (!pending || current.some((item) => item.id === pending.id)) return;
+    focusAfterDelete = null;
+    tick().then(() => {
+      const tiles = tileElements();
+      tiles[Math.min(pending.index, tiles.length - 1)]?.focus();
+    }).catch(() => undefined);
+  });
+
+  async function deleteFocused(tile: HTMLElement, node: BookmarkNode) {
+    const index = tileElements().indexOf(tile);
+    const deleting = requestDelete(node);
+    // С подтверждением фокусом управляет окно
+    if (!deleting) return;
+    await deleting;
+    focusAfterDelete = {id: node.id, index};
+  }
+
+  // Стрелки, Home и End переводят фокус по плиткам; Delete удаляет, F2 — редактирует
+  function onTileKeydown(event: KeyboardEvent) {
+    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+    const tile = (event.target as Element).closest<HTMLElement>('.tile');
+    if (!tile || !section.contains(tile)) return;
+
+    if (isGridKey(event.key)) {
+      event.preventDefault();
+      const tiles = tileElements();
+      const next = neighbourIndex(tiles.map((element) => element.getBoundingClientRect()), tiles.indexOf(tile), event.key);
+      if (next !== null) tiles[next].focus();
+      return;
+    }
+
+    const node = items.find((item) => item.id === tile.dataset.bookmarkId);
+    if (!node) return;
+    if (event.key === 'Delete') {
+      event.preventDefault();
+      deleteFocused(tile, node).catch((error) => {
+        console.error('Failed to delete', error);
+        showNotice(`Не удалось удалить: ${error instanceof Error ? error.message : error}`);
+      });
+    } else if (event.key === 'F2') {
+      event.preventDefault();
+      ui.dialog = {kind: 'edit', node};
+    }
+  }
+
+  // Alt+1…9 открывает первые девять плиток — закладки и папки
+  function onWindowKeydown(event: KeyboardEvent) {
+    onTileKeydown(event);
+    if (event.defaultPrevented || !event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || modals.depth > 0) return;
+    // По коду клавиши, а не символу: работает в любой раскладке
+    const digit = /^Digit([1-9])$/.exec(event.code);
+    const tile = digit && section.querySelectorAll<HTMLElement>('.tile[data-bookmark-id]')[Number(digit[1]) - 1];
+    if (!tile) return;
+    event.preventDefault();
+    tile.click();
+  }
 </script>
 
+<svelte:window onkeydown={onWindowKeydown}/>
+
 <section
+  bind:this={section}
   class="bookmark-grid"
   aria-label={search.active ? 'Результаты поиска' : 'Закладки'}
   style:--insert-delay="{FOLDER_EDGE_DELAY}ms"

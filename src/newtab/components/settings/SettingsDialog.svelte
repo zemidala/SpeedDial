@@ -1,6 +1,7 @@
 <script lang="ts">
   import Modal from '../ui/Modal.svelte';
   import AdvancedSettings from './AdvancedSettings.svelte';
+  import BackupSettings from './BackupSettings.svelte';
   import GeneralSettings from './GeneralSettings.svelte';
   import ViewSettings from './ViewSettings.svelte';
 
@@ -9,6 +10,7 @@
   const TABS = [
     {id: 'view', label: 'Вид'},
     {id: 'general', label: 'Общие'},
+    {id: 'backup', label: 'Копии'},
     {id: 'advanced', label: 'Расширенные'},
   ] as const;
 
@@ -39,6 +41,8 @@
       <ViewSettings/>
     {:else if activeTab === 'general'}
       <GeneralSettings/>
+    {:else if activeTab === 'backup'}
+      <BackupSettings/>
     {:else}
       <AdvancedSettings/>
     {/if}

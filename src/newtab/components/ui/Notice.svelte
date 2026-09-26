@@ -1,5 +1,5 @@
 <script lang="ts">
-  import {hideNotice, notice} from '../../../lib/notice.svelte';
+  import {hideNotice, notice, runNoticeAction} from '../../../lib/notice.svelte';
   import Icon from './Icon.svelte';
 
   // Уведомление об ошибке в углу экрана. Показывается в верхнем открытом модальном окне
@@ -9,6 +9,9 @@
 {#if notice.message}
   <div class="notice notice--{notice.kind}" role={notice.kind === 'error' ? 'alert' : 'status'}>
     <p class="notice__message">{notice.message}</p>
+    {#if notice.action}
+      <button type="button" class="notice__action" onclick={runNoticeAction}>{notice.action.label}</button>
+    {/if}
     <button type="button" class="notice__close" aria-label="Закрыть уведомление" onclick={hideNotice}>
       <Icon name="close" size={16}/>
     </button>
@@ -47,6 +50,24 @@
     font-size: 14px;
     font-weight: normal;
     line-height: 1.45;
+  }
+
+  .notice__action {
+    flex-shrink: 0;
+    align-self: center;
+    padding: 4px 10px;
+    border: none;
+    border-radius: 4px;
+    background: none;
+    color: var(--accent);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .notice__action:hover {
+    background: var(--surface-hover);
   }
 
   .notice__close {

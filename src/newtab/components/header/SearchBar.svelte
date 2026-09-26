@@ -3,6 +3,7 @@
   import {SEARCH_ENGINE_NAMES} from '../../../lib/search';
   import {search} from '../../../lib/search.svelte';
   import {settings} from '../../../lib/settings/store.svelte';
+  import {modals} from '../../../lib/ui.svelte';
   import Icon from '../ui/Icon.svelte';
 
   let input: HTMLInputElement;
@@ -19,13 +20,30 @@
     search.searchWeb();
   }
 
+  // Esc — очистить поиск, стрелка вниз — к первой плитке: найти, перейти стрелками, открыть Enter
   function onkeydown(event: KeyboardEvent) {
     if (event.key === 'Escape' && search.active) {
       event.stopPropagation();
       search.clear();
+    } else if (event.key === 'ArrowDown') {
+      const first = document.querySelector<HTMLElement>('.bookmark-grid .tile');
+      if (!first) return;
+      event.preventDefault();
+      first.focus();
     }
   }
+
+  // «/» в любом месте страницы, кроме полей ввода, переводит фокус в поиск
+  function onWindowKeydown(event: KeyboardEvent) {
+    if (event.key !== '/' || event.ctrlKey || event.altKey || event.metaKey || modals.depth > 0) return;
+    if ((event.target as Element).closest('input, textarea, select, [contenteditable]')) return;
+    event.preventDefault();
+    input.focus();
+    input.select();
+  }
 </script>
+
+<svelte:window onkeydown={onWindowKeydown}/>
 
 <form class="search-bar" role="search" {onsubmit}>
   <Icon name="search" size={18} class="search-bar__icon"/>

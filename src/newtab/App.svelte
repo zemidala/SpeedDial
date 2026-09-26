@@ -80,13 +80,15 @@
 
   // Фон страницы: цвет, своё изображение или картинка дня Bing
   $effect(() => {
-    const {background: type, backgroundColor} = settings.current;
+    const {background: type, backgroundColor, backgroundBlur, backgroundDim} = settings.current;
     const body = document.body;
     const image = type === 'image' ? background.imageUrl : type === 'bing' ? background.bing?.url ?? null : null;
 
     body.classList.toggle('page--background-color', type === 'color');
     body.classList.toggle('page--background-image', image !== null);
     body.style.setProperty('--page-background-color', backgroundColor);
+    body.style.setProperty('--page-background-blur', `${backgroundBlur}px`);
+    body.style.setProperty('--page-background-dim', String(backgroundDim / 100));
     if (image) body.style.setProperty('--page-background-image', `url("${image}")`);
     else body.style.removeProperty('--page-background-image');
   });

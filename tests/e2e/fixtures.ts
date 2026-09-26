@@ -125,7 +125,7 @@ export async function dropAt(page: Page, x: number, y: number) {
 }
 
 /** Открывает окно настроек на нужной вкладке */
-export async function openSettings(page: Page, tab: 'Вид' | 'Общие' | 'Расширенные' = 'Вид') {
+export async function openSettings(page: Page, tab: 'Вид' | 'Общие' | 'Копии' | 'Расширенные' = 'Вид') {
   await page.getByRole('button', {name: 'Настройки'}).click();
   const dialog = page.getByRole('dialog', {name: 'Настройки'});
   await dialog.getByRole('tab', {name: tab}).click();
