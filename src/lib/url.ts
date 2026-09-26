@@ -45,6 +45,23 @@ export function siteName(url: string): string {
   return second;
 }
 
+/**
+ * Key for telling whether two links lead to the same page: with or without "www.", over http or https,
+ * with a trailing slash or an #anchor it's still the same page. null — not a web page
+ */
+export function pageKey(url: string): string | null {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return null;
+  }
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null;
+  const host = parsed.host.replace(/^www\./, '');
+  const path = parsed.pathname.replace(/\/+$/, '');
+  return `${host}${path}${parsed.search}`;
+}
+
 /** A regular web link the browser opens itself on an <a> click */
 export function isWebUrl(url: string): boolean {
   return /^https?:\/\//i.test(url);

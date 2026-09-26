@@ -6,10 +6,12 @@
   import {OAUTH_PROVIDERS, type OAuthProviderId} from '../../../lib/backup/providers';
   import {cloud, restoreBackup} from '../../../lib/backup/store.svelte';
   import {serverOrigin} from '../../../lib/backup/webdav';
+  import {bookmarksToHtml, type HtmlBookmark, parseBookmarksHtml} from '../../../lib/bookmarksHtml';
   import {downloadBlob, pickFile} from '../../../lib/files';
   import {formatDateTime, t} from '../../../lib/i18n/index.svelte';
   import {permissions} from '../../../lib/permissions.svelte';
   import {settings} from '../../../lib/settings/store.svelte';
+  import ImportDialog from './ImportDialog.svelte';
   import RestoreDialog from './RestoreDialog.svelte';
   import SettingRow from './SettingRow.svelte';
   import SettingsGroup from './SettingsGroup.svelte';
@@ -40,6 +42,7 @@
   let error = $state('');
   /** Backup about to be restored: a file name on the server or one read from a file */
   let restoring = $state<{title: string; load: () => Promise<Backup>} | null>(null);
+  let importing = $state.raw<{fileName: string; nodes: HtmlBookmark[]} | null>(null);
 
   // An unpacked extension (development mode) also shows unconfigured clouds — with a hint on how to set them up.
   // A store install shows only those with a Client ID in the build
@@ -125,6 +128,27 @@
     restoring = {title: t.backup.restoreFile(file.name), load: async () => parseBackup(await file.text())};
   }
 
+  /** A bookmarks file from another browser — read here, what to do with it is chosen in the dialog */
+  async function importHtml() {
+    const file = await pickFile('text/html,.html,.htm');
+    if (!file) return;
+    status = '';
+    error = '';
+    try {
+      importing = {fileName: file.name, nodes: parseBookmarksHtml(await file.text())};
+    } catch {
+      error = t.importHtml.notBookmarks(file.name);
+    }
+  }
+
+  async function exportHtml() {
+    await run(async () => {
+      const [root] = await chrome.bookmarks.getTree();
+      const html = bookmarksToHtml(root.children ?? []);
+      downloadBlob(`bookmarks-${new Date().toISOString().slice(0, 10)}.html`, new Blob([html], {type: 'text/html'}));
+    }, t.importHtml.exported);
+  }
+
   const formatDate = formatDateTime;
   const formatSize = (bytes: number) => (bytes >= 1024 * 1024
     ? t.common.megabytes((bytes / 1024 / 1024).toFixed(1))
@@ -135,6 +159,15 @@
   <SettingRow label={t.backup.fileRow} hint={t.backup.fileHint}>
     <button type="button" class="button" disabled={busy} onclick={saveToFile}>{t.backup.saveToFile}</button>
     <button type="button" class="button" disabled={busy} onclick={restoreFromFile}>{t.backup.restoreEllipsis}</button>
+  </SettingRow>
+</SettingsGroup>
+
+<SettingsGroup title={t.importHtml.group}>
+  <SettingRow label={t.importHtml.importRow} hint={t.importHtml.importHint}>
+    <button type="button" class="button" disabled={busy} onclick={importHtml}>{t.importHtml.importButton}</button>
+  </SettingRow>
+  <SettingRow label={t.importHtml.exportRow} hint={t.importHtml.exportHint}>
+    <button type="button" class="button" disabled={busy} onclick={exportHtml}>{t.importHtml.exportButton}</button>
   </SettingRow>
 </SettingsGroup>
 
@@ -248,6 +281,15 @@
 {/if}
 {#if error}
   <p class="backup-settings__error" role="alert">{error}</p>
+{/if}
+
+{#if importing}
+  <ImportDialog
+    fileName={importing.fileName}
+    nodes={importing.nodes}
+    onimported={(message) => (status = message)}
+    onclose={() => (importing = null)}
+  />
 {/if}
 
 {#if restoring}

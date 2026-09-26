@@ -1,5 +1,6 @@
 import {describe, expect, it} from 'vitest';
-import {indexBookmarks, needsScreenshot, pageKey, STALE_AFTER} from './autoCapture';
+import {pageKey} from '../url';
+import {indexBookmarks, needsScreenshot, STALE_AFTER} from './autoCapture';
 import type {StoredThumbnail} from './storage';
 
 describe('pageKey', () => {

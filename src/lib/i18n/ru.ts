@@ -395,6 +395,33 @@ export const ru: Messages = {
     notSettingsFile: 'Это не файл настроек SpeedDial',
   },
 
+  importHtml: {
+    group: 'Закладки из других браузеров',
+    importRow: 'Импорт из файла закладок',
+    importHint: 'HTML-файл, который сохраняют Chrome, Edge, Firefox, Opera, Safari, Яндекс Браузер и другие через «Экспорт закладок»',
+    importButton: 'Импортировать…',
+    exportRow: 'Экспорт в файл закладок',
+    exportHint: 'Все закладки в HTML — его примет любой браузер',
+    exportButton: 'Экспортировать',
+    exported: 'Закладки сохранены в файл',
+    notBookmarks: (file: string) => `«${file}» — не файл закладок`,
+    title: (file: string) => `Импорт «${file}»`,
+    summary: (bookmarks: number, folders: number) =>
+      `Будет добавлено ${bookmarks} ${plural(bookmarks, 'закладка', 'закладки', 'закладок')}`
+      + ` в ${folders} ${plural(folders, 'папке', 'папках', 'папках')}`,
+    nothing: 'Нечего добавлять',
+    duplicates: (count: number) => `Уже есть в закладках: ${count}`,
+    parent: 'Куда',
+    intoNewFolder: 'Сложить в новую папку',
+    folderTitle: 'Название новой папки',
+    defaultFolder: 'Импортированные закладки',
+    skipDuplicates: 'Пропускать закладки, которые уже есть',
+    submit: 'Импортировать',
+    progress: (done: number, total: number) => `Импорт… ${done} из ${total}`,
+    done: (count: number, folder: string, skipped: number) =>
+      `Импортировано в «${folder}»: ${count}${skipped > 0 ? `. Пропущено как уже существующие: ${skipped}` : ''}`,
+  },
+
   backup: {
     file: 'Копия в файле',
     fileRow: 'Сохранить или восстановить',

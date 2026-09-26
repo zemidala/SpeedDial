@@ -4,7 +4,8 @@ import {coverTop, THUMBNAIL_HEIGHT, THUMBNAIL_WIDTH} from '../lib/images';
 import {sendMessage} from '../lib/messages';
 import {SITE_ACCESS} from '../lib/permissionSets';
 import {loadSettings} from '../lib/settings/storage';
-import {indexBookmarks, needsScreenshot, pageKey} from '../lib/thumbnails/autoCapture';
+import {indexBookmarks, needsScreenshot} from '../lib/thumbnails/autoCapture';
+import {pageKey} from '../lib/url';
 import {getThumbnail, saveThumbnail} from '../lib/thumbnails/storage';
 import {isCaptureWindow} from './capture';
 

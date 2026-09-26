@@ -385,6 +385,32 @@ export const en = {
     notSettingsFile: 'This isn’t a SpeedDial settings file',
   },
 
+  importHtml: {
+    group: 'Bookmarks from other browsers',
+    importRow: 'Import a bookmarks file',
+    importHint: 'The HTML file that Chrome, Edge, Firefox, Opera, Safari and other browsers save with “Export bookmarks”',
+    importButton: 'Import…',
+    exportRow: 'Export to a bookmarks file',
+    exportHint: 'All bookmarks in HTML — any browser can import it',
+    exportButton: 'Export',
+    exported: 'Bookmarks saved to a file',
+    notBookmarks: (file: string) => `“${file}” isn’t a bookmarks file`,
+    title: (file: string) => `Import “${file}”`,
+    summary: (bookmarks: number, folders: number) =>
+      `${bookmarks} ${bookmarks === 1 ? 'bookmark' : 'bookmarks'} in ${folders} ${folders === 1 ? 'folder' : 'folders'} will be added`,
+    nothing: 'Nothing new to add',
+    duplicates: (count: number) => `Already in your bookmarks: ${count}`,
+    parent: 'Where',
+    intoNewFolder: 'Put into a new folder',
+    folderTitle: 'New folder name',
+    defaultFolder: 'Imported bookmarks',
+    skipDuplicates: 'Skip bookmarks that already exist',
+    submit: 'Import',
+    progress: (done: number, total: number) => `Importing… ${done} of ${total}`,
+    done: (count: number, folder: string, skipped: number) =>
+      `Imported to “${folder}”: ${count}${skipped > 0 ? `. Skipped as existing: ${skipped}` : ''}`,
+  },
+
   backup: {
     file: 'Backup file',
     fileRow: 'Save or restore',
