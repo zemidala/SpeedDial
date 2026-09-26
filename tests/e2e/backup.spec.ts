@@ -132,7 +132,7 @@ test('«добавить недостающие» из облака и авто�
   await expect(restore.getByLabel(/Добавить недостающие закладки/)).toBeChecked();
   await restore.getByRole('button', {name: 'Восстановить'}).click();
 
-  await expect(newtab.getByRole('status').filter({hasText: 'Добавлено закладок и папок: 1'})).toBeVisible();
+  await expect(newtab.getByRole('status').filter({hasText: 'Добавлено 1 закладка или папка'})).toBeVisible();
   expect((await getChildren(newtab, '1')).map((node) => node.title)).toEqual(['Альфа', 'Папка', 'Бета']);
 });
 

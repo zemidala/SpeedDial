@@ -1,5 +1,6 @@
 // Резервная копия SpeedDial: настройки, закладки с порядком и (по желанию) миниатюры и фон.
 // Без Svelte — используется и в service worker (автоматические копии)
+import {t} from '../i18n/index.svelte';
 import {idbGet, idbSet} from '../idb';
 import {LOCAL_KEYS, type Settings, splitSettings} from '../settings/schema';
 import {loadSettings} from '../settings/storage';
@@ -123,13 +124,13 @@ export function parseBackup(text: string): Backup {
   try {
     backup = JSON.parse(text);
   } catch {
-    throw new Error('Файл копии повреждён: это не JSON');
+    throw new Error(t.cloudErrors.backupNotJson);
   }
   if (backup?.format !== BACKUP_FORMAT || !Array.isArray(backup.roots)) {
-    throw new Error('Это не резервная копия SpeedDial');
+    throw new Error(t.cloudErrors.notBackup);
   }
   if ((backup.version ?? 0) > BACKUP_VERSION) {
-    throw new Error('Копия создана более новой версией SpeedDial — обновите расширение');
+    throw new Error(t.cloudErrors.newerVersion);
   }
   return {...backup, settings: backup.settings ?? {}} as Backup;
 }

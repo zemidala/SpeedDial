@@ -1,5 +1,6 @@
 <script lang="ts">
   import {MediaQuery} from 'svelte/reactivity';
+  import {t} from '../../../lib/i18n/index.svelte';
   import {type ColorSettingKey, DEFAULT_SETTINGS} from '../../../lib/settings/schema';
   import {settings} from '../../../lib/settings/store.svelte';
   import {isDarkTheme} from '../../../lib/settings/theme';
@@ -32,13 +33,13 @@
       value={pickerValue}
       oninput={(event) => settings.update({[key]: event.currentTarget.value})}
     >
-    <span class="color-row__value">{value || 'по теме'}</span>
+    <span class="color-row__value">{value || t.view.colorByTheme}</span>
     <button
       type="button"
       class="button"
       disabled={isDefault}
       onclick={() => settings.update({[key]: DEFAULT_SETTINGS[key]})}
-    >Сбросить</button>
+    >{t.common.reset}</button>
   {/snippet}
 </SettingRow>
 

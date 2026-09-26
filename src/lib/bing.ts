@@ -1,4 +1,6 @@
 // Картинка дня Bing для фона страницы. Нужно разрешение на доступ к www.bing.com
+import {t} from './i18n/index.svelte';
+
 
 export const BING_ORIGIN = 'https://www.bing.com';
 
@@ -89,9 +91,9 @@ export async function loadBingImage(): Promise<BingImage> {
   if (cached && cached.expiresAt > Date.now() && cached.market === market && cached.uhd === uhd) return cached;
 
   const response = await fetch(`${BING_ORIGIN}/HPImageArchive.aspx?format=js&idx=0&n=1&mkt=${market}`);
-  if (!response.ok) throw new Error(`Bing ответил ошибкой ${response.status}`);
+  if (!response.ok) throw new Error(t.errors.bingStatus(response.status));
   const api = ((await response.json()) as {images?: BingApiImage[]}).images?.[0];
-  if (!api) throw new Error('Bing не вернул картинку дня');
+  if (!api) throw new Error(t.errors.bingNoImage);
 
   const image = toBingImage(api, market, uhd && await hasUhd(api.urlbase));
   await chrome.storage.local.set({[CACHE_KEY]: image});

@@ -1,5 +1,6 @@
 // Google Диск: копии в скрытой папке приложения (appDataFolder) — среди файлов пользователя их не видно,
 // а приложение не видит ничего, кроме своих файлов
+import {t} from '../../i18n/index.svelte';
 import {authorize, type OAuthTokens, redirectUrl} from '../oauth';
 import {apiFetch, type CloudClient, type RemoteFile, sortBackups} from '../provider';
 import type {OAuthProvider} from './types';
@@ -44,7 +45,7 @@ export class GoogleDriveClient implements CloudClient {
 
   async read(name: string): Promise<string> {
     const id = await this.#id(name);
-    if (!id) throw new Error('Копия не найдена на Google Диске');
+    if (!id) throw new Error(t.cloudErrors.notFound);
     return (await apiFetch(`${FILES_URL}/${id}?alt=media`, this.token)).text();
   }
 
@@ -56,7 +57,7 @@ export class GoogleDriveClient implements CloudClient {
       body: JSON.stringify({name, parents: ['appDataFolder']}),
     });
     const location = start.headers.get('Location');
-    if (!location) throw new Error('Google Диск не принял загрузку');
+    if (!location) throw new Error(t.cloudErrors.uploadRejected);
     await apiFetch(location, this.token, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: content});
   }
 
@@ -78,14 +79,16 @@ async function requestAccess(clientId: string, interactive: boolean, account?: s
 
   const params = await authorize(url, interactive);
   const accessToken = params.get('access_token');
-  if (!accessToken) throw new Error('Google не выдал доступ');
+  if (!accessToken) throw new Error(t.cloudErrors.noAccessGranted('Google'));
   return {accessToken, expiresAt: Date.now() + Number(params.get('expires_in') ?? 3600) * 1000};
 }
 
 export function googleDrive(clientId: string): OAuthProvider {
   return {
     id: 'google',
-    label: 'Google Диск',
+    get label() {
+      return t.backup.google;
+    },
     clientId,
     origins: ['https://www.googleapis.com/*'],
     async signIn() {

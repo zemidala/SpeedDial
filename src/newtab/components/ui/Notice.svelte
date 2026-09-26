@@ -1,4 +1,5 @@
 <script lang="ts">
+  import {t} from '../../../lib/i18n/index.svelte';
   import {hideNotice, notice, runNoticeAction} from '../../../lib/notice.svelte';
   import Icon from './Icon.svelte';
 
@@ -12,7 +13,7 @@
     {#if notice.action}
       <button type="button" class="notice__action" onclick={runNoticeAction}>{notice.action.label}</button>
     {/if}
-    <button type="button" class="notice__close" aria-label="Закрыть уведомление" onclick={hideNotice}>
+    <button type="button" class="notice__close" aria-label={t.notice.close} onclick={hideNotice}>
       <Icon name="close" size={16}/>
     </button>
   </div>

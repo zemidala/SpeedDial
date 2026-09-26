@@ -1,5 +1,6 @@
 // Клиент WebDAV: Яндекс.Диск (пароль приложения), Nextcloud, ownCloud, Koofr и другие.
 // Без DOMParser — его нет в service worker, ответ PROPFIND разбирается регулярными выражениями
+import {t} from '../i18n/index.svelte';
 import {type CloudClient, type RemoteFile, sortBackups} from './provider';
 
 export interface WebDavConfig {
@@ -18,11 +19,11 @@ export function normalizeServerUrl(value: string): string {
   try {
     url = new URL(value.trim());
   } catch {
-    throw new Error('Неверный адрес сервера');
+    throw new Error(t.cloudErrors.invalidServer);
   }
   const local = url.hostname === 'localhost' || url.hostname === '127.0.0.1';
   if (url.protocol !== 'https:' && !(url.protocol === 'http:' && local)) {
-    throw new Error('Адрес сервера должен начинаться с https://');
+    throw new Error(t.cloudErrors.httpsRequired);
   }
   url.hash = '';
   url.search = '';
@@ -91,10 +92,10 @@ export class WebDavClient implements CloudClient {
         headers: {Authorization: this.#auth, ...init.headers},
       });
     } catch {
-      throw new Error('Сервер недоступен: проверьте адрес и подключение к интернету');
+      throw new Error(t.cloudErrors.serverOffline);
     }
     if (response.status === 401 || response.status === 403) {
-      throw new Error('Сервер отклонил логин или пароль. Для Яндекс.Диска нужен пароль приложения');
+      throw new Error(t.cloudErrors.wrongPassword);
     }
     return response;
   }
@@ -108,7 +109,7 @@ export class WebDavClient implements CloudClient {
     const response = await this.#request('MKCOL', this.#folderUrl);
     // 201 — создана, 405 — уже существует (так отвечает большинство серверов)
     if (!response.ok && response.status !== 405) {
-      throw new Error(`Не удалось создать папку ${REMOTE_FOLDER} на сервере (${response.status})`);
+      throw new Error(t.cloudErrors.folderFailed(REMOTE_FOLDER, response.status));
     }
   }
 
@@ -120,13 +121,13 @@ export class WebDavClient implements CloudClient {
         + '<d:propfind xmlns:d="DAV:"><d:prop><d:getlastmodified/><d:getcontentlength/><d:resourcetype/></d:prop></d:propfind>',
     });
     if (response.status === 404) return [];
-    if (!response.ok) throw new Error(`Не удалось получить список копий (${response.status})`);
+    if (!response.ok) throw new Error(t.cloudErrors.listFailed(response.status));
     return sortBackups(parsePropfind(await response.text()));
   }
 
   async read(name: string): Promise<string> {
     const response = await this.#request('GET', this.#fileUrl(name));
-    if (!response.ok) throw new Error(`Не удалось скачать копию (${response.status})`);
+    if (!response.ok) throw new Error(t.cloudErrors.downloadFailed(response.status));
     return response.text();
   }
 
@@ -135,11 +136,11 @@ export class WebDavClient implements CloudClient {
       headers: {'Content-Type': 'application/json'},
       body: content,
     });
-    if (!response.ok) throw new Error(`Не удалось сохранить копию на сервере (${response.status})`);
+    if (!response.ok) throw new Error(t.cloudErrors.uploadFailed(response.status));
   }
 
   async remove(name: string): Promise<void> {
     const response = await this.#request('DELETE', this.#fileUrl(name));
-    if (!response.ok && response.status !== 404) throw new Error(`Не удалось удалить копию (${response.status})`);
+    if (!response.ok && response.status !== 404) throw new Error(t.cloudErrors.removeFailed(response.status));
   }
 }

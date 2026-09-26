@@ -6,8 +6,9 @@
   import {ROOT_FOLDER_ID} from '../../../lib/constants';
   import {dragDrop, FOLDER_EDGE_DELAY} from '../../../lib/dragDrop.svelte';
   import {isGridKey, neighbourIndex} from '../../../lib/gridKeyboard';
+  import {t} from '../../../lib/i18n/index.svelte';
   import {showNotice} from '../../../lib/notice.svelte';
-  import {SEARCH_ENGINE_NAMES} from '../../../lib/search';
+  import {searchEngineName} from '../../../lib/search';
   import {search} from '../../../lib/search.svelte';
   import {settings} from '../../../lib/settings/store.svelte';
   import {sortNodes} from '../../../lib/sorting';
@@ -50,9 +51,9 @@
   const emptyMessage = $derived.by(() => {
     if (items.length > 0) return null;
     if (search.active) {
-      return `Ничего не найдено. Нажмите Enter, чтобы искать в ${SEARCH_ENGINE_NAMES[settings.current.searchEngine]}.`;
+      return t.grid.nothingFound(searchEngineName(settings.current.searchEngine));
     }
-    if (bookmarks.loaded && !showAddTile) return 'Здесь пока пусто. Нажмите правой кнопкой мыши, чтобы добавить закладку.';
+    if (bookmarks.loaded && !showAddTile) return t.grid.empty;
     return null;
   });
 
@@ -105,7 +106,7 @@
       event.preventDefault();
       deleteFocused(tile, node).catch((error) => {
         console.error('Failed to delete', error);
-        showNotice(`Не удалось удалить: ${error instanceof Error ? error.message : error}`);
+        showNotice(t.notice.deleteFailed(error instanceof Error ? error.message : String(error)));
       });
     } else if (event.key === 'F2') {
       event.preventDefault();
@@ -131,7 +132,7 @@
 <section
   bind:this={section}
   class="bookmark-grid"
-  aria-label={search.active ? 'Результаты поиска' : 'Закладки'}
+  aria-label={search.active ? t.grid.searchResults : t.grid.bookmarks}
   style:--insert-delay="{FOLDER_EDGE_DELAY}ms"
 >
   {#if parentFolderId !== null}

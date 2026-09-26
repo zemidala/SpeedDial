@@ -1,18 +1,5 @@
 import type {SortOrder, TypeOrder} from './settings/schema';
 
-export const SORT_ORDER_NAMES: Record<SortOrder, string> = {
-  none: 'Не сортировать',
-  title: 'По названию',
-  url: 'По адресу',
-  dateAdded: 'По дате добавления (новые сначала)',
-};
-
-export const TYPE_ORDER_NAMES: Record<TypeOrder, string> = {
-  none: 'Не сортировать',
-  foldersFirst: 'Сначала папки',
-  bookmarksFirst: 'Сначала закладки',
-};
-
 interface SortableNode {
   title: string;
   url?: string;

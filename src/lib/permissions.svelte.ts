@@ -1,5 +1,6 @@
 // Необязательные разрешения: запрашиваются, только когда пользователь включает функцию
-import {hideNotice, RELOAD_EXTENSION_HINT, showNotice} from './notice.svelte';
+import {t} from './i18n/index.svelte';
+import {hideNotice, showNotice} from './notice.svelte';
 import {BING_ACCESS, CLIPBOARD_ACCESS, SITE_ACCESS} from './permissionSets';
 
 /** Понятное объяснение ошибки запроса разрешения */
@@ -7,9 +8,9 @@ function describeError(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
   // Страницы распакованного расширения браузер читает с диска сразу, а манифест — только при перезагрузке
   if (message.includes('Only permissions specified in the manifest')) {
-    return `Браузер использует устаревшую версию расширения. ${RELOAD_EXTENSION_HINT}`;
+    return t.notice.outdatedPermissions(t.notice.reloadHint);
   }
-  return `Не удалось запросить разрешение: ${message}`;
+  return t.notice.permissionFailed(message);
 }
 
 class PermissionsStore {

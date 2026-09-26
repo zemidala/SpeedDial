@@ -1,6 +1,7 @@
 <script lang="ts">
   import {onMount} from 'svelte';
-  import {SEARCH_ENGINE_NAMES} from '../../../lib/search';
+  import {t} from '../../../lib/i18n/index.svelte';
+  import {searchEngineName} from '../../../lib/search';
   import {search} from '../../../lib/search.svelte';
   import {settings} from '../../../lib/settings/store.svelte';
   import {modals} from '../../../lib/ui.svelte';
@@ -8,7 +9,7 @@
 
   let input: HTMLInputElement;
 
-  const engineName = $derived(SEARCH_ENGINE_NAMES[settings.current.searchEngine]);
+  const engineName = $derived(searchEngineName(settings.current.searchEngine));
 
   onMount(() => {
     if (settings.current.autofocusSearch) input.focus();
@@ -51,8 +52,8 @@
     bind:this={input}
     class="search-bar__input"
     type="search"
-    aria-label="Поиск"
-    placeholder="Поиск в закладках, Enter — в {engineName}"
+    aria-label={t.header.search}
+    placeholder={t.header.searchPlaceholder(engineName)}
     value={search.query}
     oninput={(event) => search.setQuery(event.currentTarget.value)}
     {onkeydown}

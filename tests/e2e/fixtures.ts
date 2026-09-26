@@ -3,7 +3,7 @@ import {tmpdir} from 'node:os';
 import {join, resolve} from 'node:path';
 import {type BrowserContext, chromium, type Page, test as base} from '@playwright/test';
 
-const EXTENSION_PATH = resolve(import.meta.dirname, '../../dist');
+export const EXTENSION_PATH = resolve(import.meta.dirname, '../../dist');
 
 export interface SeedItem {
   title: string;
@@ -46,6 +46,8 @@ interface Fixtures {
   hostAccess: boolean;
   /** Отдельная копия сборки для теста — если тест меняет её файлы */
   isolatedBuild: boolean;
+  /** Язык браузера; тесты написаны для русского интерфейса */
+  browserLocale: string;
   extensionPath: string;
   context: BrowserContext;
   extensionId: string;
@@ -56,14 +58,17 @@ interface Fixtures {
 export const test = base.extend<Fixtures>({
   hostAccess: [false, {option: true}],
   isolatedBuild: [false, {option: true}],
+  browserLocale: ['ru-RU', {option: true}],
 
   extensionPath: async ({hostAccess, isolatedBuild}, use) => {
     await use(isolatedBuild ? copyBuild() : hostAccess ? getHostAccessBuild() : EXTENSION_PATH);
   },
 
-  context: async ({extensionPath}, use) => {
+  context: async ({extensionPath, browserLocale}, use) => {
     const context = await chromium.launchPersistentContext('', {
       channel: 'chromium',
+      // «Как в браузере» даёт язык этой локали
+      locale: browserLocale,
       args: [
         `--disable-extensions-except=${extensionPath}`,
         `--load-extension=${extensionPath}`,

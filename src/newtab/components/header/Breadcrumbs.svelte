@@ -2,14 +2,15 @@
   import {bookmarks} from '../../../lib/bookmarks.svelte';
   import {ROOT_FOLDER_ID} from '../../../lib/constants';
   import {dragDrop} from '../../../lib/dragDrop.svelte';
+  import {t} from '../../../lib/i18n/index.svelte';
   import {folderOpenHandlers} from '../../../lib/navigation';
 
   // Путь к открытой папке. Папки пути — кнопки (не ссылки, чтобы браузер не показывал адрес
   // chrome-extension://… при наведении) и принимают перетаскиваемые закладки; текущая — просто текст
-  const crumbs = $derived([{id: ROOT_FOLDER_ID, title: 'Главная'}, ...bookmarks.path]);
+  const crumbs = $derived([{id: ROOT_FOLDER_ID, title: t.common.home}, ...bookmarks.path]);
 </script>
 
-<nav class="breadcrumbs" aria-label="Путь к папке">
+<nav class="breadcrumbs" aria-label={t.header.breadcrumbs}>
   {#each crumbs as crumb, i (crumb.id)}
     {#if i > 0}
       <span class="breadcrumbs__separator" aria-hidden="true">›</span>

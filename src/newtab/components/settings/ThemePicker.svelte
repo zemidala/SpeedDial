@@ -1,5 +1,6 @@
 <script lang="ts">
   import {MediaQuery} from 'svelte/reactivity';
+  import {t} from '../../../lib/i18n/index.svelte';
   import {settings} from '../../../lib/settings/store.svelte';
   import {isDarkTheme} from '../../../lib/settings/theme';
   import {withDimming} from '../../../lib/themes/current';
@@ -16,10 +17,17 @@
     customPreset(settings.current.customAccent, settings.current.customTint),
   ].map((preset) => withDimming(preset, settings.current.lightDimming)));
 
+  // Названия-бренды не переводятся, а «Стандартная» и «Свои цвета» — на языке интерфейса
+  const presetName = (preset: {id: string; name: string}) => {
+    if (preset.id === 'standard') return t.view.themeStandard;
+    if (preset.id === 'custom') return t.view.themeCustom;
+    return preset.name;
+  };
+
   const paletteOf = (preset: {light: ThemePalette; dark: ThemePalette}) => (dark ? preset.dark : preset.light);
 </script>
 
-<div class="theme-picker" role="radiogroup" aria-label="Тема оформления">
+<div class="theme-picker" role="radiogroup" aria-label={t.view.preset}>
   {#each presets as preset (preset.id)}
     {@const palette = paletteOf(preset)}
     {@const selected = settings.current.themePreset === preset.id}
@@ -57,7 +65,7 @@
           </span>
         </span>
       </span>
-      <span class="theme-card__name">{preset.name}</span>
+      <span class="theme-card__name">{presetName(preset)}</span>
     </button>
   {/each}
 </div>

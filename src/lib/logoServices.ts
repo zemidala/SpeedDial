@@ -6,29 +6,24 @@ export interface LogoServiceInfo {
   name: string;
   /** {{website}} — домен сайта, {{token}} — ключ доступа */
   template: string;
-  hint: string;
 }
 
 export const LOGO_SERVICES: Record<Exclude<LogoService, 'none' | 'custom'>, LogoServiceInfo> = {
   google: {
     name: 'Google',
     template: 'https://www.google.com/s2/favicons?domain={{website}}&sz=256',
-    hint: 'До 256 px, если у сайта есть крупная иконка; маленькие растягивает',
   },
   duckduckgo: {
     name: 'DuckDuckGo',
     template: 'https://icons.duckduckgo.com/ip3/{{website}}.ico',
-    hint: 'Исходная иконка сайта, без растягивания',
   },
   iconhorse: {
     name: 'icon.horse',
     template: 'https://icon.horse/icon/{{website}}',
-    hint: 'Сам ищет лучшую иконку сайта. Бесплатно — с ограничением числа запросов',
   },
   logodev: {
     name: 'logo.dev',
     template: 'https://img.logo.dev/{{website}}?token={{token}}&size=256&format=png',
-    hint: 'Логотипы брендов. Нужен бесплатный ключ с logo.dev',
   },
 };
 

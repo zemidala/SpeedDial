@@ -2,6 +2,7 @@
   import {background} from '../lib/background.svelte';
   import {readableTextColor} from '../lib/color';
   import {dragDrop} from '../lib/dragDrop.svelte';
+  import {currentLanguage, setLanguage, t} from '../lib/i18n/index.svelte';
   import {showNotice} from '../lib/notice.svelte';
   import {permissions} from '../lib/permissions.svelte';
   import {settings} from '../lib/settings/store.svelte';
@@ -51,6 +52,13 @@
     setCustomColor(root.style, 'folder', folderColor);
   });
 
+  // Язык интерфейса, язык документа и заголовок вкладки
+  $effect(() => {
+    setLanguage(settings.current.language);
+    document.documentElement.lang = currentLanguage();
+    document.title = t.common.newTab;
+  });
+
   // Тема оформления: цвета обоих режимов в одном стиле (light-dark), плюс кэш для theme-init.js,
   // чтобы при следующем открытии вкладки тема применилась до первой отрисовки
   $effect(() => {
@@ -74,7 +82,7 @@
     if (settings.current.background !== 'bing' || !permissions.bing) return;
     background.loadBing().catch((error) => {
       console.error('Failed to load Bing image', error);
-      showNotice(`Не удалось загрузить картинку дня Bing: ${error instanceof Error ? error.message : error}`);
+      showNotice(t.notice.bingFailed(error instanceof Error ? error.message : String(error)));
     });
   });
 

@@ -139,7 +139,7 @@ test('фон «Картинка дня Bing» с подписью и кэшем'
     const headers = {'Access-Control-Allow-Origin': '*'};
     if (url.pathname === '/HPImageArchive.aspx') {
       apiRequests++;
-      expect(url.searchParams.get('mkt')).toBe('en-US'); // Язык тестового браузера
+      expect(url.searchParams.get('mkt')).toBe('ru-RU'); // Язык тестового браузера
       return route.fulfill({headers, contentType: 'application/json', body: JSON.stringify({
         images: [{
           url: '/th?id=OHR.Test_1920x1080.jpg',

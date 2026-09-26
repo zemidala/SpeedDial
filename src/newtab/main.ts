@@ -1,10 +1,11 @@
 import {mount} from 'svelte';
 import {background} from '../lib/background.svelte';
 import {bookmarks} from '../lib/bookmarks.svelte';
+import {setLanguage, t} from '../lib/i18n/index.svelte';
 import {icons} from '../lib/icons.svelte';
 import {onDatabaseOutdated} from '../lib/idb';
 import {isManifestOutdated} from '../lib/manifestCheck';
-import {RELOAD_EXTENSION_HINT, showNotice} from '../lib/notice.svelte';
+import {showNotice} from '../lib/notice.svelte';
 import {permissions} from '../lib/permissions.svelte';
 import {settings} from '../lib/settings/store.svelte';
 import {thumbnails} from '../lib/thumbnails/store.svelte';
@@ -26,8 +27,10 @@ background.load().catch(logError('Failed to load background'));
 
 isManifestOutdated()
   .then((outdated) => {
-    if (outdated) showNotice(`Расширение обновилось, но браузер ещё не перезагрузил его настройки. ${RELOAD_EXTENSION_HINT}`);
+    if (outdated) showNotice(t.notice.extensionUpdated(t.notice.reloadHint));
   })
   .catch(logError('Failed to check manifest'));
 
+// Язык — до первой отрисовки: настройки уже прочитаны из кэша
+setLanguage(settings.current.language);
 mount(App, {target: document.getElementById('app')!});

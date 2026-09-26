@@ -1,5 +1,6 @@
 // Копии в облаке: подключение, запуск и состояние. Без Svelte — автоматические копии делает service worker.
 // Данные подключения хранятся только на этом устройстве (chrome.storage.local) и в облако браузера не попадают
+import {t} from '../i18n/index.svelte';
 import {type Backup, backupFileName, backupFingerprint, createBackup} from './backup';
 import {isFresh, type OAuthTokens} from './oauth';
 import {AuthExpiredError, type CloudClient} from './provider';
@@ -88,7 +89,7 @@ export function connectionLabel(connection: CloudConnection): string {
  */
 export async function cloudClient(config: CloudConfig): Promise<CloudClient> {
   if (!await chrome.permissions.contains({origins: connectionOrigins(config)})) {
-    throw new Error('Нет разрешения на доступ к облаку. Подключитесь заново в настройках');
+    throw new Error(t.cloudErrors.noPermission);
   }
   if (config.provider === 'webdav') return new WebDavClient(config);
 
@@ -99,7 +100,7 @@ export async function cloudClient(config: CloudConfig): Promise<CloudClient> {
       tokens = await provider.refresh(tokens, config.account);
     } catch (error) {
       console.warn('Token refresh failed', error);
-      throw new AuthExpiredError(`Вход в ${provider.label} устарел. Отключите облако и подключитесь заново`);
+      throw new AuthExpiredError(t.cloudErrors.authExpiredFor(provider.label));
     }
     await saveCloudConfig({...config, tokens});
   }
@@ -120,7 +121,7 @@ export type BackupOutcome = 'saved' | 'unchanged';
  */
 export async function runCloudBackup({force}: {force: boolean}): Promise<BackupOutcome> {
   const config = await loadCloudConfig();
-  if (!config) throw new Error('Облако не подключено');
+  if (!config) throw new Error(t.cloudErrors.notConnected);
   try {
     const client = await cloudClient(config);
     const backup: Backup = await createBackup({includeImages: config.includeImages});

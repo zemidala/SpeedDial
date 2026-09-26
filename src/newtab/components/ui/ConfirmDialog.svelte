@@ -1,4 +1,5 @@
 <script lang="ts">
+  import {t} from '../../../lib/i18n/index.svelte';
   import type {ConfirmOptions} from '../../../lib/ui.svelte';
   import Modal from './Modal.svelte';
 
@@ -28,7 +29,7 @@
   {/if}
 
   {#snippet footer()}
-    <button type="button" class="button" onclick={onclose}>Отмена</button>
+    <button type="button" class="button" onclick={onclose}>{t.common.cancel}</button>
     <button
       type="button"
       class="button"

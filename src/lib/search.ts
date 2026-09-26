@@ -1,12 +1,21 @@
+import {t} from './i18n/index.svelte';
 import type {SearchEngine} from './settings/schema';
 
-export const SEARCH_ENGINE_NAMES: Record<SearchEngine, string> = {
-  google: 'Google',
-  yandex: 'Яндекс',
-  bing: 'Bing',
-  duckduckgo: 'DuckDuckGo',
-  custom: 'Свой адрес',
-};
+/** Название поисковой системы на языке интерфейса */
+export function searchEngineName(engine: SearchEngine): string {
+  switch (engine) {
+    case 'google':
+      return 'Google';
+    case 'yandex':
+      return t.general.searchEngineYandex;
+    case 'bing':
+      return 'Bing';
+    case 'duckduckgo':
+      return 'DuckDuckGo';
+    case 'custom':
+      return t.general.searchEngineCustom;
+  }
+}
 
 // %s заменяется закодированным запросом
 const SEARCH_URLS: Record<Exclude<SearchEngine, 'custom'>, string> = {

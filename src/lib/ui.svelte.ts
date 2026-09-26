@@ -1,5 +1,6 @@
 import type {BookmarkNode} from './bookmarks.svelte';
 import {removeNode, restoreNode} from './bookmarkActions';
+import {t} from './i18n/index.svelte';
 import {showNotice} from './notice.svelte';
 import {settings} from './settings/store.svelte';
 import {thumbnails} from './thumbnails/store.svelte';
@@ -45,9 +46,8 @@ export function openSettings(): void {
 /** Удаляет закладку или папку и предлагает отменить удаление */
 async function deleteWithUndo(node: BookmarkNode): Promise<void> {
   const removed = await removeNode(node);
-  const what = removed.tree.url ? 'Закладка' : 'Папка';
-  showNotice(`${what} «${removed.tree.title}» удалена`, 'info', {
-    label: 'Отменить',
+  showNotice(t.bookmark.deleted(!removed.tree.url, removed.tree.title), 'info', {
+    label: t.common.undo,
     run: async () => thumbnails.restore(removed.thumbnails, await restoreNode(removed)),
   });
 }
@@ -59,11 +59,11 @@ export function requestDelete(node: BookmarkNode): Promise<void> | void {
   const isFolder = !node.url;
   ui.dialog = {
     kind: 'confirm',
-    title: isFolder ? 'Удалить папку?' : 'Удалить закладку?',
+    title: isFolder ? t.bookmark.deleteFolderTitle : t.bookmark.deleteBookmarkTitle,
     message: isFolder
-      ? `«${node.title}» будет удалена вместе со всем содержимым. Отменить это действие нельзя.`
-      : `«${node.title}» будет удалена. Отменить это действие нельзя.`,
-    confirmLabel: 'Удалить',
+      ? t.bookmark.deleteFolderMessage(node.title)
+      : t.bookmark.deleteBookmarkMessage(node.title),
+    confirmLabel: t.common.delete,
     danger: true,
     onConfirm: () => deleteWithUndo(node),
   };

@@ -1,6 +1,7 @@
 <script lang="ts">
   import {type BookmarkNode, bookmarks} from '../../lib/bookmarks.svelte';
   import {ROOT_FOLDER_ID} from '../../lib/constants';
+  import {t} from '../../lib/i18n/index.svelte';
   import {folderPageUrl, type OpenMode, openUrl} from '../../lib/navigation';
   import {showNotice} from '../../lib/notice.svelte';
   import {search} from '../../lib/search.svelte';
@@ -32,14 +33,14 @@
       return openUrl(folderPageUrl(node.id), mode);
     };
     const entries: MenuEntry[] = [
-      {label: 'Открыть', action: open('current')},
-      {label: 'Открыть в новой вкладке', action: open('tab')},
-      {label: 'Открыть в фоновой вкладке', action: open('background')},
-      {label: 'Открыть в новом окне', action: open('window')},
+      {label: t.menu.open, action: open('current')},
+      {label: t.menu.openInNewTab, action: open('tab')},
+      {label: t.menu.openInBackground, action: open('background')},
+      {label: t.menu.openInNewWindow, action: open('window')},
     ];
     // В режиме инкогнито открываются только веб-страницы: у страниц расширения нет доступа в инкогнито
     if (node.url && isWebUrl(node.url)) {
-      entries.push({label: 'Открыть в окне в режиме инкогнито', action: open('incognito')});
+      entries.push({label: t.menu.openIncognito, action: open('incognito')});
     }
     return entries;
   }
@@ -49,8 +50,8 @@
     const canGoBack = window.navigation?.canGoBack ?? true;
     const canGoForward = window.navigation?.canGoForward ?? true;
     return [
-      {label: 'Назад', icon: 'back', disabled: !canGoBack, action: () => history.back()},
-      {label: 'Вперед', icon: 'forward', disabled: !canGoForward, action: () => history.forward()},
+      {label: t.menu.back, icon: 'back', disabled: !canGoBack, action: () => history.back()},
+      {label: t.menu.forward, icon: 'forward', disabled: !canGoForward, action: () => history.forward()},
     ];
   }
 
@@ -60,12 +61,12 @@
       const parent = {parentId: anchor.id, parentTitle: anchor.title};
       return [
         {
-          label: 'Новая закладка в этой папке…',
+          label: t.menu.newBookmarkHere,
           icon: 'bookmarkPlus',
           action: () => (ui.dialog = {kind: 'create', type: 'bookmark', ...parent}),
         },
         {
-          label: 'Новая папка в этой папке…',
+          label: t.menu.newFolderHere,
           icon: 'folderPlus',
           action: () => (ui.dialog = {kind: 'create', type: 'folder', ...parent}),
         },
@@ -79,14 +80,14 @@
       ? (anchor.index ?? 0) + 1
       : undefined;
     return [
-      {label: 'Новая закладка…', icon: 'bookmarkPlus', action: () => (ui.dialog = {kind: 'create', type: 'bookmark', parentId, index})},
-      {label: 'Новая папка…', icon: 'folderPlus', action: () => (ui.dialog = {kind: 'create', type: 'folder', parentId, index})},
+      {label: t.menu.newBookmark, icon: 'bookmarkPlus', action: () => (ui.dialog = {kind: 'create', type: 'bookmark', parentId, index})},
+      {label: t.menu.newFolder, icon: 'folderPlus', action: () => (ui.dialog = {kind: 'create', type: 'folder', parentId, index})},
     ];
   }
 
   function sortEntry(folder: {id: string; title: string}): MenuItem {
     return {
-      label: 'Сортировать…',
+      label: t.menu.sort,
       icon: 'sort',
       // Системные папки в корне переставлять нельзя
       disabled: folder.id === ROOT_FOLDER_ID,
@@ -94,9 +95,9 @@
     };
   }
 
-  const currentFolder = () => ({id: bookmarks.folderId, title: bookmarks.path.at(-1)?.title ?? 'Главная'});
+  const currentFolder = () => ({id: bookmarks.folderId, title: bookmarks.path.at(-1)?.title ?? t.common.home});
 
-  const refreshEntry: MenuItem = {label: 'Обновить', icon: 'refresh', action: () => location.reload()};
+  const refreshEntry = (): MenuItem => ({label: t.menu.refresh, icon: 'refresh', action: () => location.reload()});
 
   /** Меню плитки закладки или папки */
   function tileEntries(node: BookmarkNode): MenuEntry[] {
@@ -105,29 +106,29 @@
       const url = node.url;
       entries.push(
         {
-          label: 'Копировать ссылку',
+          label: t.menu.copyLink,
           icon: 'copy',
           action: async () => {
             await navigator.clipboard.writeText(url);
-            showNotice('Ссылка скопирована', 'info');
+            showNotice(t.notice.linkCopied, 'info');
           },
         },
         'separator',
       );
     }
     entries.push(...createEntries(node), 'separator');
-    entries.push({label: 'Редактировать…', icon: 'pencil', action: () => (ui.dialog = {kind: 'edit', node})});
+    entries.push({label: t.menu.edit, icon: 'pencil', action: () => (ui.dialog = {kind: 'edit', node})});
     if (node.url) {
       const bookmark = node as BookmarkNode & {url: string};
-      entries.push({label: 'Значок…', icon: 'image', action: () => (ui.dialog = {kind: 'icon', node: bookmark})});
+      entries.push({label: t.menu.icon, icon: 'image', action: () => (ui.dialog = {kind: 'icon', node: bookmark})});
     }
     // На папке «Сортировать» упорядочивает её саму, на закладке — открытую папку
     entries.push(
       sortEntry(node.url ? currentFolder() : {id: node.id, title: node.title}),
       'separator',
-      {label: settings.current.confirmDelete ? 'Удалить…' : 'Удалить', icon: 'trash', action: () => requestDelete(node)},
+      {label: settings.current.confirmDelete ? t.menu.deleteConfirm : t.menu.delete, icon: 'trash', action: () => requestDelete(node)},
       'separator',
-      refreshEntry,
+      refreshEntry(),
     );
     return entries;
   }
@@ -141,11 +142,11 @@
       'separator',
       sortEntry(currentFolder()),
       'separator',
-      refreshEntry,
+      refreshEntry(),
     ];
     // Если кнопка настроек скрыта, настройки открываются отсюда
     if (!settings.current.showSettingsButton) {
-      entries.push({label: 'Настройки', icon: 'settings', action: openSettings});
+      entries.push({label: t.common.settings, icon: 'settings', action: openSettings});
     }
     return entries;
   }
@@ -190,7 +191,7 @@
       .then(item.action)
       .catch((error) => {
         console.error(`${item.label}:`, error);
-        showNotice(`Не удалось выполнить «${item.label}»: ${error instanceof Error ? error.message : error}`);
+        showNotice(t.notice.actionFailed(item.label, error instanceof Error ? error.message : String(error)));
       });
   }
 

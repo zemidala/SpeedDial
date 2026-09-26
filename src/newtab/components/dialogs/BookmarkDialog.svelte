@@ -1,4 +1,5 @@
 <script lang="ts">
+  import {t} from '../../../lib/i18n/index.svelte';
   import {SITE_ACCESS} from '../../../lib/permissionSets';
   import {permissions} from '../../../lib/permissions.svelte';
   import {settings} from '../../../lib/settings/store.svelte';
@@ -23,10 +24,10 @@
 
   function getHeading(): string {
     if (initial.kind === 'create') {
-      const heading = isFolder ? 'Новая папка' : 'Новая закладка';
-      return initial.parentTitle ? `${heading} в «${initial.parentTitle}»` : heading;
+      const heading = isFolder ? t.bookmark.newFolder : t.bookmark.newBookmark;
+      return initial.parentTitle ? t.bookmark.inFolder(heading, initial.parentTitle) : heading;
     }
-    return isFolder ? 'Изменить папку' : 'Изменить закладку';
+    return isFolder ? t.bookmark.editFolder : t.bookmark.editBookmark;
   }
 
   /** Место новой закладки: в начало, если так задано в настройках, иначе переданное (по умолчанию — в конец) */
@@ -42,7 +43,7 @@
         await chrome.bookmarks.create({
           parentId: initial.parentId,
           index: newIndex(initial.index),
-          title: title.trim() || 'Новая папка',
+          title: title.trim() || t.bookmark.newFolder,
         });
       }
       return;
@@ -50,7 +51,7 @@
 
     const normalizedUrl = normalizeUrl(url);
     if (!normalizedUrl) {
-      throw new Error('Неверный формат URL');
+      throw new Error(t.bookmark.invalidUrl);
     }
     const details = {title: title.trim() || getHostname(normalizedUrl), url: normalizedUrl};
 
@@ -87,17 +88,17 @@
 
 <Modal title={getHeading()} {onclose}>
   <form id={formId} class="bookmark-form" {onsubmit}>
-    <label class="bookmark-form__label" for="{formId}-title">Название</label>
+    <label class="bookmark-form__label" for="{formId}-title">{t.bookmark.title}</label>
     <input
       id="{formId}-title"
       class="input bookmark-form__field"
       type="text"
-      placeholder={isFolder ? 'Новая папка' : 'Введите название'}
+      placeholder={isFolder ? t.bookmark.newFolder : t.bookmark.titlePlaceholder}
       bind:value={title}
     >
 
     {#if !isFolder}
-      <label class="bookmark-form__label" for="{formId}-url">Адрес</label>
+      <label class="bookmark-form__label" for="{formId}-url">{t.bookmark.address}</label>
       <input
         id="{formId}-url"
         class="input bookmark-form__field"
@@ -114,9 +115,9 @@
   </form>
 
   {#snippet footer()}
-    <button type="button" class="button" onclick={onclose}>Отмена</button>
+    <button type="button" class="button" onclick={onclose}>{t.common.cancel}</button>
     <button type="submit" class="button button--primary" form={formId} disabled={saving}>
-      {initial.kind === 'create' ? 'Создать' : 'Сохранить'}
+      {initial.kind === 'create' ? t.common.create : t.common.save}
     </button>
   {/snippet}
 </Modal>

@@ -1,5 +1,6 @@
 <script lang="ts">
   import type {RestoreMode} from '../../../lib/backup/backup';
+  import {t} from '../../../lib/i18n/index.svelte';
   import Modal from '../ui/Modal.svelte';
 
   // Выбор способа восстановления копии
@@ -29,19 +30,19 @@
 </script>
 
 <Modal {title} {onclose}>
-  <div class="restore-dialog" role="radiogroup" aria-label="Способ восстановления">
+  <div class="restore-dialog" role="radiogroup" aria-label={t.backup.restoreModes}>
     <label class="restore-dialog__option">
       <input type="radio" name="{baseId}-mode" value="merge" bind:group={mode}>
       <span>
-        <span class="restore-dialog__label">Добавить недостающие закладки</span>
-        <span class="restore-dialog__hint">Закладки и папки из копии, которых здесь нет. Ничего не удаляется, настройки не меняются</span>
+        <span class="restore-dialog__label">{t.backup.merge}</span>
+        <span class="restore-dialog__hint">{t.backup.mergeHint}</span>
       </span>
     </label>
     <label class="restore-dialog__option">
       <input type="radio" name="{baseId}-mode" value="replace" bind:group={mode}>
       <span>
-        <span class="restore-dialog__label">Восстановить полностью</span>
-        <span class="restore-dialog__hint">Закладки, их порядок, настройки и фон станут как в копии. Можно будет отменить</span>
+        <span class="restore-dialog__label">{t.backup.replace}</span>
+        <span class="restore-dialog__hint">{t.backup.replaceHint}</span>
       </span>
     </label>
   </div>
@@ -50,8 +51,8 @@
   {/if}
 
   {#snippet footer()}
-    <button type="button" class="button" onclick={onclose}>Отмена</button>
-    <button type="button" class="button button--primary" disabled={busy} onclick={restore}>Восстановить</button>
+    <button type="button" class="button" onclick={onclose}>{t.common.cancel}</button>
+    <button type="button" class="button button--primary" disabled={busy} onclick={restore}>{t.backup.restore}</button>
   {/snippet}
 </Modal>
 

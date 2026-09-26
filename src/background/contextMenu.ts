@@ -1,5 +1,6 @@
 // Пункт «Добавить в SpeedDial» в контекстном меню страниц и ссылок
 import {BOOKMARKS_BAR_ID} from '../lib/constants';
+import {setLanguage, t} from '../lib/i18n/index.svelte';
 import {SITE_ACCESS} from '../lib/permissionSets';
 import {loadSettings} from '../lib/settings/storage';
 import {getHostname} from '../lib/url';
@@ -9,12 +10,13 @@ const MENU_ITEM_ID = 'add-to-speeddial';
 
 /** Показывает или убирает пункт меню в зависимости от настройки */
 export async function syncContextMenu(): Promise<void> {
-  const {browserContextMenu} = await loadSettings();
+  const {browserContextMenu, language} = await loadSettings();
+  setLanguage(language);
   await chrome.contextMenus.removeAll();
   if (browserContextMenu) {
     chrome.contextMenus.create({
       id: MENU_ITEM_ID,
-      title: 'Добавить в SpeedDial',
+      title: t.menu.addToSpeedDial,
       contexts: ['page', 'link'],
     });
   }

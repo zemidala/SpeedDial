@@ -1,9 +1,17 @@
 import {AUTO_BACKUP_ALARM, runCloudBackup, scheduleAutoBackup} from '../lib/backup/cloud';
+import {setLanguage} from '../lib/i18n/index.svelte';
 import {onMessage, type RuntimeMessage, sendMessage} from '../lib/messages';
-import {onSettingsChanged} from '../lib/settings/storage';
+import {loadSettings, onSettingsChanged} from '../lib/settings/storage';
 import {deleteThumbnail} from '../lib/thumbnails/storage';
 import {cancelCapture, captureStatus, captureThumbnails} from './capture';
 import {setupContextMenu, syncContextMenu} from './contextMenu';
+
+// Язык сообщений service worker (ошибки копий, пункт меню) — из настроек
+const applyLanguage = () => {
+  loadSettings().then(({language}) => setLanguage(language)).catch((error) => console.error('Failed to load language', error));
+};
+applyLanguage();
+onSettingsChanged(applyLanguage);
 
 // Клик по значку расширения открывает новую вкладку, то есть SpeedDial
 chrome.action.onClicked.addListener(() => {

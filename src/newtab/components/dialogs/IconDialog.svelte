@@ -1,6 +1,7 @@
 <script lang="ts">
   import type {BookmarkNode} from '../../../lib/bookmarks.svelte';
   import {pickFile, readClipboardImage} from '../../../lib/files';
+  import {t} from '../../../lib/i18n/index.svelte';
   import {icons} from '../../../lib/icons.svelte';
   import {SITE_ACCESS} from '../../../lib/permissionSets';
   import {permissions} from '../../../lib/permissions.svelte';
@@ -33,57 +34,57 @@
     }
   }
 
-  const refreshIcon = () => run(() => icons.refresh(node.url), 'Иконка загружается заново');
+  const refreshIcon = () => run(() => icons.refresh(node.url), t.iconDialog.iconReloading);
 
   const capture = () => run(async () => {
     // Запрос разрешения — первым делом, пока действует клик пользователя
     if (!permissions.siteAccess && !(await permissions.request(SITE_ACCESS))) {
-      throw new Error('Без доступа к сайтам снимок страницы сделать нельзя');
+      throw new Error(t.iconDialog.captureNeedsAccess);
     }
     await thumbnails.capture([{id: node.id, url: node.url}]);
-  }, 'Снимок страницы делается — картинка обновится, когда он будет готов');
+  }, t.iconDialog.captureStarted);
 
   const pick = () => run(async () => {
     const file = await pickFile('image/*');
     if (file) await thumbnails.setCustom(node.id, file);
-  }, 'Картинка обновлена');
+  }, t.iconDialog.imageUpdated);
 
   const paste = () => run(async () => {
     const image = await readClipboardImage();
-    if (!image) throw new Error('В буфере обмена нет картинки');
+    if (!image) throw new Error(t.iconDialog.noClipboardImage);
     await thumbnails.setCustom(node.id, image);
-  }, 'Картинка вставлена из буфера обмена');
+  }, t.iconDialog.pasted);
 
-  const removeThumbnail = () => run(() => thumbnails.remove(node.id), 'Картинка убрана — показывается иконка сайта');
+  const removeThumbnail = () => run(() => thumbnails.remove(node.id), t.iconDialog.removed);
 </script>
 
-<Modal title="Значок «{node.title}»" {onclose}>
+<Modal title={t.iconDialog.title(node.title)} {onclose}>
   <div class="icon-dialog__preview">
     {#if thumbnail.url}
-      <img class="icon-dialog__thumbnail" src={thumbnail.url} alt="Текущая картинка">
+      <img class="icon-dialog__thumbnail" src={thumbnail.url} alt={t.iconDialog.currentImage}>
     {:else}
       <SiteIcon entry={icon}/>
     {/if}
   </div>
 
   <div class="icon-dialog__actions">
-    <button type="button" class="button" disabled={busy} onclick={refreshIcon}>Обновить иконку сайта</button>
+    <button type="button" class="button" disabled={busy} onclick={refreshIcon}>{t.iconDialog.refreshIcon}</button>
     {#if isWebUrl(node.url)}
       <button type="button" class="button" disabled={busy || thumbnails.progress !== null} onclick={capture}>
-        Сделать снимок страницы
+        {t.iconDialog.capture}
       </button>
     {/if}
-    <button type="button" class="button" disabled={busy} onclick={pick}>Выбрать картинку…</button>
+    <button type="button" class="button" disabled={busy} onclick={pick}>{t.iconDialog.chooseImage}</button>
     <button type="button" class="button" disabled={busy || !permissions.clipboard} onclick={paste}>
-      Вставить из буфера обмена
+      {t.iconDialog.paste}
     </button>
     {#if thumbnail.url}
-      <button type="button" class="button" disabled={busy} onclick={removeThumbnail}>Убрать картинку</button>
+      <button type="button" class="button" disabled={busy} onclick={removeThumbnail}>{t.iconDialog.removeImage}</button>
     {/if}
   </div>
 
   {#if !permissions.clipboard}
-    <p class="icon-dialog__hint">Чтобы вставлять картинки из буфера обмена, включите это разрешение в настройках, раздел «Расширенные».</p>
+    <p class="icon-dialog__hint">{t.iconDialog.clipboardHint}</p>
   {/if}
   {#if error}
     <p class="icon-dialog__error" role="alert">{error}</p>
@@ -92,7 +93,7 @@
   {/if}
 
   {#snippet footer()}
-    <button type="button" class="button button--primary" onclick={onclose}>Готово</button>
+    <button type="button" class="button button--primary" onclick={onclose}>{t.common.done}</button>
   {/snippet}
 </Modal>
 

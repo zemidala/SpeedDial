@@ -23,5 +23,7 @@ export default defineConfig({
   },
   test: {
     include: ['src/**/*.test.ts'],
+    // Тесты проверяют русские тексты ошибок; английский — в отдельном тесте i18n
+    setupFiles: ['src/test-setup.ts'],
   },
 });

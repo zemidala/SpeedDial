@@ -3,7 +3,8 @@
   "name": "SpeedDial",
   "short_name": "SpeedDial",
   "version": "2.0.0",
-  "description": "Визуальные закладки на странице новой вкладки",
+  "description": "__MSG_extDescription__",
+  "default_locale": "en",
   "minimum_chrome_version": "123",
   "chrome_url_overrides": {
     "newtab": "newtab.html"
@@ -38,6 +39,6 @@
       "48": "icons/icon48.png",
       "128": "icons/icon128.png"
     },
-    "default_title": "Открыть SpeedDial"
+    "default_title": "__MSG_actionTitle__"
   }
 }

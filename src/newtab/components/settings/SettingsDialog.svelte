@@ -1,4 +1,5 @@
 <script lang="ts">
+  import {t} from '../../../lib/i18n/index.svelte';
   import Modal from '../ui/Modal.svelte';
   import AdvancedSettings from './AdvancedSettings.svelte';
   import BackupSettings from './BackupSettings.svelte';
@@ -8,10 +9,10 @@
   let {onclose}: {onclose: () => void} = $props();
 
   const TABS = [
-    {id: 'view', label: 'Вид'},
-    {id: 'general', label: 'Общие'},
-    {id: 'backup', label: 'Копии'},
-    {id: 'advanced', label: 'Расширенные'},
+    {id: 'view'},
+    {id: 'general'},
+    {id: 'backup'},
+    {id: 'advanced'},
   ] as const;
 
   type TabId = (typeof TABS)[number]['id'];
@@ -20,8 +21,8 @@
   let activeTab = $state<TabId>('view');
 </script>
 
-<Modal title="Настройки" size="large" {onclose}>
-  <div class="settings-tabs" role="tablist" aria-label="Разделы настроек">
+<Modal title={t.settings.title} size="large" {onclose}>
+  <div class="settings-tabs" role="tablist" aria-label={t.settings.sections}>
     {#each TABS as tab (tab.id)}
       <button
         id="{baseId}-{tab.id}-tab"
@@ -32,7 +33,7 @@
         aria-selected={activeTab === tab.id}
         aria-controls="{baseId}-panel"
         onclick={() => (activeTab = tab.id)}
-      >{tab.label}</button>
+      >{t.settings.tabs[tab.id]}</button>
     {/each}
   </div>
 
@@ -49,7 +50,7 @@
   </div>
 
   {#snippet footer()}
-    <button type="button" class="button button--primary" onclick={onclose}>Готово</button>
+    <button type="button" class="button button--primary" onclick={onclose}>{t.common.done}</button>
   {/snippet}
 </Modal>
 

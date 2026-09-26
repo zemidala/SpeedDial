@@ -1,7 +1,7 @@
 <script lang="ts">
   import {sortFolder} from '../../../lib/bookmarkActions';
+  import {t} from '../../../lib/i18n/index.svelte';
   import {SORT_ORDERS, type SortOrder, TYPE_ORDERS, type TypeOrder} from '../../../lib/settings/schema';
-  import {SORT_ORDER_NAMES, TYPE_ORDER_NAMES} from '../../../lib/sorting';
   import type {FolderRef} from '../../../lib/ui.svelte';
   import Modal from '../ui/Modal.svelte';
 
@@ -31,31 +31,31 @@
   }
 </script>
 
-<Modal title="Сортировать «{folder.title}»" {onclose}>
+<Modal title={t.sort.title(folder.title)} {onclose}>
   <form id={formId} class="sort-form" {onsubmit}>
-    <label class="sort-form__label" for="{formId}-order">Порядок</label>
+    <label class="sort-form__label" for="{formId}-order">{t.sort.order}</label>
     <select id="{formId}-order" class="input" bind:value={order}>
       {#each orders as value (value)}
-        <option {value}>{SORT_ORDER_NAMES[value]}</option>
+        <option {value}>{t.sort.orders[value]}</option>
       {/each}
     </select>
 
-    <label class="sort-form__label" for="{formId}-type">Папки и закладки</label>
+    <label class="sort-form__label" for="{formId}-type">{t.sort.types}</label>
     <select id="{formId}-type" class="input" bind:value={typeOrder}>
       {#each TYPE_ORDERS as value (value)}
-        <option {value}>{TYPE_ORDER_NAMES[value]}</option>
+        <option {value}>{t.sort.typeOrders[value]}</option>
       {/each}
     </select>
 
-    <p class="sort-form__hint">Порядок изменится и в самом браузере — в менеджере и на панели закладок.</p>
+    <p class="sort-form__hint">{t.sort.hint}</p>
     {#if error}
       <p class="sort-form__error" role="alert">{error}</p>
     {/if}
   </form>
 
   {#snippet footer()}
-    <button type="button" class="button" onclick={onclose}>Отмена</button>
-    <button type="submit" class="button button--primary" form={formId} disabled={sorting}>Сортировать</button>
+    <button type="button" class="button" onclick={onclose}>{t.common.cancel}</button>
+    <button type="submit" class="button button--primary" form={formId} disabled={sorting}>{t.sort.submit}</button>
   {/snippet}
 </Modal>
 

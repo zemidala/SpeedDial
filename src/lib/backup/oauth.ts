@@ -1,5 +1,7 @@
 // Вход в облачные сервисы по OAuth 2.0 через chrome.identity.launchWebAuthFlow — работает в Chrome и Edge.
 // Секретов у расширения нет: Dropbox и OneDrive — код с PKCE, Google — токен сразу (implicit flow)
+import {t} from '../i18n/index.svelte';
+
 
 export interface OAuthTokens {
   accessToken: string;
@@ -48,17 +50,17 @@ export async function authorize(url: URL, interactive: boolean): Promise<URLSear
   try {
     redirect = await chrome.identity.launchWebAuthFlow({url: url.href, interactive});
   } catch (error) {
-    throw new Error(interactive ? 'Вход отменён' : 'Нужно войти в облако заново', {cause: error});
+    throw new Error(interactive ? t.cloudErrors.signInCancelled : t.cloudErrors.signInAgain, {cause: error});
   }
-  if (!redirect) throw new Error('Вход отменён');
+  if (!redirect) throw new Error(t.cloudErrors.signInCancelled);
 
   const params = responseParams(redirect);
   const error = params.get('error');
   if (error) {
-    if (error === 'access_denied') throw new Error('Вход отменён: доступ не разрешён');
-    throw new Error(`Сервис отказал во входе: ${params.get('error_description') ?? error}`);
+    if (error === 'access_denied') throw new Error(t.cloudErrors.accessDenied);
+    throw new Error(t.cloudErrors.serviceRefused(params.get('error_description') ?? error));
   }
-  if (params.get('state') !== state) throw new Error('Ответ сервиса не прошёл проверку, попробуйте ещё раз');
+  if (params.get('state') !== state) throw new Error(t.cloudErrors.stateMismatch);
   return params;
 }
 
@@ -78,12 +80,12 @@ export async function requestToken(
       body: new URLSearchParams(form),
     });
   } catch {
-    throw new Error('Облако недоступно: проверьте подключение к интернету');
+    throw new Error(t.cloudErrors.offline);
   }
   const data = await response.json().catch(() => ({})) as Record<string, unknown>;
   if (!response.ok || typeof data.access_token !== 'string') {
     const reason = data.error_description ?? data.error ?? response.status;
-    throw new Error(`Не удалось войти: ${String(reason)}`);
+    throw new Error(t.cloudErrors.signInFailed(String(reason)));
   }
   return {
     accessToken: data.access_token,

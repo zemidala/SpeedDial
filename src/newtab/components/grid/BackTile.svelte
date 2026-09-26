@@ -1,5 +1,6 @@
 <script lang="ts">
   import {dragDrop} from '../../../lib/dragDrop.svelte';
+  import {t} from '../../../lib/i18n/index.svelte';
   import {folderOpenHandlers} from '../../../lib/navigation';
   import Icon from '../ui/Icon.svelte';
   import Tile from './Tile.svelte';
@@ -10,7 +11,7 @@
 
 <Tile
   modifiers={{action: true, 'drop-into': dragDrop.target?.id === folderId}}
-  title="Назад"
+  title={t.common.back}
   data-drop-folder-id={folderId}
   {...folderOpenHandlers(folderId)}
 >
@@ -18,6 +19,6 @@
     <Icon name="back" class="action-tile__icon"/>
   {/snippet}
   {#snippet label()}
-    <span class="tile__title-text">Назад</span>
+    <span class="tile__title-text">{t.common.back}</span>
   {/snippet}
 </Tile>

@@ -1,5 +1,6 @@
 // Резервные копии на странице: подключение к облаку, список копий, восстановление
 import {background} from '../background.svelte';
+import {t} from '../i18n/index.svelte';
 import {showNotice} from '../notice.svelte';
 import {settings} from '../settings/store.svelte';
 import {thumbnails} from '../thumbnails/store.svelte';
@@ -22,8 +23,8 @@ async function applyBackup(backup: Backup, mode: RestoreMode): Promise<string> {
     if (await restoreBackground(backup)) await background.load();
   }
   await thumbnails.reloadAll();
-  if (mode === 'replace') return 'Копия восстановлена';
-  return result.created > 0 ? `Добавлено закладок и папок: ${result.created}` : 'Все закладки из копии уже есть';
+  if (mode === 'replace') return t.backup.restored;
+  return result.created > 0 ? t.backup.added(result.created) : t.backup.nothingToAdd;
 }
 
 /**
@@ -34,8 +35,8 @@ export async function restoreBackup(backup: Backup, mode: RestoreMode): Promise<
   const previous = mode === 'replace' ? await createBackup({includeImages: true}, chrome.bookmarks, settings.snapshot()) : null;
   const message = await applyBackup(backup, mode);
   showNotice(message, 'info', previous && {
-    label: 'Отменить',
-    run: async () => showNotice(await applyBackup(previous, 'replace').then(() => 'Восстановление отменено'), 'info'),
+    label: t.common.undo,
+    run: async () => showNotice(await applyBackup(previous, 'replace').then(() => t.backup.restoreUndone), 'info'),
   });
 }
 
@@ -102,7 +103,7 @@ class CloudStore {
   }
 
   #client(): Promise<CloudClient> {
-    if (!this.config) throw new Error('Облако не подключено');
+    if (!this.config) throw new Error(t.cloudErrors.notConnected);
     return cloudClient($state.snapshot(this.config));
   }
 

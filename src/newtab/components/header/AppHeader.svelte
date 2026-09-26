@@ -1,4 +1,5 @@
 <script lang="ts">
+  import {t} from '../../../lib/i18n/index.svelte';
   import {settings} from '../../../lib/settings/store.svelte';
   import {openSettings} from '../../../lib/ui.svelte';
   import Icon from '../ui/Icon.svelte';
@@ -21,7 +22,7 @@
     {/if}
     <ThemeToggle/>
     {#if settings.current.showSettingsButton}
-      <button type="button" class="icon-button" aria-label="Настройки" title="Настройки" onclick={openSettings}>
+      <button type="button" class="icon-button" aria-label={t.common.settings} title={t.common.settings} onclick={openSettings}>
         <Icon name="settings"/>
       </button>
     {/if}

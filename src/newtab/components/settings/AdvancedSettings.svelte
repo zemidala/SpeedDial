@@ -1,5 +1,6 @@
 <script lang="ts">
   import {downloadBlob, pickFile} from '../../../lib/files';
+  import {t} from '../../../lib/i18n/index.svelte';
   import {icons} from '../../../lib/icons.svelte';
   import {CLIPBOARD_ACCESS, SITE_ACCESS} from '../../../lib/permissionSets';
   import {permissions} from '../../../lib/permissions.svelte';
@@ -37,7 +38,7 @@
     if (!file) return;
     try {
       settings.replace(parseSettingsFile(await file.text(), settings.snapshot()));
-      done('Настройки импортированы');
+      done(t.advanced.imported);
     } catch (error) {
       done(error instanceof Error ? error.message : String(error));
     }
@@ -45,78 +46,78 @@
 </script>
 
 <SwitchRow
-  label="Спрашивать подтверждение при удалении"
-  hint="Без подтверждения удаление можно отменить в уведомлении"
+  label={t.advanced.confirmDelete}
+  hint={t.advanced.confirmDeleteHint}
   checked={current.confirmDelete}
   onchange={(confirmDelete) => settings.update({confirmDelete})}
 />
 
-<SettingRow label="Очистить локальные миниатюры" hint="Снимки страниц и выбранные картинки закладок">
+<SettingRow label={t.advanced.clearThumbnails} hint={t.advanced.clearThumbnailsHint}>
   <button
     type="button"
     class="button"
     onclick={() => (confirmation = {
-      title: 'Очистить миниатюры?',
-      message: 'Все снимки страниц и выбранные картинки будут удалены с этого устройства.',
-      confirmLabel: 'Очистить',
+      title: t.advanced.clearThumbnailsTitle,
+      message: t.advanced.clearThumbnailsMessage,
+      confirmLabel: t.common.clear,
       danger: true,
       onConfirm: async () => {
         await thumbnails.clearAll();
-        done('Миниатюры удалены');
+        done(t.advanced.thumbnailsCleared);
       },
     })}
-  >Очистить</button>
+  >{t.common.clear}</button>
 </SettingRow>
 
-<SettingRow label="Очистить иконки сайтов" hint="Иконки высокого качества загрузятся заново">
+<SettingRow label={t.advanced.clearIcons} hint={t.advanced.clearIconsHint}>
   <button
     type="button"
     class="button"
     onclick={async () => {
       await icons.clearSiteIcons();
-      done('Иконки сайтов удалены');
+      done(t.advanced.iconsCleared);
     }}
-  >Очистить</button>
+  >{t.common.clear}</button>
 </SettingRow>
 
-<SettingRow label="Сброс к настройкам по умолчанию">
+<SettingRow label={t.advanced.resetSettings}>
   <button
     type="button"
     class="button"
     onclick={() => (confirmation = {
-      title: 'Сбросить настройки?',
-      message: 'Все настройки вернутся к значениям по умолчанию. Закладки и миниатюры не изменятся.',
-      confirmLabel: 'Сбросить',
+      title: t.advanced.resetTitle,
+      message: t.advanced.resetMessage,
+      confirmLabel: t.common.reset,
       danger: true,
       onConfirm: () => {
         settings.replace({syncEnabled: current.syncEnabled});
-        done('Настройки сброшены');
+        done(t.advanced.settingsReset);
       },
     })}
-  >Сбросить</button>
+  >{t.common.reset}</button>
 </SettingRow>
 
 <SettingRow
-  label="Удалить синхронизированные данные"
-  hint="Удаляет настройки SpeedDial из аккаунта браузера. На этом устройстве они останутся"
+  label={t.advanced.clearSynced}
+  hint={t.advanced.clearSyncedHint}
 >
   <button
     type="button"
     class="button"
     onclick={() => (confirmation = {
-      title: 'Удалить данные из аккаунта?',
-      message: 'Настройки SpeedDial будут удалены из аккаунта браузера на всех устройствах.',
-      confirmLabel: 'Удалить',
+      title: t.advanced.clearSyncedTitle,
+      message: t.advanced.clearSyncedMessage,
+      confirmLabel: t.common.delete,
       danger: true,
       onConfirm: async () => {
         await clearSyncedData();
-        done('Синхронизированные данные удалены');
+        done(t.advanced.syncedCleared);
       },
     })}
-  >Удалить</button>
+  >{t.common.delete}</button>
 </SettingRow>
 
-<SettingRow label="Пользовательский CSS" hint="Применяется ко всей странице. До {MAX_CUSTOM_CSS_LENGTH} символов" stacked>
+<SettingRow label={t.advanced.customCss} hint={t.advanced.customCssHint(MAX_CUSTOM_CSS_LENGTH)} stacked>
   {#snippet children(id)}
     <textarea
       {id}
@@ -131,20 +132,20 @@
   {/snippet}
 </SettingRow>
 
-<SettingRow label="Импорт и экспорт настроек" hint="Только настройки расширения, без закладок и картинок">
-  <button type="button" class="button" onclick={importSettings}>Импорт…</button>
-  <button type="button" class="button" onclick={exportSettings}>Экспорт</button>
+<SettingRow label={t.advanced.transfer} hint={t.advanced.transferHint}>
+  <button type="button" class="button" onclick={importSettings}>{t.advanced.import}</button>
+  <button type="button" class="button" onclick={exportSettings}>{t.advanced.export}</button>
 </SettingRow>
 
 <SwitchRow
-  label="Чтение буфера обмена"
-  hint="В контекстном меню закладки появится «Вставить картинку из буфера обмена». Если это разрешение вас беспокоит, не включайте его"
+  label={t.advanced.clipboard}
+  hint={t.advanced.clipboardHint}
   checked={permissions.clipboard}
   onchange={(enabled) => togglePermission(CLIPBOARD_ACCESS, enabled)}
 />
 <SwitchRow
-  label="Доступ к сайтам"
-  hint="Нужен для иконок высокого качества и снимков страниц. Браузер спросит разрешение при включении"
+  label={t.advanced.siteAccess}
+  hint={t.advanced.siteAccessHint}
   checked={permissions.siteAccess}
   onchange={(enabled) => togglePermission(SITE_ACCESS, enabled)}
 />

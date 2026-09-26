@@ -1,6 +1,7 @@
 <script lang="ts">
   import {bookmarks} from '../../../lib/bookmarks.svelte';
   import {collectBookmarks} from '../../../lib/folders';
+  import {t} from '../../../lib/i18n/index.svelte';
   import {SITE_ACCESS} from '../../../lib/permissionSets';
   import {permissions} from '../../../lib/permissions.svelte';
   import {settings} from '../../../lib/settings/store.svelte';
@@ -31,9 +32,9 @@
     }
     ui.dialog = {
       kind: 'confirm',
-      title: 'Остановить создание миниатюр?',
-      message: 'Уже готовые миниатюры сохранятся, остальные не будут созданы.',
-      confirmLabel: 'Остановить',
+      title: t.header.stopTitle,
+      message: t.header.stopMessage,
+      confirmLabel: t.header.stopConfirm,
       onConfirm: () => thumbnails.cancelCapture(),
     };
   }
@@ -43,10 +44,10 @@
   type="button"
   class="icon-button refresh-button"
   class:icon-button--active={running}
-  aria-label={running ? 'Остановить создание миниатюр' : 'Обновить миниатюры'}
+  aria-label={running ? t.header.stopThumbnails : t.header.refreshThumbnails}
   title={thumbnails.progress
-    ? `Создаются миниатюры: ${thumbnails.progress.done} из ${thumbnails.progress.total}. Нажмите, чтобы остановить`
-    : 'Обновить миниатюры'}
+    ? t.header.thumbnailsProgress(thumbnails.progress.done, thumbnails.progress.total)
+    : t.header.refreshThumbnails}
   {onclick}
 >
   {#if thumbnails.progress}

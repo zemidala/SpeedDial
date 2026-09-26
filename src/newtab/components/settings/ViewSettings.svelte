@@ -1,6 +1,7 @@
 <script lang="ts">
   import {background} from '../../../lib/background.svelte';
   import {pickFile} from '../../../lib/files';
+  import {LANGUAGE_NAMES, LANGUAGES, t} from '../../../lib/i18n/index.svelte';
   import {icons} from '../../../lib/icons.svelte';
   import {LOGO_SERVICES} from '../../../lib/logoServices';
   import {BING_ACCESS, SITE_ACCESS} from '../../../lib/permissionSets';
@@ -8,6 +9,7 @@
   import {
     type Background,
     type IconStyle,
+    type LanguageSetting,
     type LogoService,
     RANGES,
     type Theme,
@@ -24,9 +26,9 @@
   const current = $derived(settings.current);
 
   const logoServiceHint = $derived.by(() => {
-    const base = 'Запасной источник, если на самом сайте крупной иконки нет. Сервис узнает адреса ваших закладок';
+    const base = t.view.logoServiceHint;
     const service = current.logoService;
-    return service === 'none' || service === 'custom' ? base : `${base}.\n${LOGO_SERVICES[service].hint}`;
+    return service === 'none' || service === 'custom' ? base : `${base}.\n${t.view.logoServiceHints[service]}`;
   });
 
   const columnOptions = Array.from({length: RANGES.columns.max}, (_, i) => ({value: String(i + 1), label: String(i + 1)}));
@@ -54,78 +56,87 @@
 </script>
 
 <SelectRow
-  label="Светлая или тёмная"
+  label={t.view.language}
+  value={current.language}
+  options={[
+    {value: 'auto', label: t.view.languageAuto},
+    ...LANGUAGES.map((language) => ({value: language, label: LANGUAGE_NAMES[language]})),
+  ]}
+  onchange={(value) => settings.update({language: value as LanguageSetting})}
+/>
+<SelectRow
+  label={t.view.theme}
   value={current.theme}
   options={[
-    {value: 'auto', label: 'Как в системе'},
-    {value: 'light', label: 'Светлая'},
-    {value: 'dark', label: 'Тёмная'},
+    {value: 'auto', label: t.view.themeAuto},
+    {value: 'light', label: t.view.themeLight},
+    {value: 'dark', label: t.view.themeDark},
   ]}
   onchange={(value) => settings.update({theme: value as Theme})}
 />
 <SettingRow
-  label="Тема оформления"
-  hint="Показаны цвета для текущего режима — светлого или тёмного. У каждой темы есть оба варианта"
+  label={t.view.preset}
+  hint={t.view.presetHint}
   stacked
 >
   <ThemePicker/>
 </SettingRow>
 <RangeRow
   key="lightDimming"
-  label="Приглушить светлую тему"
-  hint="Светлые фоны становятся мягче и не слепят; текст остаётся читаемым. На тёмную тему не влияет"
+  label={t.view.lightDimming}
+  hint={t.view.lightDimmingHint}
   unit="%"
 />
 {#if current.themePreset === 'custom'}
-  <ColorRow key="customAccent" label="Акцент" hint="Ссылки, кнопки, переключатели"/>
-  <ColorRow key="customTint" label="Оттенок фона" hint="Фон, панели и плитки слегка окрашиваются этим цветом"/>
+  <ColorRow key="customAccent" label={t.view.accent} hint={t.view.accentHint}/>
+  <ColorRow key="customTint" label={t.view.tint} hint={t.view.tintHint}/>
 {/if}
 
 <SelectRow
-  label="Количество колонок"
+  label={t.view.columns}
   value={current.columns}
   options={columnOptions}
   onchange={(value) => settings.update({columns: Number(value)})}
 />
-<RangeRow key="containerWidth" label="Ширина панели" unit="%"/>
-<SwitchRow key="verticalCenter" label="Вертикальное центрирование"/>
+<RangeRow key="containerWidth" label={t.view.containerWidth} unit="%"/>
+<SwitchRow key="verticalCenter" label={t.view.verticalCenter}/>
 
 <SelectRow
-  label="Вид иконок"
-  hint="«На весь блок» — иконка крупно, а область вокруг заливается цветом её краёв"
+  label={t.view.iconStyle}
+  hint={t.view.iconStyleHint}
   value={current.iconStyle}
   options={[
-    {value: 'plate', label: 'На подложке'},
-    {value: 'fill', label: 'На весь блок'},
+    {value: 'plate', label: t.view.iconPlate},
+    {value: 'fill', label: t.view.iconFill},
   ]}
   onchange={(value) => settings.update({iconStyle: value as IconStyle})}
 />
 <RangeRow
   key="iconScale"
-  label="Размер иконки"
-  hint="Иконки не растягиваются больше своего качества — для крупных нужны иконки высокого качества"
+  label={t.view.iconScale}
+  hint={t.view.iconScaleHint}
   unit="%"
 />
-<SwitchRow key="iconTint" label="Подкрашивать плитку цветом иконки"/>
+<SwitchRow key="iconTint" label={t.view.iconTint}/>
 <SwitchRow
-  label="Иконки высокого качества"
-  hint="Расширение само находит на сайтах закладок SVG, иконки приложений и крупные версии favicon. Понадобится доступ к сайтам"
+  label={t.view.siteIcons}
+  hint={t.view.siteIconsHint}
   checked={icons.siteIconsEnabled}
   onchange={(enabled) => toggleSiteIcons(enabled)}
 />
 <SelectRow
-  label="Сервис иконок"
+  label={t.view.logoService}
   hint={logoServiceHint}
   value={current.logoService}
   options={[
-    {value: 'none', label: 'Не использовать'},
+    {value: 'none', label: t.view.logoServiceNone},
     ...Object.entries(LOGO_SERVICES).map(([value, service]) => ({value, label: service.name})),
-    {value: 'custom', label: 'Свой адрес'},
+    {value: 'custom', label: t.view.logoServiceCustom},
   ]}
   onchange={(value) => settings.update({logoService: value as LogoService})}
 />
 {#if current.logoService === 'logodev'}
-  <SettingRow label="Ключ logo.dev" hint="Публичный ключ (pk_…) из личного кабинета logo.dev">
+  <SettingRow label={t.view.logoDevToken} hint={t.view.logoDevTokenHint}>
     {#snippet children(id)}
       <input
         {id}
@@ -139,7 +150,7 @@
     {/snippet}
   </SettingRow>
 {:else if current.logoService === 'custom'}
-  <SettingRow label="Адрес иконки" hint={'Подстрока {{website}} заменяется доменом сайта.\nПример: https://example.com/icons/{{website}}.png'}>
+  <SettingRow label={t.view.customLogoUrl} hint={t.view.customLogoUrlHint}>
     {#snippet children(id)}
       <input
         {id}
@@ -152,32 +163,32 @@
   </SettingRow>
 {/if}
 
-<SwitchRow key="showToolbar" label="Показывать панель поиска и выбора папки"/>
-<SwitchRow key="autofocusSearch" label="Фокус на строке поиска" disabled={!current.showToolbar}/>
+<SwitchRow key="showToolbar" label={t.view.showToolbar}/>
+<SwitchRow key="autofocusSearch" label={t.view.autofocusSearch} disabled={!current.showToolbar}/>
 <SwitchRow
   key="showSettingsButton"
-  label="Показывать кнопку настроек"
-  hint="Настройки всегда можно открыть из контекстного меню страницы"
+  label={t.view.showSettingsButton}
+  hint={t.view.showSettingsButtonHint}
 />
-<SwitchRow key="showBackTile" label="Показывать плитку «Назад» в папках"/>
-<SwitchRow key="showAddTile" label="Показывать плитку добавления закладки"/>
-<SwitchRow key="showTitles" label="Показывать названия закладок"/>
+<SwitchRow key="showBackTile" label={t.view.showBackTile}/>
+<SwitchRow key="showAddTile" label={t.view.showAddTile}/>
+<SwitchRow key="showTitles" label={t.view.showTitles}/>
 <SelectRow
-  label="Положение названий"
+  label={t.view.titlePosition}
   value={current.titlePosition}
   options={[
-    {value: 'bottom-inside', label: 'Снизу, внутри плитки'},
-    {value: 'top-inside', label: 'Сверху, внутри плитки'},
-    {value: 'bottom-outside', label: 'Под плиткой'},
-    {value: 'top-outside', label: 'Над плиткой'},
+    {value: 'bottom-inside', label: t.view.titleBottomInside},
+    {value: 'top-inside', label: t.view.titleTopInside},
+    {value: 'bottom-outside', label: t.view.titleBottomOutside},
+    {value: 'top-outside', label: t.view.titleTopOutside},
   ]}
   onchange={(value) => settings.update({titlePosition: value as TitlePosition})}
 />
-<SwitchRow key="showTitleIcons" label="Показывать иконки сайтов рядом с названием" disabled={!current.showTitles}/>
+<SwitchRow key="showTitleIcons" label={t.view.showTitleIcons} disabled={!current.showTitles}/>
 
-<ColorRow key="tileColor" label="Цвет плитки"/>
-<ColorRow key="folderColor" label="Цвет папки"/>
-<SettingRow label="Шрифт">
+<ColorRow key="tileColor" label={t.view.tileColor}/>
+<ColorRow key="folderColor" label={t.view.folderColor}/>
+<SettingRow label={t.view.font}>
   {#snippet children(id)}
     <input
       {id}
@@ -191,32 +202,32 @@
 </SettingRow>
 
 <SelectRow
-  label="Фон"
+  label={t.view.background}
   value={current.background}
   options={[
-    {value: 'none', label: 'Без фона'},
-    {value: 'color', label: 'Цвет'},
-    {value: 'image', label: 'Изображение'},
-    {value: 'bing', label: 'Картинка дня Bing'},
+    {value: 'none', label: t.view.backgroundNone},
+    {value: 'color', label: t.view.backgroundColor},
+    {value: 'image', label: t.view.backgroundImage},
+    {value: 'bing', label: t.view.backgroundBing},
   ]}
   onchange={(value) => changeBackground(value as Background)}
 />
 {#if current.background === 'color'}
-  <ColorRow key="backgroundColor" label="Цвет фона"/>
+  <ColorRow key="backgroundColor" label={t.view.backgroundColorLabel}/>
 {:else if current.background === 'image'}
-  <SettingRow label="Фоновое изображение" hint="Хранится только на этом устройстве">
-    <button type="button" class="button" onclick={chooseBackgroundImage}>Выбрать файл…</button>
+  <SettingRow label={t.view.backgroundImageLabel} hint={t.view.backgroundImageHint}>
+    <button type="button" class="button" onclick={chooseBackgroundImage}>{t.view.chooseFile}</button>
     {#if background.imageUrl}
-      <button type="button" class="button" onclick={() => background.clear()}>Убрать</button>
+      <button type="button" class="button" onclick={() => background.clear()}>{t.common.remove}</button>
     {/if}
   </SettingRow>
 {:else if current.background === 'bing' && !permissions.bing}
   <!-- Настройки синхронизируются, а разрешения — нет: на этом устройстве доступ к Bing ещё не выдан -->
-  <SettingRow label="Доступ к Bing" hint="Нужен, чтобы загружать картинку дня на этом устройстве">
-    <button type="button" class="button" onclick={() => permissions.request(BING_ACCESS)}>Разрешить</button>
+  <SettingRow label={t.view.bingAccess} hint={t.view.bingAccessHint}>
+    <button type="button" class="button" onclick={() => permissions.request(BING_ACCESS)}>{t.common.allow}</button>
   </SettingRow>
 {/if}
 {#if current.background === 'image' || current.background === 'bing'}
-  <RangeRow key="backgroundBlur" label="Размытие фона" hint="Плитки и текст лучше читаются на спокойном фоне" unit=" px"/>
-  <RangeRow key="backgroundDim" label="Затемнение фона" unit="%"/>
+  <RangeRow key="backgroundBlur" label={t.view.backgroundBlur} hint={t.view.backgroundBlurHint} unit={t.view.pixels}/>
+  <RangeRow key="backgroundDim" label={t.view.backgroundDim} unit="%"/>
 {/if}

@@ -43,6 +43,3 @@ export function hideNotice(): void {
   notice.message = null;
   notice.action = null;
 }
-
-export const RELOAD_EXTENSION_HINT = 'Откройте страницу расширений (chrome://extensions или edge://extensions) '
-  + 'и нажмите «Перезагрузить» у SpeedDial.';

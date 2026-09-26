@@ -7,37 +7,30 @@
   import {cloud, restoreBackup} from '../../../lib/backup/store.svelte';
   import {serverOrigin} from '../../../lib/backup/webdav';
   import {downloadBlob, pickFile} from '../../../lib/files';
+  import {formatDateTime, t} from '../../../lib/i18n/index.svelte';
   import {permissions} from '../../../lib/permissions.svelte';
   import {settings} from '../../../lib/settings/store.svelte';
   import RestoreDialog from './RestoreDialog.svelte';
   import SettingRow from './SettingRow.svelte';
   import SwitchRow from './SwitchRow.svelte';
 
+  const YANDEX_WEBDAV_URL = 'https://webdav.yandex.ru';
+
   type PresetId = 'yandex' | 'google' | 'dropbox' | 'onedrive' | 'nextcloud' | 'other';
 
   // Облака: вход через окно сервиса (oauth) или по WebDAV с готовым адресом
-  const PRESETS: Record<PresetId, {label: string; hint: string; url?: string; oauth?: OAuthProviderId}> = {
-    yandex: {
-      label: 'Яндекс.Диск',
-      url: 'https://webdav.yandex.ru',
-      hint: 'Логин — ваш логин Яндекса. Пароль — пароль приложения: id.yandex.ru → Безопасность → '
-        + 'Пароли приложений → «Файлы (WebDAV)». Обычный пароль Яндекс не примет',
-    },
-    google: {label: 'Google Диск', oauth: 'google', hint: 'Копии лежат в скрытой папке приложения — среди ваших файлов их не видно'},
-    dropbox: {label: 'Dropbox', oauth: 'dropbox', hint: 'Копии лежат в папке «Приложения/SpeedDial»'},
-    onedrive: {label: 'OneDrive', oauth: 'onedrive', hint: 'Копии лежат в папке «Приложения/SpeedDial»'},
-    nextcloud: {
-      label: 'Nextcloud / ownCloud',
-      url: '',
-      hint: 'Адрес вида https://cloud.example.com/remote.php/dav/files/ЛОГИН/. '
-        + 'Лучше создать пароль приложения в настройках безопасности Nextcloud',
-    },
-    other: {label: 'Другой WebDAV', url: '', hint: 'Koofr, Box, свой сервер — любой сервер WebDAV по https'},
-  };
+  const PRESETS: Record<PresetId, {label: string; hint: string; url?: string; oauth?: OAuthProviderId}> = $derived({
+    yandex: {label: t.backup.yandex, url: YANDEX_WEBDAV_URL, hint: t.backup.yandexHint},
+    google: {label: t.backup.google, oauth: 'google', hint: t.backup.googleHint},
+    dropbox: {label: 'Dropbox', oauth: 'dropbox', hint: t.backup.appFolderHint},
+    onedrive: {label: 'OneDrive', oauth: 'onedrive', hint: t.backup.appFolderHint},
+    nextcloud: {label: 'Nextcloud / ownCloud', url: '', hint: t.backup.nextcloudHint},
+    other: {label: t.backup.otherWebDav, url: '', hint: t.backup.otherWebDavHint},
+  });
 
   const formId = $props.id();
   let preset = $state<PresetId>('yandex');
-  let url = $state(PRESETS.yandex.url ?? '');
+  let url = $state(YANDEX_WEBDAV_URL);
   let username = $state('');
   let password = $state('');
 
@@ -78,10 +71,10 @@
     if (!oauth) return;
     // Разрешение — первым делом, пока действует нажатие кнопки
     if (!await permissions.request({origins: oauth.origins})) {
-      error = `Без доступа к ${oauth.label} копии сохранять нельзя`;
+      error = t.backup.noAccess(oauth.label);
       return;
     }
-    await run(() => cloud.signIn(oauth.id), 'Подключено. Копии будут сохраняться автоматически');
+    await run(() => cloud.signIn(oauth.id), t.backup.connectedStatus);
   }
 
   /** Выполняет действие, показывая ход и ошибку под разделом */
@@ -111,10 +104,10 @@
     // Разрешение — первым делом, пока действует нажатие кнопки
     const granted = await permissions.request({origins: [origin]});
     if (!granted) {
-      error = 'Без доступа к серверу копии сохранять нельзя';
+      error = t.backup.serverAccessDenied;
       return;
     }
-    await run(() => cloud.connectWebDav({url, username, password}), 'Подключено. Копии будут сохраняться автоматически');
+    await run(() => cloud.connectWebDav({url, username, password}), t.backup.connectedStatus);
     if (!error) password = '';
   }
 
@@ -122,36 +115,35 @@
     await run(async () => {
       const backup = await createBackup({includeImages: true}, chrome.bookmarks, settings.snapshot());
       downloadBlob(backupFileName(), new Blob([JSON.stringify(backup)], {type: 'application/json'}));
-    }, 'Копия сохранена в файл');
+    }, t.backup.savedToFile);
   }
 
   async function restoreFromFile() {
     const file = await pickFile('application/json,.json');
     if (!file) return;
-    restoring = {title: `Восстановить «${file.name}»`, load: async () => parseBackup(await file.text())};
+    restoring = {title: t.backup.restoreFile(file.name), load: async () => parseBackup(await file.text())};
   }
 
-  const formatDate = (time: number) => new Date(time).toLocaleString('ru-RU', {dateStyle: 'medium', timeStyle: 'short'});
+  const formatDate = formatDateTime;
   const formatSize = (bytes: number) => (bytes >= 1024 * 1024
-    ? `${(bytes / 1024 / 1024).toFixed(1)} МБ`
-    : `${Math.max(1, Math.round(bytes / 1024))} КБ`);
+    ? t.common.megabytes((bytes / 1024 / 1024).toFixed(1))
+    : t.common.kilobytes(Math.max(1, Math.round(bytes / 1024))));
 </script>
 
-<SettingRow label="Копия в файле" hint="Закладки с порядком, настройки, миниатюры и фон — в одном файле">
-  <button type="button" class="button" disabled={busy} onclick={saveToFile}>Сохранить в файл</button>
-  <button type="button" class="button" disabled={busy} onclick={restoreFromFile}>Восстановить…</button>
+<SettingRow label={t.backup.file} hint={t.backup.fileHint}>
+  <button type="button" class="button" disabled={busy} onclick={saveToFile}>{t.backup.saveToFile}</button>
+  <button type="button" class="button" disabled={busy} onclick={restoreFromFile}>{t.backup.restoreEllipsis}</button>
 </SettingRow>
 
-<h3 class="backup-settings__heading">Копии в облаке</h3>
+<h3 class="backup-settings__heading">{t.backup.cloud}</h3>
 
 {#if !cloud.loaded}
-  <p class="backup-settings__note">Загрузка…</p>
+  <p class="backup-settings__note">{t.common.loading}</p>
 {:else if !cloud.config}
   <p class="backup-settings__note">
-    Подключите облачный диск — копии будут сохраняться сами после изменений, а восстановить их можно
-    на любом компьютере и в любом браузере: Chrome, Edge.
+    {t.backup.intro}
   </p>
-  <SettingRow label="Сервис" hint={PRESETS[preset].hint}>
+  <SettingRow label={t.backup.service} hint={PRESETS[preset].hint}>
     {#snippet children(id)}
       <select {id} class="input" value={preset} onchange={(event) => choosePreset(event.currentTarget.value as PresetId)}>
         {#each presets as [id, item] (id)}
@@ -162,72 +154,71 @@
   </SettingRow>
   {#if oauth?.clientId}
     <div class="backup-settings__actions">
-      <button type="button" class="button button--primary" disabled={busy} onclick={signIn}>Войти в {oauth.label}</button>
+      <button type="button" class="button button--primary" disabled={busy} onclick={signIn}>{t.backup.signIn(oauth.label)}</button>
     </div>
   {:else if oauth}
     <p class="backup-settings__note">
-      Режим разработки: вход в {oauth.label} не настроен в этой сборке расширения — нужен Client ID приложения
-      (инструкция — docs/cloud-setup.md). Адрес возврата для регистрации приложения:
+      {t.backup.notConfigured(oauth.label)}
       <code class="backup-settings__code">{redirectUrl()}</code>
     </p>
   {:else}
   <form id={formId} class="backup-settings__form" onsubmit={connect}>
-    <SettingRow label="Адрес сервера">
+    <SettingRow label={t.backup.serverUrl}>
       {#snippet children(id)}
         <input {id} class="input" type="url" required placeholder="https://" bind:value={url}>
       {/snippet}
     </SettingRow>
-    <SettingRow label="Логин">
+    <SettingRow label={t.backup.username}>
       {#snippet children(id)}
         <input {id} class="input" type="text" required autocomplete="username" bind:value={username}>
       {/snippet}
     </SettingRow>
-    <SettingRow label="Пароль" hint="Хранится только на этом устройстве">
+    <SettingRow label={t.backup.password} hint={t.backup.passwordHint}>
       {#snippet children(id)}
         <input {id} class="input" type="password" required autocomplete="current-password" bind:value={password}>
       {/snippet}
     </SettingRow>
     <div class="backup-settings__actions">
-      <button type="submit" class="button button--primary" disabled={busy}>Подключить</button>
+      <button type="submit" class="button button--primary" disabled={busy}>{t.backup.connect}</button>
     </div>
   </form>
   {/if}
 {:else}
   {@const config = cloud.config}
   <SettingRow
-    label="Подключено"
+    label={t.backup.connected}
     hint="{config.provider === 'webdav' ? config.username : config.account} · {connectionLabel(config)}"
   >
-    <button type="button" class="button" disabled={busy} onclick={() => run(() => cloud.disconnect(), 'Облако отключено')}>
-      Отключить
+    <button type="button" class="button" disabled={busy} onclick={() => run(() => cloud.disconnect(), t.backup.disconnected)}>
+      {t.backup.disconnect}
     </button>
   </SettingRow>
   <SwitchRow
-    label="Сохранять копию автоматически"
-    hint="Через минуту после изменений; хранятся последние 10 копий"
+    label={t.backup.auto}
+    hint={t.backup.autoHint}
     checked={config.auto}
     onchange={(auto) => cloud.update({auto})}
   />
   <SwitchRow
-    label="Добавлять миниатюры и фон"
-    hint="Копия станет больше, зато восстановится вместе с картинками"
+    label={t.backup.includeImages}
+    hint={t.backup.includeImagesHint}
     checked={config.includeImages}
     onchange={(includeImages) => cloud.update({includeImages})}
   />
   <SettingRow
-    label="Последняя копия"
-    hint={cloud.status.lastBackupAt ? formatDate(cloud.status.lastBackupAt) : 'Ещё не сохранялась'}
+    label={t.backup.lastBackup}
+    hint={cloud.status.lastBackupAt ? formatDate(cloud.status.lastBackupAt) : t.backup.neverSaved}
   >
-    <button type="button" class="button" disabled={busy} onclick={() => run(() => cloud.backupNow(), 'Копия сохранена')}>
-      Сохранить копию сейчас
+    <button type="button" class="button" disabled={busy} onclick={() => run(() => cloud.backupNow(), t.backup.saved)}>
+      {t.backup.backupNow}
     </button>
   </SettingRow>
   {#if cloud.status.lastError}
-    <p class="backup-settings__error" role="alert">Последняя копия не сохранилась: {cloud.status.lastError}</p>
+    <p class="backup-settings__error" role="alert">{t.backup.lastError(cloud.status.lastError)}</p>
   {/if}
 
   {#if cloud.files && cloud.files.length > 0}
-    <ul class="backup-settings__files" aria-label="Копии на сервере">
+    <ul class="backup-settings__files" aria-label={t.backup.files}>
       {#each cloud.files as file (file.name)}
         <li class="backup-settings__file">
           <span class="backup-settings__file-name">{file.modified ? formatDate(file.modified) : file.name}</span>
@@ -237,15 +228,15 @@
             class="button"
             disabled={busy}
             onclick={() => (restoring = {
-              title: `Восстановить копию от ${file.modified ? formatDate(file.modified) : file.name}`,
+              title: t.backup.restoreCopy(file.modified ? formatDate(file.modified) : file.name),
               load: async () => parseBackup(await cloud.readFile(file.name)),
             })}
-          >Восстановить…</button>
+          >{t.backup.restoreEllipsis}</button>
         </li>
       {/each}
     </ul>
   {:else if cloud.files}
-    <p class="backup-settings__note">На сервере пока нет копий</p>
+    <p class="backup-settings__note">{t.backup.noFiles}</p>
   {/if}
 {/if}
 

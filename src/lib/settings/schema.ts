@@ -1,6 +1,10 @@
 // Схема настроек: типы, значения по умолчанию и проверка данных из хранилища и импорта
+import {en} from '../i18n/en';
+import {ru} from '../i18n/ru';
 import {DEFAULT_THEME_PRESET, THEME_PRESET_IDS} from '../themes/presets';
 
+/** auto — язык браузера, если на него есть перевод, иначе английский */
+export const LANGUAGE_SETTINGS = ['auto', 'en', 'ru'] as const;
 export const THEMES = ['auto', 'light', 'dark'] as const;
 export const BACKGROUNDS = ['none', 'color', 'image', 'bing'] as const;
 export const ICON_STYLES = ['plate', 'fill'] as const;
@@ -10,6 +14,7 @@ export const SEARCH_ENGINES = ['google', 'yandex', 'bing', 'duckduckgo', 'custom
 export const SORT_ORDERS = ['none', 'title', 'url', 'dateAdded'] as const;
 export const TYPE_ORDERS = ['none', 'foldersFirst', 'bookmarksFirst'] as const;
 
+export type LanguageSetting = (typeof LANGUAGE_SETTINGS)[number];
 export type Theme = (typeof THEMES)[number];
 export type Background = (typeof BACKGROUNDS)[number];
 export type IconStyle = (typeof ICON_STYLES)[number];
@@ -26,6 +31,7 @@ export interface ServiceLink {
 
 export interface Settings {
   // ===== Вид =====
+  language: LanguageSetting;
   columns: number;
   /** Ширина области закладок, % ширины окна */
   containerWidth: number;
@@ -114,19 +120,16 @@ export const LOCAL_KEYS = ['defaultFolderId', 'syncEnabled'] as const satisfies 
 
 export const MAX_CUSTOM_CSS_LENGTH = 5000; // chrome.storage.sync ограничивает запись 8 КБ
 
-export const DEFAULT_SERVICES: ServiceLink[] = [
-  {title: 'Gmail', url: 'https://mail.google.com/'},
-  {title: 'Google Диск', url: 'https://drive.google.com/'},
-  {title: 'YouTube', url: 'https://www.youtube.com/'},
-  {title: 'Google Карты', url: 'https://maps.google.com/'},
-  {title: 'Переводчик', url: 'https://translate.google.com/'},
-  {title: 'Календарь', url: 'https://calendar.google.com/'},
-  {title: 'Яндекс Почта', url: 'https://mail.yandex.ru/'},
-  {title: 'Яндекс Диск', url: 'https://disk.yandex.ru/'},
-  {title: 'Яндекс Карты', url: 'https://yandex.ru/maps/'},
-];
+/** Сервисы по умолчанию — для языка браузера: русскому пользователю Яндекс, остальным Outlook и Википедия */
+function defaultServices(): ServiceLink[] {
+  const ui = globalThis.chrome?.i18n?.getUILanguage?.() ?? globalThis.navigator?.language ?? 'en';
+  return (ui.toLowerCase().startsWith('ru') ? ru : en).general.defaultServices;
+}
+
+export const DEFAULT_SERVICES: ServiceLink[] = defaultServices();
 
 export const DEFAULT_SETTINGS: Readonly<Settings> = {
+  language: 'auto',
   columns: 6,
   containerWidth: 90,
   theme: 'auto',
@@ -185,6 +188,7 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = {
 
 // Допустимые значения: перечисления и диапазоны чисел
 const ENUMS: Partial<Record<keyof Settings, readonly string[]>> = {
+  language: LANGUAGE_SETTINGS,
   theme: THEMES,
   themePreset: THEME_PRESET_IDS,
   background: BACKGROUNDS,

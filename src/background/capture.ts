@@ -1,4 +1,5 @@
 // Снимки страниц для миниатюр: страница открывается в отдельном окне, снимается и окно закрывается
+import {t} from '../lib/i18n/index.svelte';
 import {resizeImage, THUMBNAIL_HEIGHT, THUMBNAIL_WIDTH} from '../lib/images';
 import {type CaptureItem, type CaptureProgress, sendMessage} from '../lib/messages';
 import {loadSettings} from '../lib/settings/storage';
@@ -53,7 +54,7 @@ async function captureOne(url: string, delaySeconds: number): Promise<Blob> {
     height: WINDOW_HEIGHT,
   });
   const tabId = window?.tabs?.[0]?.id;
-  if (!window?.id || tabId === undefined) throw new Error('Не удалось открыть окно для снимка');
+  if (!window?.id || tabId === undefined) throw new Error(t.errors.captureWindow);
   currentWindowId = window.id;
 
   try {

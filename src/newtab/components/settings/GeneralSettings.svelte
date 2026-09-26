@@ -1,7 +1,8 @@
 <script lang="ts">
   import {onMount} from 'svelte';
   import {type FolderOption, getFolderOptions} from '../../../lib/folders';
-  import {SEARCH_ENGINE_NAMES} from '../../../lib/search';
+  import {t} from '../../../lib/i18n/index.svelte';
+  import {searchEngineName} from '../../../lib/search';
   import {formatServices, parseServices} from '../../../lib/services';
   import {
     SEARCH_ENGINES,
@@ -12,7 +13,6 @@
     type TypeOrder,
   } from '../../../lib/settings/schema';
   import {settings} from '../../../lib/settings/store.svelte';
-  import {SORT_ORDER_NAMES, TYPE_ORDER_NAMES} from '../../../lib/sorting';
   import RangeRow from './RangeRow.svelte';
   import SelectRow from './SelectRow.svelte';
   import SettingRow from './SettingRow.svelte';
@@ -40,21 +40,21 @@
 </script>
 
 <SelectRow
-  label="Папка по умолчанию"
-  hint="Открывается в новой вкладке. Не синхронизируется"
+  label={t.general.defaultFolder}
+  hint={t.general.defaultFolderHint}
   value={current.defaultFolderId}
   options={folderOptions}
   onchange={(value) => settings.update({defaultFolderId: value})}
 />
-<SwitchRow key="rememberLastFolder" label="Открывать последнюю открытую папку"/>
+<SwitchRow key="rememberLastFolder" label={t.general.rememberLastFolder}/>
 <SelectRow
-  label="Поисковая система"
+  label={t.general.searchEngine}
   value={current.searchEngine}
-  options={SEARCH_ENGINES.map((engine) => ({value: engine, label: SEARCH_ENGINE_NAMES[engine]}))}
+  options={SEARCH_ENGINES.map((engine) => ({value: engine, label: searchEngineName(engine)}))}
   onchange={(value) => settings.update({searchEngine: value as SearchEngine})}
 />
 {#if current.searchEngine === 'custom'}
-  <SettingRow label="Адрес поиска" hint="%s заменяется поисковым запросом">
+  <SettingRow label={t.general.customSearchUrl} hint={t.general.customSearchUrlHint}>
     {#snippet children(id)}
       <input
         {id}
@@ -70,11 +70,11 @@
 
 <SwitchRow
   key="showServices"
-  label="Панель быстрого доступа к сервисам"
-  hint="Меню ссылок на часто используемые сервисы"
+  label={t.general.showServices}
+  hint={t.general.showServicesHint}
 />
 {#if current.showServices}
-  <SettingRow label="Сервисы" hint="По одному на строку: «Название | адрес»" stacked>
+  <SettingRow label={t.general.services} hint={t.general.servicesHint} stacked>
     {#snippet children(id)}
       <textarea {id} class="textarea" rows="6" bind:value={servicesText} onchange={saveServices}></textarea>
     {/snippet}
@@ -82,63 +82,63 @@
 {/if}
 <SwitchRow
   key="folderPreview"
-  label="Миниатюры сайтов на папке"
-  hint="Иконки первых закладок папки вместо значка папки"
+  label={t.general.folderPreview}
+  hint={t.general.folderPreviewHint}
 />
 
 <SwitchRow
   key="showThumbnailRefresh"
-  label="Кнопка обновления миниатюр"
-  hint="Делает снимки страниц всех закладок открытой папки. Понадобится доступ к сайтам"
+  label={t.general.showThumbnailRefresh}
+  hint={t.general.showThumbnailRefreshHint}
 />
-<SwitchRow key="captureOnCreate" label="Снимок страницы при создании закладки"/>
+<SwitchRow key="captureOnCreate" label={t.general.captureOnCreate}/>
 <RangeRow
   key="captureDelay"
-  label="Задержка перед снимком"
-  hint="Пригодится, если страница долго загружается. Чем больше задержка, тем дольше ожидание"
-  unit=" с"
+  label={t.general.captureDelay}
+  hint={t.general.captureDelayHint}
+  unit={t.general.seconds}
 />
 <SwitchRow
   key="refreshIncludesSubfolders"
-  label="Включая подпапки"
-  hint="Кнопка обновления миниатюр обходит и вложенные папки"
+  label={t.general.refreshIncludesSubfolders}
+  hint={t.general.refreshIncludesSubfoldersHint}
 />
 
-<SwitchRow key="openInNewTab" label="Открывать закладки и поиск в новой вкладке"/>
-<SwitchRow key="newBookmarksFirst" label="Добавлять новые закладки в начало папки"/>
-<SwitchRow key="dragAndDrop" label="Включить перетаскивание"/>
+<SwitchRow key="openInNewTab" label={t.general.openInNewTab}/>
+<SwitchRow key="newBookmarksFirst" label={t.general.newBookmarksFirst}/>
+<SwitchRow key="dragAndDrop" label={t.general.dragAndDrop}/>
 <div class="settings-group">
   <SelectRow
-    label="Сортировать"
-    hint="Пока выбрана сортировка, перетаскивание не работает"
+    label={t.general.sortOrder}
+    hint={t.general.sortHint}
     value={current.sortOrder}
-    options={SORT_ORDERS.map((order) => ({value: order, label: SORT_ORDER_NAMES[order]}))}
+    options={SORT_ORDERS.map((order) => ({value: order, label: t.sort.orders[order]}))}
     onchange={(value) => settings.update({sortOrder: value as SortOrder})}
   />
   <SelectRow
-    label="Папки и закладки"
-    hint="Пока выбрана сортировка, перетаскивание не работает"
+    label={t.general.typeOrder}
+    hint={t.general.sortHint}
     value={current.typeOrder}
-    options={TYPE_ORDERS.map((order) => ({value: order, label: TYPE_ORDER_NAMES[order]}))}
+    options={TYPE_ORDERS.map((order) => ({value: order, label: t.sort.typeOrders[order]}))}
     onchange={(value) => settings.update({typeOrder: value as TypeOrder})}
   />
 </div>
 
 <SwitchRow
   key="browserContextMenu"
-  label="Показывать в контекстном меню браузера"
-  hint="Пункт «Добавить в SpeedDial» на страницах и ссылках"
+  label={t.general.browserContextMenu}
+  hint={t.general.browserContextMenuHint}
 />
 <SwitchRow
   key="closeTabAfterAdd"
-  label="Закрывать вкладку после добавления"
-  hint="Только при добавлении страницы через контекстное меню браузера"
+  label={t.general.closeTabAfterAdd}
+  hint={t.general.closeTabAfterAddHint}
   disabled={!current.browserContextMenu}
 />
 <SwitchRow
   key="syncEnabled"
-  label="Включить синхронизацию"
-  hint="Настройки хранятся в аккаунте браузера и одинаковы на всех устройствах"
+  label={t.general.syncEnabled}
+  hint={t.general.syncEnabledHint}
 />
 
 <style>

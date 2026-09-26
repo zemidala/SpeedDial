@@ -1,4 +1,5 @@
 <script lang="ts">
+  import {t} from '../../../lib/i18n/index.svelte';
   import {icons} from '../../../lib/icons.svelte';
   import {settings} from '../../../lib/settings/store.svelte';
   import SiteIcon from '../grid/SiteIcon.svelte';
@@ -23,8 +24,8 @@
     type="button"
     class="icon-button"
     class:icon-button--active={open}
-    aria-label="Сервисы"
-    title="Сервисы"
+    aria-label={t.header.services}
+    title={t.header.services}
     aria-expanded={open}
     onclick={() => (open = !open)}
   >
@@ -32,7 +33,7 @@
   </button>
 
   {#if open}
-    <nav class="services-menu__popup" aria-label="Сервисы">
+    <nav class="services-menu__popup" aria-label={t.header.services}>
       {#each settings.current.services as service, i (i)}
         <a
           class="services-menu__item"
@@ -43,7 +44,7 @@
           <span class="services-menu__title">{service.title}</span>
         </a>
       {:else}
-        <p class="services-menu__empty">Список сервисов пуст — его можно заполнить в настройках</p>
+        <p class="services-menu__empty">{t.header.servicesEmpty}</p>
       {/each}
     </nav>
   {/if}

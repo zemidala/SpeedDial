@@ -1,4 +1,5 @@
 // Экспорт и импорт настроек в файл. Закладки и картинки в файл не входят
+import {t} from '../i18n/index.svelte';
 import {LOCAL_KEYS, sanitizeSettings, type Settings, splitSettings} from './schema';
 
 const FILE_FORMAT = 'speeddial-settings';
@@ -28,10 +29,10 @@ export function parseSettingsFile(text: string, current: Settings): Settings {
   try {
     file = JSON.parse(text);
   } catch {
-    throw new Error('Файл повреждён: это не JSON');
+    throw new Error(t.advanced.fileNotJson);
   }
   if (file?.format !== FILE_FORMAT || typeof file.settings !== 'object' || file.settings === null) {
-    throw new Error('Это не файл настроек SpeedDial');
+    throw new Error(t.advanced.notSettingsFile);
   }
 
   const imported = {...file.settings} as Record<string, unknown>;

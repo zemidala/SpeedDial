@@ -1,4 +1,5 @@
 // Общее для облачных хранилищ копий: интерфейс клиента и запросы к API сервисов
+import {t} from '../i18n/index.svelte';
 
 export interface RemoteFile {
   name: string;
@@ -25,7 +26,7 @@ export function sortBackups(files: RemoteFile[]): RemoteFile[] {
 
 /** Вход устарел или отозван — нужно подключиться заново */
 export class AuthExpiredError extends Error {
-  constructor(message = 'Вход в облако устарел. Отключите облако и подключитесь заново') {
+  constructor(message = t.cloudErrors.authExpired) {
     super(message);
     this.name = 'AuthExpiredError';
   }
@@ -47,11 +48,11 @@ export async function apiFetch(
       headers: {...(token ? {Authorization: `Bearer ${token}`} : {}), ...init.headers},
     });
   } catch {
-    throw new Error('Облако недоступно: проверьте подключение к интернету');
+    throw new Error(t.cloudErrors.offline);
   }
   if (response.ok || allowedStatuses.includes(response.status)) return response;
   if (response.status === 401) throw new AuthExpiredError();
   const details = await response.text().catch(() => '');
   console.error('Cloud API error', response.status, url, details);
-  throw new Error(`Облако вернуло ошибку ${response.status}`);
+  throw new Error(t.cloudErrors.httpError(response.status));
 }

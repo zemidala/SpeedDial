@@ -1,4 +1,5 @@
 // Dropbox: приложение с доступом только к своей папке (Apps/SpeedDial). Вход с PKCE, продление по refresh-токену
+import {t} from '../../i18n/index.svelte';
 import {authorize, pkcePair, redirectUrl, requestToken} from '../oauth';
 import {apiFetch, type CloudClient, type RemoteFile, sortBackups} from '../provider';
 import type {OAuthProvider} from './types';
@@ -88,7 +89,7 @@ export function dropbox(clientId: string): OAuthProvider {
       // offline — refresh-токен для автоматических копий без повторного входа
       url.searchParams.set('token_access_type', 'offline');
       const code = (await authorize(url, true)).get('code');
-      if (!code) throw new Error('Dropbox не выдал доступ');
+      if (!code) throw new Error(t.cloudErrors.noAccessGranted('Dropbox'));
 
       const tokens = await requestToken(TOKEN_URL, {
         grant_type: 'authorization_code',
@@ -102,7 +103,7 @@ export function dropbox(clientId: string): OAuthProvider {
       return {tokens, account: account.email ?? 'Dropbox'};
     },
     async refresh(tokens) {
-      if (!tokens.refreshToken) throw new Error('Нужно войти в Dropbox заново');
+      if (!tokens.refreshToken) throw new Error(t.cloudErrors.signInAgain);
       return requestToken(TOKEN_URL, {grant_type: 'refresh_token', refresh_token: tokens.refreshToken, client_id: clientId}, tokens);
     },
     client: (token) => new DropboxClient(token),

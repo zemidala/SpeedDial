@@ -1,4 +1,5 @@
 // OneDrive: копии в папке приложения (Приложения/SpeedDial). Вход через Microsoft с PKCE
+import {t} from '../../i18n/index.svelte';
 import {authorize, type OAuthTokens, pkcePair, redirectUrl, requestToken} from '../oauth';
 import {apiFetch, type CloudClient, type RemoteFile, sortBackups} from '../provider';
 import type {OAuthProvider} from './types';
@@ -44,7 +45,7 @@ export class OneDriveClient implements CloudClient {
     const item = await (await apiFetch(`${this.#item(name)}?$select=@microsoft.graph.downloadUrl`, this.token)).json() as
       Record<string, string | undefined>;
     const downloadUrl = item['@microsoft.graph.downloadUrl'];
-    if (!downloadUrl) throw new Error('Копия не найдена в OneDrive');
+    if (!downloadUrl) throw new Error(t.cloudErrors.notFound);
     return (await apiFetch(downloadUrl, null)).text();
   }
 
@@ -74,7 +75,7 @@ async function codeFlow(clientId: string, interactive: boolean, account?: string
   url.searchParams.set('prompt', interactive ? 'select_account' : 'none');
   if (account) url.searchParams.set('login_hint', account);
   const code = (await authorize(url, interactive)).get('code');
-  if (!code) throw new Error('Microsoft не выдал доступ');
+  if (!code) throw new Error(t.cloudErrors.noAccessGranted('Microsoft'));
 
   return requestToken(`${AUTHORITY}/token`, {
     client_id: clientId,

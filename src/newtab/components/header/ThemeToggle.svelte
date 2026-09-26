@@ -1,5 +1,6 @@
 <script lang="ts">
   import {MediaQuery} from 'svelte/reactivity';
+  import {t} from '../../../lib/i18n/index.svelte';
   import {settings} from '../../../lib/settings/store.svelte';
   import {isDarkTheme} from '../../../lib/settings/theme';
   import Icon from '../ui/Icon.svelte';
@@ -12,8 +13,8 @@
 <button
   type="button"
   class="icon-button"
-  aria-label={dark ? 'Включить светлую тему' : 'Включить тёмную тему'}
-  title={dark ? 'Светлая тема' : 'Тёмная тема'}
+  aria-label={dark ? t.header.enableLight : t.header.enableDark}
+  title={dark ? t.header.lightTheme : t.header.darkTheme}
   onclick={() => settings.update({theme: dark ? 'light' : 'dark'})}
 >
   <Icon name={dark ? 'sun' : 'moon'}/>
