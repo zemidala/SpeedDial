@@ -83,3 +83,11 @@ Unit tests sit next to the code they test (`*.test.ts`).
 - Every user-visible string goes through `t` (`src/lib/i18n`), with the same key in `en.ts` and `ru.ts`.
 - A new setting goes into `src/lib/settings/schema.ts` (type, default, allowed values) and into `TAB_SETTINGS` in
   `changes.svelte.ts`, so the settings dialog marks it as changed.
+
+## License
+
+Copyright (C) 2026 zemidala
+
+SpeedDial is free software: you can redistribute it and/or modify it under the terms of the
+[GNU General Public License, version 3](LICENSE). A modified version you distribute must be released under the same
+license, with its source code. The SpeedDial name and icon identify the official version.
