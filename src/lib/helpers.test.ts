@@ -8,7 +8,7 @@ import {sortNodes} from './sorting';
 describe('buildSearchUrl', () => {
   it('inserts the encoded query', () => {
     expect(buildSearchUrl('google', ' кот & пёс ')).toBe('https://www.google.com/search?q=%D0%BA%D0%BE%D1%82%20%26%20%D0%BF%D1%91%D1%81');
-    expect(buildSearchUrl('yandex', 'a')).toBe('https://yandex.ru/search/?text=a');
+    expect(buildSearchUrl('duckduckgo', 'a')).toBe('https://duckduckgo.com/?q=a');
   });
 
   it('custom URL with %s; an invalid one falls back to Google', () => {

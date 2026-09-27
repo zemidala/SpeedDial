@@ -15,6 +15,8 @@ describe('sanitizeSettings', () => {
     expect(result.showTitles).toBe(true);
     expect(result.searchEngine).toBe('google');
     expect(result.tileColor).toBe('');
+    // Yandex is no longer offered: a saved choice falls back to Google
+    expect(sanitizeSettings({searchEngine: 'yandex'}).searchEngine).toBe('google');
   });
 
   it('clamps numbers to the range', () => {

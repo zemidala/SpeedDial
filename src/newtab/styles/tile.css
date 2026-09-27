@@ -222,3 +222,55 @@
   outline-offset: 2px;
   transform: scale(1.04);
 }
+
+/* ===== Placeholders while loading =====
+   Placeholder tiles until the bookmarks load, and a plate where a site icon is still loading. They fade in after
+   a short delay: a fast load never shows them, nothing flickers. skeleton-pulse is shared with SiteIcon.svelte */
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes skeleton-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.tile--skeleton {
+  cursor: default;
+  animation: skeleton-in 0.2s 0.15s both;
+}
+
+.tile--skeleton .tile__card,
+.tile--skeleton:hover .tile__card {
+  box-shadow: none;
+  transform: none;
+}
+
+.tile--skeleton .tile__visual,
+.tile__skeleton-line {
+  background: color-mix(in oklab, var(--text) 7%, transparent);
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+.tile__skeleton-line {
+  width: 55%;
+  height: 0.8em;
+  margin: 0.15em 0;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tile--skeleton,
+  .tile--skeleton .tile__visual,
+  .tile__skeleton-line {
+    animation: none;
+  }
+}

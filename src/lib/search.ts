@@ -6,8 +6,6 @@ export function searchEngineName(engine: SearchEngine): string {
   switch (engine) {
     case 'google':
       return 'Google';
-    case 'yandex':
-      return t.general.searchEngineYandex;
     case 'bing':
       return 'Bing';
     case 'duckduckgo':
@@ -20,7 +18,6 @@ export function searchEngineName(engine: SearchEngine): string {
 // %s is replaced with the encoded query
 const SEARCH_URLS: Record<Exclude<SearchEngine, 'custom'>, string> = {
   google: 'https://www.google.com/search?q=%s',
-  yandex: 'https://yandex.ru/search/?text=%s',
   bing: 'https://www.bing.com/search?q=%s',
   duckduckgo: 'https://duckduckgo.com/?q=%s',
 };

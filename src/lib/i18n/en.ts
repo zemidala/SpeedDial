@@ -355,7 +355,6 @@ export const en = {
     showRecentlyClosed: 'Recently closed tabs',
     showRecentlyClosedHint: 'A shelf below the tiles to get closed tabs back quickly; the full list is a folder of its own. The browser will ask for permission',
     searchEngine: 'Search engine',
-    searchEngineYandex: 'Yandex',
     searchEngineCustom: 'Custom URL',
     customSearchUrl: 'Search URL',
     customSearchUrlHint: '%s is replaced with the search query',

@@ -17,7 +17,8 @@ export const ICON_STYLES = ['plate', 'fill'] as const;
 export const TITLE_POSITIONS = ['bottom-inside', 'top-inside', 'bottom-outside', 'top-outside'] as const;
 export const TITLE_ALIGNS = ['left', 'center', 'right'] as const;
 export const LOGO_SERVICE_IDS = ['none', 'google', 'duckduckgo', 'iconhorse', 'logodev', 'custom'] as const;
-export const SEARCH_ENGINES = ['google', 'yandex', 'bing', 'duckduckgo', 'custom'] as const;
+/** Yandex was removed: a saved 'yandex' falls back to the default, Google */
+export const SEARCH_ENGINES = ['google', 'bing', 'duckduckgo', 'custom'] as const;
 export const SORT_ORDERS = ['none', 'title', 'url', 'dateAdded'] as const;
 export const TYPE_ORDERS = ['none', 'foldersFirst', 'bookmarksFirst'] as const;
 /** Screenshots of bookmarked pages while browsing: none, only for bookmarks without a thumbnail, or also refreshing old ones */

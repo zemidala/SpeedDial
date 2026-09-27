@@ -21,6 +21,7 @@
   import BookmarkTile from './BookmarkTile.svelte';
   import FolderTile from './FolderTile.svelte';
   import SelectionBar from './SelectionBar.svelte';
+  import TileSkeleton from './TileSkeleton.svelte';
 
   const REORDER_DURATION = 200; // Ms; tiles smoothly make room while dragging
 
@@ -66,6 +67,46 @@
     if (bookmarks.loaded && bookmarks.virtual) return t.virtual.empty;
     if (bookmarks.loaded && !showAddTile) return t.grid.empty;
     return null;
+  });
+
+  // ===== Loading =====
+  // Until the first load: placeholder tiles, as many as the opening folder had last time — the tiles don't jump
+  // when they come. Counts per folder in localStorage: a convenience of this device only
+  const SKELETON_KEY = 'skeletonTiles';
+  const SKELETON_FOLDERS = 20; // Counts of the folders opened most recently
+
+  function readSkeletonCounts(): Record<string, number> {
+    try {
+      const counts: unknown = JSON.parse(localStorage.getItem(SKELETON_KEY) ?? '{}');
+      return counts && typeof counts === 'object' ? counts as Record<string, number> : {};
+    } catch {
+      return {};
+    }
+  }
+
+  const skeletonCount = (() => {
+    const saved = readSkeletonCounts()[bookmarks.openingFolder()];
+    const columns = settings.current.columns;
+    return typeof saved === 'number' && saved > 0 ? Math.min(saved, columns * 6) : columns * 2;
+  })();
+  const showSkeleton = $derived(!bookmarks.loaded && !search.active);
+
+  // Kept up to date as the folder changes
+  $effect(() => {
+    if (!bookmarks.loaded || search.active) return;
+    const folderId = bookmarks.folderId;
+    const count = items.length + (showAddTile ? 1 : 0) + (parentFolderId !== null ? 1 : 0);
+    untrack(() => {
+      const counts = readSkeletonCounts();
+      if (counts[folderId] === count) return;
+      delete counts[folderId];
+      const recent = [...Object.entries(counts), [folderId, count]].slice(-SKELETON_FOLDERS);
+      try {
+        localStorage.setItem(SKELETON_KEY, JSON.stringify(Object.fromEntries(recent)));
+      } catch {
+        // Storage may be unavailable — the next start shows two rows
+      }
+    });
   });
 
   // ===== Selection =====
@@ -211,6 +252,12 @@
   style:--insert-delay="{FOLDER_EDGE_DELAY}ms"
   onclickcapture={onClickCapture}
 >
+  {#if showSkeleton}
+    {#each {length: skeletonCount}, i (i)}
+      <div class="bookmark-grid__cell"><TileSkeleton/></div>
+    {/each}
+  {/if}
+
   {#if parentFolderId !== null}
     <BackTile folderId={parentFolderId}/>
   {/if}

@@ -365,7 +365,6 @@ export const ru: Messages = {
     showRecentlyClosed: 'Недавно закрытые вкладки',
     showRecentlyClosedHint: 'Полкой под плитками — чтобы быстро вернуть закрытую вкладку; весь список — отдельной папкой. Браузер спросит разрешение',
     searchEngine: 'Поисковая система',
-    searchEngineYandex: 'Яндекс',
     searchEngineCustom: 'Свой адрес',
     customSearchUrl: 'Адрес поиска',
     customSearchUrlHint: '%s заменяется поисковым запросом',

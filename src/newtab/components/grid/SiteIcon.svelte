@@ -35,6 +35,7 @@
   class="site-icon site-icon--{appearance}"
   class:site-icon--cover={cover}
   class:site-icon--letter={showLetter}
+  class:site-icon--loading={!info && !entry.loaded}
   class:site-icon--lighten={lighten}
   class:site-icon--own-background={info?.fullBleed}
   style:--letter-color={showLetter ? hashColor(host) : undefined}
@@ -180,6 +181,38 @@
   .site-icon--mini.site-icon--letter {
     border-radius: 4px;
     background: var(--letter-color);
+  }
+
+  /* ===== Still loading: a softly pulsing plate =====
+     It fades in after a short delay (skeleton-pulse in tile.css): an icon from the cache appears without a flash */
+  .site-icon--loading {
+    position: relative;
+  }
+
+  /* Plates and cells are rounded already; without a plate the placeholder is an app-icon square */
+  .site-icon--fill.site-icon--loading {
+    border-radius: 18%;
+  }
+
+  .site-icon--mini.site-icon--loading {
+    border-radius: 4px;
+  }
+
+  .site-icon--loading::after {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: color-mix(in oklab, var(--text) 12%, transparent);
+    content: '';
+    opacity: 0;
+    animation: skeleton-pulse 1.4s ease-in-out 0.15s infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .site-icon--loading::after {
+      opacity: 0.6;
+      animation: none;
+    }
   }
 
   .site-icon--mini .site-icon__letter {

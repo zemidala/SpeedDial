@@ -153,6 +153,11 @@ class BookmarksStore {
    * Folder shown in a new tab: the last opened one or the default folder. The default setting means
    * "the bookmarks bar" — whatever its id is in this browser; without a bar — Home, where the user picks a folder
    */
+  /** The folder the page opens with: from the address (#folder=…) or the start folder */
+  openingFolder(): string {
+    return folderFromHash() ?? this.startFolder();
+  }
+
   startFolder(): string {
     if (settings.current.rememberLastFolder) {
       const last = localStorage.getItem(LAST_FOLDER_KEY);

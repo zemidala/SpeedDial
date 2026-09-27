@@ -254,6 +254,28 @@ test('a tab that left SpeedDial or was closed isn\'t taken back after a reload',
   await expect.poll(stored).toHaveLength(0);
 });
 
+test('placeholder tiles while the bookmarks load, as many as last time', async ({context, newtab}) => {
+  const tiles = newtab.locator('.bookmark-grid__cell > .tile:not(.tile--skeleton)');
+  await expect(tile(newtab, 'Example')).toBeVisible();
+  const count = await newtab.locator('.bookmark-grid > *:not(p)').count();
+  await expect.poll(() => newtab.evaluate(() => JSON.parse(localStorage.getItem('skeletonTiles') ?? '{}')['1']))
+    .toBe(count);
+
+  // Slow bookmarks: the placeholders show up (after a short delay) and give way to the tiles
+  await context.addInitScript(() => {
+    const getChildren = chrome.bookmarks.getChildren.bind(chrome.bookmarks);
+    chrome.bookmarks.getChildren = ((id: string) => new Promise((resolve) => setTimeout(resolve, 1500))
+      .then(() => getChildren(id))) as typeof chrome.bookmarks.getChildren;
+  });
+  await newtab.reload();
+  const skeletons = newtab.locator('.tile--skeleton');
+  await expect(skeletons).toHaveCount(count);
+  await expect(skeletons.first()).toHaveCSS('opacity', '1');
+  await expect(skeletons).toHaveCount(0);
+  await expect(tile(newtab, 'Example')).toBeVisible();
+  expect(await tiles.count()).toBeGreaterThan(0);
+});
+
 test('"Back to top" shows up as soon as the tiles are scrolled down and brings them back', async ({newtab}) => {
   await newtab.setViewportSize({width: 1000, height: 600});
   await seed(newtab, Array.from({length: 60}, (_, i) => ({title: `Tile ${i}`, url: `https://t${i}.example/`})));
