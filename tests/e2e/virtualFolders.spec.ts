@@ -45,10 +45,14 @@ test('the invitation turns on the shelves below the start page tiles', async ({n
   // The tooltip has the full name and the URL
   await expect(mostVisited.getByRole('link', {name: 'Alpha site'})).toHaveAttribute('title', 'Alpha site\nhttps://alpha.example/');
 
-  // The shelves are on the start pages only, not inside other folders
+  // The shelves are at hand in every folder, not only on the start page
   await tile(newtab, 'Папка').click();
   await expect(tile(newtab, 'Внутри')).toBeVisible();
+  await expect(mostVisited.getByRole('link', {name: 'Alpha site'})).toBeVisible();
+  // ...but not in search results
+  await newtab.getByRole('searchbox', {name: 'Поиск'}).fill('Внутри');
   await expect(mostVisited).toHaveCount(0);
+  await newtab.getByRole('searchbox', {name: 'Поиск'}).fill('');
   await newtab.getByRole('navigation', {name: 'Путь к папке'}).getByRole('button', {name: 'Главная'}).click();
   await expect(mostVisited).toBeVisible();
 

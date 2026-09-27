@@ -8,7 +8,7 @@
   import {type BookmarkEntry, bookmarkEntries} from '../../../lib/duplicates';
   import {t} from '../../../lib/i18n/index.svelte';
   import {icons} from '../../../lib/icons.svelte';
-  import {type LinkCheck, runPool} from '../../../lib/linkCheck';
+  import {type LinkCheck, RECHECK_TIMEOUT, runPool} from '../../../lib/linkCheck';
   import {requestLinkCheck} from '../../../lib/messages';
   import {showNotice} from '../../../lib/notice.svelte';
   import {SITE_ACCESS} from '../../../lib/permissionSets';
@@ -30,6 +30,8 @@
 
   /** Requests at once: fast enough, and doesn't flood one site with requests */
   const CONCURRENCY = 6;
+  /** The second try for sites that didn't answer: few at a time, so none is slowed down by the others */
+  const RECHECK_CONCURRENCY = 2;
 
   interface Problem {
     entry: BookmarkEntry;
@@ -40,6 +42,8 @@
   let phase = $state<'idle' | 'running' | 'done'>('idle');
   let checked = $state(0);
   let stopped = $state(false);
+  /** Sites that didn't answer, still being asked again */
+  let rechecking = $state(0);
   let problems = $state<Problem[]>([]);
   const selected = new SvelteSet<string>();
   let busy = $state(false);
@@ -101,24 +105,46 @@
     problems = [];
     selected.clear();
     const working: string[] = [];
+    const ask = async (entry: BookmarkEntry, timeout?: number): Promise<LinkCheck | null> => {
+      try {
+        return await Promise.race([requestLinkCheck(entry.url, timeout), whenStopped(signal)]);
+      } catch {
+        return signal.aborted ? null : {problem: 'unreachable'};
+      }
+    };
 
     await runPool(entries, CONCURRENCY, signal, async (entry) => {
-      let check: LinkCheck;
-      try {
-        check = await Promise.race([requestLinkCheck(entry.url), whenStopped(signal)]);
-      } catch {
-        if (signal.aborted) return; // Stopped
-        check = {problem: 'unreachable'};
-      }
+      const check = await ask(entry);
+      if (!check) return; // Stopped
       checked++;
       if (check.problem) {
         problems.push({entry, check: {...check, problem: check.problem}});
-        // A server error may be temporary — not marked for action by default
-        if (check.problem !== 'serverError') selected.add(entry.id);
+        // Only a page the site says is gone is marked for action by default: a server error is often temporary,
+        // and a site that didn't answer the extension may still open in the browser (internal sites, VPN)
+        if (check.problem === 'notFound') selected.add(entry.id);
       } else if (brokenLinks.get(entry.id)) {
         working.push(entry.id);
       }
     });
+
+    // Sites that didn't answer get a second, patient try one by one: many just answered slowly while
+    // six requests were running at once
+    const silent = problems.filter(({check}) => check.problem === 'unreachable').map(({entry}) => entry);
+    rechecking = silent.length;
+    await runPool(silent, RECHECK_CONCURRENCY, signal, async (entry) => {
+      const check = await ask(entry, RECHECK_TIMEOUT);
+      if (!check) return;
+      rechecking--;
+      if (check.problem === 'unreachable') return;
+      problems = problems.filter((problem) => problem.entry.id !== entry.id);
+      if (check.problem) {
+        problems.push({entry, check: {...check, problem: check.problem}});
+        if (check.problem === 'notFound') selected.add(entry.id);
+      } else if (brokenLinks.get(entry.id)) {
+        working.push(entry.id);
+      }
+    });
+    rechecking = 0;
 
     // Marked earlier but working now — the placeholder goes away
     if (working.length > 0) await brokenLinks.unmark(working);
@@ -188,7 +214,9 @@
   {:else}
     <div class="link-check__progress">
       <p class="link-check__text" role="status">
-        {#if phase === 'running'}
+        {#if phase === 'running' && rechecking > 0}
+          {t.linkCheck.rechecking(rechecking)}
+        {:else if phase === 'running'}
           {single ? t.linkCheck.checkingOne : t.linkCheck.progress(checked, entries.length, problems.length)}
         {:else if single && !stopped}
           {problems.length === 0 ? t.linkCheck.linkWorks : t.linkCheck.linkBroken}
@@ -199,7 +227,7 @@
         {/if}
       </p>
       {#if phase === 'running'}
-        <progress max={entries.length} value={single ? undefined : checked}></progress>
+        <progress max={entries.length} value={single || rechecking > 0 ? undefined : checked}></progress>
       {/if}
     </div>
 

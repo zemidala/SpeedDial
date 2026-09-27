@@ -32,10 +32,11 @@
   const hasThumbnail = $derived(Boolean(thumbnail.url) && !broken && !iconOnly.get(bookmark.id));
   const tint = $derived(iconTint && !hasThumbnail ? icon.info?.color : null);
 
-  // In "fill" mode the area is filled with the icon's edge colour — the icon blends into the tile
+  // In "fill" mode a site letter gets its colour as the background. An icon with its own background fills the area
+  // itself (SiteIcon); no colour is guessed from the icon's edges — a guess never quite matches the image
+  // (a band of another shade beside gradients) and differs between browsers
   const fillColor = $derived.by(() => {
-    if (iconStyle !== 'fill' || hasThumbnail) return null;
-    if (icon.info) return icon.info.edgeColor;
+    if (iconStyle !== 'fill' || hasThumbnail || icon.info) return null;
     return icon.loaded ? hashColor(siteName(url)) : null;
   });
 

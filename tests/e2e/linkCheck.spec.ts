@@ -30,13 +30,13 @@ test.beforeEach(async ({context, newtab}) => {
 
 const dialogOf = (page: Page) => page.getByRole('dialog', {name: 'Проверка ссылок'});
 
-async function runCheck(page: Page) {
+async function runCheck(page: Page, count = 5) {
   await page.locator('main').click({button: 'right', position: {x: 5, y: 5}});
   await page.getByRole('menuitem', {name: 'Проверить все ссылки…'}).click();
   const dialog = dialogOf(page);
-  await expect(dialog).toContainText('Для каждой из 5 закладок');
+  await expect(dialog).toContainText(`Для каждой из ${count} закладок`);
   await dialog.getByRole('button', {name: 'Проверить'}).click();
-  await expect(dialog.getByRole('status').first()).toHaveText(/^Проверено ссылок: 5\./, {timeout: 30_000});
+  await expect(dialog.getByRole('status').first()).toHaveText(new RegExp(`^Проверено ссылок: ${count}\\.`), {timeout: 30_000});
   return dialog;
 }
 
@@ -44,15 +44,17 @@ test('finds broken links and marks them: the tile shows the placeholder', async 
   const dialog = await runCheck(newtab);
   await expect(dialog.getByRole('status').first()).toHaveText('Проверено ссылок: 5. Не работают: 3');
 
-  // A gone page and a dead site are selected; a server error may be temporary — not selected; working ones aren't listed
+  // Only a gone page is selected: a server error may be temporary, a silent site may open in the browser;
+  // working ones aren't listed
   await expect(dialog.getByRole('checkbox', {name: 'Выбрать «Gone»'})).toBeChecked();
-  await expect(dialog.getByRole('checkbox', {name: 'Выбрать «Dead»'})).toBeChecked();
+  await expect(dialog.getByRole('checkbox', {name: 'Выбрать «Dead»'})).not.toBeChecked();
   await expect(dialog.getByRole('checkbox', {name: 'Выбрать «Server»'})).not.toBeChecked();
   await expect(dialog.getByRole('checkbox')).toHaveCount(3);
   await expect(dialog.getByText('Страница не найдена (404)')).toBeVisible();
   await expect(dialog.getByText('Ошибка сервера (502)')).toBeVisible();
-  await expect(dialog.getByText('Сайт не отвечает')).toBeVisible();
+  await expect(dialog.getByText('Сайт не ответил')).toBeVisible();
 
+  await dialog.getByRole('checkbox', {name: 'Выбрать «Dead»'}).check();
   await dialog.getByRole('button', {name: 'Пометить (2)'}).click();
   await expect(dialog.getByRole('status').filter({hasText: 'Помечено как нерабочие: 2'})).toBeVisible();
   await dialog.getByRole('button', {name: 'Закрыть', exact: true}).click();
@@ -79,6 +81,7 @@ test('finds broken links and marks them: the tile shows the placeholder', async 
 test('a mark goes away when the link works again or its address changes', async ({context, newtab}) => {
   let dialog = await runCheck(newtab);
   await dialog.getByRole('checkbox', {name: 'Выбрать «Server»'}).check();
+  await dialog.getByRole('checkbox', {name: 'Выбрать «Dead»'}).check();
   await dialog.getByRole('button', {name: 'Пометить (3)'}).click();
   await dialog.getByRole('button', {name: 'Закрыть', exact: true}).click();
   await expect(tile(newtab, 'Server')).toHaveClass(/tile--broken/);
@@ -117,6 +120,7 @@ test('checking doesn\'t download what a site asks to preload', async ({context, 
 
 test('broken links are deleted and brought back with undo', async ({newtab}) => {
   const dialog = await runCheck(newtab);
+  await dialog.getByRole('checkbox', {name: 'Выбрать «Dead»'}).check();
   await dialog.getByRole('button', {name: 'Удалить (2)'}).click();
   await expect(dialog.getByRole('checkbox')).toHaveCount(1);
   await expect.poll(async () => (await getChildren(newtab, '1')).map((node) => node.title))
@@ -154,4 +158,16 @@ test('a bookmark\'s menu checks that link right away', async ({newtab}) => {
   await dialog.getByRole('button', {name: 'Пометить (1)'}).click();
   await dialog.getByRole('button', {name: 'Закрыть', exact: true}).click();
   await expect(tile(newtab, 'Gone')).toHaveClass(/tile--broken/);
+});
+
+test('a site that answers only on the second, patient try isn\'t reported', async ({context, newtab}) => {
+  // Drops the first two requests (HEAD and GET), then answers — like a slow or busy server
+  let requests = 0;
+  await context.route('https://slow.example/**', (route) => (++requests <= 2
+    ? route.abort('timedout')
+    : route.fulfill({status: 200, body: 'ok'})));
+  await seed(newtab, [{title: 'Slow', url: 'https://slow.example/'}]);
+  const dialog = await runCheck(newtab, 6);
+  await expect(dialog.getByRole('status').first()).toHaveText('Проверено ссылок: 6. Не работают: 3');
+  await expect(dialog.getByRole('checkbox', {name: 'Выбрать «Slow»'})).toHaveCount(0);
 });

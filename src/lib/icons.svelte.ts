@@ -1,3 +1,4 @@
+import {MediaQuery} from 'svelte/reactivity';
 import {analyzePixels, effectiveResolution, meanDifference} from './color';
 import {extractLargestIcoImage, isIco} from './ico';
 import {VECTOR_SIZE} from './iconCandidates';
@@ -6,6 +7,7 @@ import {buildLogoUrl, logoTemplate, UNKNOWN_SITE_URL} from './logoServices';
 import {permissions} from './permissions.svelte';
 import {settings} from './settings/store.svelte';
 import {fetchSiteIcon, queued} from './siteIcons';
+import {dependsOnColorScheme, fixSvgColorScheme} from './svgScheme';
 import {getFaviconUrl, isWebUrl} from './url';
 
 /** browser — from the browser cache; site — from the site itself; external — from a third-party service */
@@ -22,12 +24,16 @@ export interface IconInfo {
   edgeColor: string | null;
   /** The icon has its own opaque background — it can be stretched over the whole plate */
   fullBleed: boolean;
+  /** A black logo on a transparent background — drawn light where it'd sit on a dark tile */
+  darkMonochrome: boolean;
 }
 
 interface CachedSiteIcon {
   blob: Blob | null; // null — the site has nothing better than the regular favicon
   size: number;
   fetchedAt: number;
+  /** Only a stand-in: the site didn't answer, or a better icon didn't download in time — asked again soon */
+  retrySoon?: boolean;
 }
 
 const BROWSER_ICON_SIZE = 64;
@@ -36,6 +42,7 @@ const MAX_RESOLUTION_CHECK = 256; // Upscaled images larger than this don't occu
 const DAY = 24 * 60 * 60 * 1000;
 const SITE_ICON_TTL = 30 * DAY;
 const MISSING_ICON_TTL = 7 * DAY;
+const RETRY_SOON_TTL = 60 * 60 * 1000;
 const DEFAULT_ICON_THRESHOLD = 4; // Average pixel difference at which an icon equals the "no icon" placeholder
 const SOURCE_CHANGE_DELAY = 800;
 
@@ -146,7 +153,7 @@ async function loadExternalIcon(logoUrl: string, placeholderUrl: string | null):
     try {
       const img = await loadImage(logoUrl);
       const size = Math.min(img.naturalWidth, img.naturalHeight, BROWSER_ICON_SIZE);
-      return {src: logoUrl, size, source: 'external', color: null, edgeColor: null, fullBleed: false};
+      return {src: logoUrl, size, source: 'external', color: null, edgeColor: null, fullBleed: false, darkMonochrome: false};
     } catch {
       return null;
     }
@@ -166,6 +173,9 @@ export class IconEntry {
   info = $state.raw<IconInfo | null>(null);
   /** The first attempt is done: a letter can be shown instead of an empty plate */
   loaded = $state(false);
+
+  /** The site's icon changes with the theme — it's drawn again when SpeedDial's theme changes */
+  schemeDependent = false;
 
   #generation = 0; // Drops results of a load started before reload()
 
@@ -213,12 +223,17 @@ export class IconEntry {
 
     // 4. Fresh site icon if the cache is stale
     if (!useSiteIcons) return;
-    const ttl = cached?.blob ? SITE_ICON_TTL : MISSING_ICON_TTL;
+    const ttl = cached?.blob ? SITE_ICON_TTL : cached?.retrySoon ? RETRY_SOON_TTL : MISSING_ICON_TTL;
     if (cached && Date.now() - cached.fetchedAt < ttl) return;
 
-    const icon = await queued(() => fetchSiteIcon(this.pageUrl));
+    const {icon, final} = await queued(() => fetchSiteIcon(this.pageUrl));
     if (!isCurrent()) return;
-    const entry: CachedSiteIcon = {blob: icon?.blob ?? null, size: icon?.size ?? 0, fetchedAt: Date.now()};
+    const entry: CachedSiteIcon = {
+      blob: icon?.blob ?? null,
+      size: icon?.size ?? 0,
+      fetchedAt: Date.now(),
+      ...(final ? {} : {retrySoon: true}),
+    };
     await idbSet('icons', this.key, entry).catch((error) => console.error('Failed to cache icon', error));
     if (icon) await this.#offerSiteIcon(icon.blob, isCurrent);
   }
@@ -231,16 +246,48 @@ export class IconEntry {
     return this.load().catch((error) => console.error('Failed to load icon', error));
   }
 
-  /** The site icon replaces the current one if it's not worse in quality */
-  async #offerSiteIcon(blob: Blob, isCurrent: () => boolean): Promise<void> {
+  /**
+   * Asks the site for its icon again, ignoring the stored one. The current icon stays until the answer comes,
+   * so tiles don't drop to small browser icons meanwhile; the answer replaces it even if it's smaller
+   */
+  async refetch(): Promise<void> {
+    if (!isWebUrl(this.pageUrl) || !icons.siteIconsEnabled) return this.reload();
+    const generation = ++this.#generation;
+    const isCurrent = () => generation === this.#generation;
+    const {icon, final} = await queued(() => fetchSiteIcon(this.pageUrl));
+    if (!isCurrent()) return;
+    const entry: CachedSiteIcon = {
+      blob: icon?.blob ?? null,
+      size: icon?.size ?? 0,
+      fetchedAt: Date.now(),
+      ...(final ? {} : {retrySoon: true}),
+    };
+    await idbSet('icons', this.key, entry).catch((error) => console.error('Failed to cache icon', error));
+    // No site icon (any more): the usual sources, from the service or the browser
+    if (!icon) return this.reload();
+    await this.#offerSiteIcon(icon.blob, isCurrent, true);
+  }
+
+  /** The site icon replaces the current one if it's not worse in quality (or always, when asked for anew) */
+  async #offerSiteIcon(original: Blob, isCurrent: () => boolean, replace = false): Promise<void> {
+    const blob = await this.#themed(original);
     const url = URL.createObjectURL(blob);
     const info = await analyze(url, 'site', {vector: blob.type.includes('svg')});
-    if (!isCurrent() || !info || (this.info && info.size < this.info.size)) {
+    if (!isCurrent() || !info || (!replace && this.info && info.size < this.info.size)) {
       URL.revokeObjectURL(url);
       return;
     }
     this.#setInfo(info);
     this.loaded = true;
+  }
+
+  /** An SVG that switches colours with the theme is drawn for SpeedDial's theme — the same in every browser */
+  async #themed(blob: Blob): Promise<Blob> {
+    if (!blob.type.includes('svg')) return blob;
+    const svg = await blob.text();
+    if (!dependsOnColorScheme(svg)) return blob;
+    this.schemeDependent = true;
+    return new Blob([fixSvgColorScheme(svg, icons.dark)], {type: 'image/svg+xml'});
   }
 
   #setInfo(info: IconInfo | null): void {
@@ -260,6 +307,7 @@ class IconsStore {
 
   #entries = new Map<string, IconEntry>();
   #resolveReady!: () => void;
+  #systemDark = new MediaQuery('(prefers-color-scheme: dark)');
 
   constructor() {
     this.ready = new Promise((resolve) => {
@@ -296,7 +344,22 @@ class IconsStore {
           this.reloadAll();
         }, SOURCE_CHANGE_DELAY);
       });
+
+      // Light and dark switched: only icons that depend on the theme are drawn again
+      let wasDark = this.dark;
+      $effect(() => {
+        const dark = this.dark;
+        if (dark === wasDark) return;
+        wasDark = dark;
+        for (const entry of this.#entries.values()) if (entry.schemeDependent) void entry.reload();
+      });
     });
+  }
+
+  /** SpeedDial's theme is dark: chosen in the settings, or following a dark system */
+  get dark(): boolean {
+    const {theme} = settings.current;
+    return theme === 'dark' || (theme === 'auto' && this.#systemDark.current);
   }
 
   /** Icons are shared by all pages of one site */
@@ -326,6 +389,12 @@ class IconsStore {
   async clearSiteIcons(): Promise<void> {
     await idbClear('icons');
     this.reloadAll();
+  }
+
+  /** "Load site icons again": everything stored is forgotten; icons on screen are asked for anew without flicker */
+  async refetchSiteIcons(): Promise<void> {
+    await idbClear('icons');
+    for (const entry of this.#entries.values()) void entry.refetch();
   }
 
   #sourceKey(): string {

@@ -12,12 +12,13 @@
   import SiteIcon from './grid/SiteIcon.svelte';
   import Icon from './ui/Icon.svelte';
 
-  // A bar at the bottom of the start pages (it stays in place while the tiles scroll): the most visited sites
-  // and recently closed tabs, each in a horizontally scrolling row. While they're off, the bar holds a small invitation instead —
-  // a hidden setting would go unnoticed
+  // A bar at the bottom of every folder (it stays in place while the tiles scroll): the most visited sites
+  // and recently closed tabs, each in a horizontally scrolling row — at hand wherever the user is. While they're off,
+  // the start pages hold a small invitation instead — a hidden setting would go unnoticed.
+  // Not in search results and not in these lists opened as folders — there it'd show the same thing twice
+  const anyFolder = $derived(bookmarks.loaded && !search.active && !bookmarks.virtual);
   const startPage = $derived(
-    bookmarks.loaded && !search.active && !bookmarks.virtual
-      && [ROOT_FOLDER_ID, bookmarks.barId, bookmarks.startFolder()].includes(bookmarks.folderId),
+    anyFolder && [ROOT_FOLDER_ID, bookmarks.barId, bookmarks.startFolder()].includes(bookmarks.folderId),
   );
   const folders = $derived(enabledVirtualFolders());
   const rows = $derived(folders
@@ -25,7 +26,7 @@
     // A cleared list stays, so what was removed can be brought back
     .filter((row) => row.items.length > 0 || shelves.hasHidden[row.id]));
   const showInvite = $derived(startPage && folders.length === 0 && !settings.current.shelfInviteDismissed);
-  const visible = $derived(startPage && (rows.length > 0 || showInvite));
+  const visible = $derived((anyFolder && rows.length > 0) || showInvite);
   const collapsed = $derived(settings.current.shelvesCollapsed && rows.length > 0);
   const panelId = $props.id();
 

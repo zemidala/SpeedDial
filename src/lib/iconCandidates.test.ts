@@ -30,13 +30,23 @@ describe('candidatesFromLinks', () => {
       {rel: 'manifest', href: '/site.webmanifest'},
     ], BASE);
 
+    // Tab icons (favicons, even SVG) come after icons made for home screens
     expect(result).toEqual([
       {url: 'https://example.com/favicon.ico', size: 48, penalty: 0.8},
-      {url: 'https://example.com/app/icon-32.png', size: 32},
+      {url: 'https://example.com/app/icon-32.png', size: 32, penalty: 0.4},
       {url: 'https://example.com/touch.png', size: 180},
       {url: 'https://example.com/touch-152.png', size: 152},
-      {url: 'https://example.com/logo.svg', size: VECTOR_SIZE},
+      {url: 'https://example.com/logo.svg', size: VECTOR_SIZE, penalty: 0.4},
     ]);
+  });
+
+  it('an app icon wins over an SVG tab icon, even one found at its usual path (GitHub)', () => {
+    const declared = candidatesFromLinks([{rel: 'icon', href: '/favicon.svg', type: 'image/svg+xml'}], BASE);
+    const ranked = rankCandidates([
+      ...declared,
+      {url: 'https://example.com/apple-touch-icon.png', size: 180, penalty: 0.2},
+    ]);
+    expect(ranked[0].url).toBe('https://example.com/apple-touch-icon.png');
   });
 });
 

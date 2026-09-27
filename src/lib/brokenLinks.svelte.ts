@@ -1,15 +1,8 @@
 // Marks of not working bookmarks for the page: tiles show a placeholder icon instead of the site's
-import {SvelteMap} from 'svelte/reactivity';
-import {
-  addBrokenMarks,
-  type BrokenMark,
-  type BrokenMarks,
-  loadBrokenMarks,
-  onBrokenMarksChanged,
-  removeBrokenMarks,
-} from './brokenLinks';
+import {type BrokenMark, brokenLinkStorage} from './brokenLinks';
 import {t} from './i18n/index.svelte';
 import type {LinkProblem} from './linkCheck';
+import {PerBookmarkStore} from './perBookmark.svelte';
 
 /** What's wrong with the link, for people: "Page not found (404)", "The site doesn't respond"… */
 export function describeProblem(problem: LinkProblem, status?: number): string {
@@ -18,32 +11,17 @@ export function describeProblem(problem: LinkProblem, status?: number): string {
   return t.linkCheck.unreachable;
 }
 
-class BrokenLinksStore {
-  #marks = new SvelteMap<string, BrokenMark>();
-
-  start(): void {
-    loadBrokenMarks().then((marks) => this.#replace(marks)).catch((error) => console.error('Failed to load link marks', error));
-    // Marks set in another tab or removed by the service worker
-    onBrokenMarksChanged((marks) => this.#replace(marks));
+class BrokenLinksStore extends PerBookmarkStore<BrokenMark> {
+  constructor() {
+    super(brokenLinkStorage);
   }
 
-  get(id: string): BrokenMark | undefined {
-    return this.#marks.get(id);
+  mark(marks: Record<string, BrokenMark>): Promise<void> {
+    return this.setMany(marks);
   }
 
-  async mark(entries: Record<string, BrokenMark>): Promise<void> {
-    Object.entries(entries).forEach(([id, mark]) => this.#marks.set(id, mark));
-    await addBrokenMarks(entries);
-  }
-
-  async unmark(ids: string[]): Promise<void> {
-    ids.forEach((id) => this.#marks.delete(id));
-    await removeBrokenMarks(ids);
-  }
-
-  #replace(marks: BrokenMarks): void {
-    for (const id of this.#marks.keys()) if (!(id in marks)) this.#marks.delete(id);
-    for (const [id, mark] of Object.entries(marks)) this.#marks.set(id, mark);
+  unmark(ids: string[]): Promise<void> {
+    return this.setMany(Object.fromEntries(ids.map((id) => [id, null])));
   }
 }
 

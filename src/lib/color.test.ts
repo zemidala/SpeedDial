@@ -15,7 +15,7 @@ function image(size: number, pixel: (x: number, y: number) => Rgba): Uint8Clampe
 describe('analyzePixels', () => {
   it('finds the colour of a solid icon and treats it as full size', () => {
     const result = analyzePixels(image(8, () => [220, 30, 40, 255]), 8, 8);
-    expect(result).toEqual({color: '#dc1e28', edgeColor: '#dc1e28', fullBleed: true});
+    expect(result).toEqual({color: '#dc1e28', edgeColor: '#dc1e28', fullBleed: true, darkMonochrome: false});
   });
 
   it('takes the logo colour, not the white background; the edge colour is the background', () => {
@@ -26,12 +26,18 @@ describe('analyzePixels', () => {
 
   it('transparent corners — an icon without its own background', () => {
     const data = image(8, (x, y) => (x >= 2 && x < 6 && y >= 2 && y < 6 ? [0, 150, 0, 255] : [0, 0, 0, 0]));
-    expect(analyzePixels(data, 8, 8)).toEqual({color: '#009600', edgeColor: null, fullBleed: false});
+    expect(analyzePixels(data, 8, 8)).toEqual({color: '#009600', edgeColor: null, fullBleed: false, darkMonochrome: false});
   });
 
-  it('monochrome black icon — black', () => {
+  it('monochrome black icon — black, and marked dark monochrome (GitHub-like)', () => {
     const data = image(8, (x) => (x < 4 ? [0, 0, 0, 255] : [0, 0, 0, 0]));
-    expect(analyzePixels(data, 8, 8).color).toBe('#000000');
+    expect(analyzePixels(data, 8, 8)).toMatchObject({color: '#000000', darkMonochrome: true});
+  });
+
+  it('a dark logo with its own background, or a coloured one, isn\'t dark monochrome', () => {
+    expect(analyzePixels(image(8, () => [30, 30, 30, 255]), 8, 8).darkMonochrome).toBe(false);
+    const navy = image(8, (x) => (x < 4 ? [10, 20, 90, 255] : [0, 0, 0, 0]));
+    expect(analyzePixels(navy, 8, 8).darkMonochrome).toBe(false);
   });
 
   it('fully transparent image — no colour', () => {

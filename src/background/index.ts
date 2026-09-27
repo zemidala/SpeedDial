@@ -1,5 +1,5 @@
 import {AUTO_BACKUP_ALARM, runCloudBackup, scheduleAutoBackup} from '../lib/backup/cloud';
-import {removeBrokenMarks} from '../lib/brokenLinks';
+import {brokenLinkStorage} from '../lib/brokenLinks';
 import {setLanguage} from '../lib/i18n/index.svelte';
 import {WELCOME_PAGE} from '../lib/links';
 import {onMessage, type RuntimeMessage, sendMessage} from '../lib/messages';
@@ -64,7 +64,7 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, _sender, sendResp
     return true;
   }
   if (message.type === 'check-link') {
-    checkLinkHere(message.url).then(sendResponse);
+    checkLinkHere(message.url, message.timeout).then(sendResponse);
     return true;
   }
   return false;
@@ -78,8 +78,7 @@ chrome.bookmarks.onRemoved.addListener((_id, {node}) => {
     item.children?.forEach(collect);
   };
   collect(node);
-  removeBrokenMarks(ids).catch((error) => console.error('Failed to remove link marks', error));
-  for (const storage of [iconOnlyStorage, descriptionStorage]) {
+  for (const storage of [brokenLinkStorage, iconOnlyStorage, descriptionStorage]) {
     storage.forget(ids).catch((error) => console.error('Failed to forget bookmark data', error));
   }
   Promise.all(ids.map((id) => deleteThumbnail(id).catch(() => undefined)))
@@ -90,7 +89,7 @@ chrome.bookmarks.onRemoved.addListener((_id, {node}) => {
 // A new address may well work: the "doesn't work" mark from the link check goes away
 chrome.bookmarks.onChanged.addListener((id, change) => {
   if (change.url === undefined) return;
-  removeBrokenMarks([id]).catch((error) => console.error('Failed to remove link mark', error));
+  brokenLinkStorage.forget([id]).catch((error) => console.error('Failed to remove link mark', error));
 });
 
 // Automatic cloud backup: a minute after changes to bookmarks, settings or thumbnails

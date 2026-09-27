@@ -20,7 +20,7 @@ export type RuntimeMessage =
   /** Page → service worker: load a site's page or manifest (reply — PageResponse), see requestSitePage */
   | {type: 'fetch-page'; url: string}
   /** Page → service worker: does the link work (reply — LinkCheck) */
-  | {type: 'check-link'; url: string};
+  | {type: 'check-link'; url: string; timeout?: number};
 
 /** A site's answer as the service worker read it; text — only for HTML and JSON */
 export type PageResponse =
@@ -38,8 +38,8 @@ export async function requestSitePage(url: string): Promise<PageResponse> {
 }
 
 /** The link check, done by the service worker for the same reason as requestSitePage */
-export async function requestLinkCheck(url: string): Promise<LinkCheck> {
-  const reply: unknown = await chrome.runtime.sendMessage({type: 'check-link', url} satisfies RuntimeMessage);
+export async function requestLinkCheck(url: string, timeout?: number): Promise<LinkCheck> {
+  const reply: unknown = await chrome.runtime.sendMessage({type: 'check-link', url, timeout} satisfies RuntimeMessage);
   if (!reply || typeof reply !== 'object' || !('problem' in reply)) throw new Error('The service worker didn\'t answer');
   return reply as LinkCheck;
 }

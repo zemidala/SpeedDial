@@ -22,9 +22,9 @@ export async function fetchPage(url: string): Promise<PageResponse> {
   }
 }
 
-export async function checkLinkHere(url: string): Promise<LinkCheck> {
+export async function checkLinkHere(url: string, timeout?: number): Promise<LinkCheck> {
   try {
-    return await checkLink(url, {signal: new AbortController().signal});
+    return await checkLink(url, {signal: new AbortController().signal, timeout});
   } catch {
     return {problem: 'unreachable'};
   }

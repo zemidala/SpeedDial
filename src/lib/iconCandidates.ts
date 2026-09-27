@@ -10,15 +10,22 @@ export interface IconCandidate {
   penalty?: number;
 }
 
+/*
+ * Order of preference. Icons made for home screens and apps (apple-touch-icon, manifest icons) are made to be seen
+ * as tiles: full-colour, often on the brand's own background, the same in light and dark themes. Tab icons (favicons,
+ * even SVG ones) are often a bare monochrome mark — GitHub's black octocat — that looks foreign on a tile
+ */
+const TAB_ICON_PENALTY = 0.4;
 // The real size of an .ico is known only after parsing the file — try it after declared ones
 const ICO_PENALTY = 0.8;
 
 /** Paths where sites often put icons without declaring them in the markup */
 export const WELL_KNOWN_ICONS: ReadonlyArray<{path: string; size: number; penalty: number}> = [
-  {path: '/favicon.svg', size: VECTOR_SIZE, penalty: 0.5},
-  {path: '/android-chrome-512x512.png', size: 512, penalty: 0.5},
-  {path: '/apple-touch-icon.png', size: 180, penalty: 0.5},
-  {path: '/apple-touch-icon-precomposed.png', size: 180, penalty: 0.6},
+  // App icons at their usual paths come before declared tab icons (see TAB_ICON_PENALTY)
+  {path: '/apple-touch-icon.png', size: 180, penalty: 0.2},
+  {path: '/android-chrome-512x512.png', size: 512, penalty: 0.2},
+  {path: '/apple-touch-icon-precomposed.png', size: 180, penalty: 0.3},
+  {path: '/favicon.svg', size: VECTOR_SIZE, penalty: 0.6},
   {path: '/favicon.ico', size: MIN_USEFUL_SIZE, penalty: 0.9},
 ];
 
@@ -66,9 +73,9 @@ export function candidatesFromLinks(links: LinkIcon[], baseUrl: string): IconCan
 
     const declared = parseSizes(sizes);
     if (declared) {
-      result.push({url, size: declared});
+      result.push({url, size: declared, ...(isTouch ? {} : {penalty: TAB_ICON_PENALTY})});
     } else if (isSvg(href, type)) {
-      result.push({url, size: VECTOR_SIZE});
+      result.push({url, size: VECTOR_SIZE, penalty: TAB_ICON_PENALTY});
     } else if (isTouch) {
       result.push({url, size: 180}); // Default apple-touch-icon size
     } else if (isIcoFile(href, type)) {

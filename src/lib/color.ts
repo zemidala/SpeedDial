@@ -7,6 +7,32 @@ export interface PixelAnalysis {
   edgeColor: string | null;
   /** Opaque corners — the icon has its own background and can be stretched over the whole plate */
   fullBleed: boolean;
+  /**
+   * A black or dark grey logo on a transparent background (like GitHub's): invisible on a dark tile,
+   * so there it's drawn light
+   */
+  darkMonochrome: boolean;
+}
+
+/** Share of the opaque pixels that must be dark and colourless for a "dark monochrome" icon */
+const DARK_MONOCHROME_SHARE = 0.9;
+
+function isDarkMonochrome(data: Uint8ClampedArray): boolean {
+  let opaque = 0;
+  let dark = 0;
+  let transparent = 0;
+  for (let i = 0; i < data.length; i += 4) {
+    if (data[i + 3] < 200) {
+      transparent++;
+      continue;
+    }
+    opaque++;
+    const max = Math.max(data[i], data[i + 1], data[i + 2]);
+    const min = Math.min(data[i], data[i + 1], data[i + 2]);
+    if (max < 90 && max - min < 25) dark++;
+  }
+  // Transparent around the logo — an icon with its own background shows fine as it is
+  return opaque > 0 && transparent > 0 && dark / opaque >= DARK_MONOCHROME_SHARE;
 }
 
 function toHex(r: number, g: number, b: number): string {
@@ -64,7 +90,12 @@ export function analyzePixels(data: Uint8ClampedArray, width: number, height: nu
   best ??= neutral.count > 0 ? neutral : null;
 
   const color = best ? toHex(best.r / best.count, best.g / best.count, best.b / best.count) : null;
-  return {color, edgeColor: averageEdgeColor(data, width, height), fullBleed: hasOpaqueCorners(data, width, height)};
+  return {
+    color,
+    edgeColor: averageEdgeColor(data, width, height),
+    fullBleed: hasOpaqueCorners(data, width, height),
+    darkMonochrome: isDarkMonochrome(data),
+  };
 }
 
 function averageEdgeColor(data: Uint8ClampedArray, width: number, height: number): string | null {

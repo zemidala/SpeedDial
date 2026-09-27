@@ -51,11 +51,17 @@ describe('checkLink', () => {
       .toEqual({problem: 'serverError', status: 502});
   });
 
-  it('no answer or a timeout — unreachable', async () => {
-    expect(await checkLink('https://a.example/', {signal, fetcher: fakeFetch({HEAD: 'error'}).fetcher}))
+  it('no answer or a timeout to both requests — unreachable', async () => {
+    expect(await checkLink('https://a.example/', {signal, fetcher: fakeFetch({HEAD: 'error', GET: 'error'}).fetcher}))
       .toEqual({problem: 'unreachable'});
-    expect(await checkLink('https://a.example/', {signal, fetcher: fakeFetch({HEAD: 'hang'}).fetcher, timeout: 10}))
+    expect(await checkLink('https://a.example/', {signal, fetcher: fakeFetch({HEAD: 'hang', GET: 'hang'}).fetcher, timeout: 10}))
       .toEqual({problem: 'unreachable'});
+  });
+
+  it('a server that drops HEAD but gives the page works', async () => {
+    const {fetcher, requests} = fakeFetch({HEAD: 'error', GET: 200});
+    expect(await checkLink('https://a.example/', {signal, fetcher})).toEqual({problem: null, status: 200});
+    expect(requests).toEqual(['HEAD', 'GET']);
   });
 
   it('stopping the check isn\'t reported as a broken link', async () => {

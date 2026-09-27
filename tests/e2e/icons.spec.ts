@@ -74,17 +74,23 @@ test('small images from the site are rejected', async ({context, newtab}) => {
   await expect(tile(newtab, 'Tiny').locator('.site-icon')).toHaveClass(/site-icon--letter/);
 });
 
-test('fill icon: the area is filled with the icon\'s edge colour', async ({context, newtab}) => {
+test('fill icon with its own background is shown whole as a rounded square — its own colours, no guessed fill', async ({context, newtab}) => {
   await serveSite(context, 'https://fill.example', {
     '/': {type: 'text/html', body: '<link rel="icon" sizes="192x192" href="/icon.png">'},
     '/icon.png': {type: 'image/png', body: await makePng(newtab, 192, '#e0a020')},
   });
-  await enableSiteIcons(context, newtab, {iconStyle: 'fill', iconScale: 100});
+  await enableSiteIcons(context, newtab, {iconStyle: 'fill', iconScale: 60});
   await seed(newtab, [{title: 'Fill', url: 'https://fill.example/'}]);
 
   const fill = tile(newtab, 'Fill');
-  await expect(fill.locator('.site-icon--fill .site-icon__image')).toHaveAttribute('src', /^blob:/);
-  await expect(fill.locator('.tile__visual')).toHaveCSS('background-color', 'rgb(224, 160, 32)');
+  const image = fill.locator('.site-icon--fill.site-icon--cover .site-icon__image');
+  await expect(image).toHaveAttribute('src', /^blob:/);
+  // Whole and square — nothing cut off
+  const box = (await image.boundingBox())!;
+  expect(box.width).toBeCloseTo(box.height, 0);
+  await expect(fill.locator('.site-icon--cover')).toHaveCSS('border-radius', /%|px/);
+  // No colour painted under it
+  await expect(fill.locator('.tile__visual')).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
 });
 
 /** A small×small image of colour noise upscaled without smoothing to size×size — like a browser favicon */
@@ -197,4 +203,149 @@ test('the site icon wins over the service', async ({context, newtab}) => {
   await newtab.reload();
   await expect(tile(newtab, 'Both').locator('.site-icon')).toHaveClass(/site-icon--cover/);
   expect(await tile(newtab, 'Both').evaluate((el) => el.style.getPropertyValue('--icon-color'))).toBe('#d03030');
+});
+
+test('an SVG icon that changes with the theme follows SpeedDial\'s theme, not the system\'s', async ({context, newtab}) => {
+  // Like GitHub's logo: black by default, white in a dark theme
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><style>rect{fill:#000}'
+    + '@media (prefers-color-scheme: dark){rect{fill:#fff}}</style><rect width="10" height="10"/></svg>';
+  await serveSite(context, 'https://themed.example', {
+    '/': {type: 'text/html', body: '<link rel="icon" type="image/svg+xml" href="/icon.svg">'},
+    '/icon.svg': {type: 'image/svg+xml', body: svg},
+  });
+  // The system is light, SpeedDial is dark
+  await newtab.emulateMedia({colorScheme: 'light'});
+  await enableSiteIcons(context, newtab, {theme: 'dark'});
+  await seed(newtab, [{title: 'Themed', url: 'https://themed.example/'}]);
+
+  const image = tile(newtab, 'Themed').locator('.site-icon__image');
+  const brightness = () => image.evaluate(async (img: HTMLImageElement) => {
+    await img.decode();
+    const canvas = new OffscreenCanvas(10, 10);
+    const context = canvas.getContext('2d')!;
+    context.drawImage(img, 0, 0, 10, 10);
+    return context.getImageData(5, 5, 1, 1).data[0];
+  });
+  await expect(image).toHaveAttribute('src', /^blob:/);
+  await expect.poll(brightness).toBeGreaterThan(200); // White on the dark theme
+
+  // Switching SpeedDial to light draws it black
+  const dialog = await openSettings(newtab);
+  await dialog.getByLabel('Светлая или тёмная').selectOption('light');
+  await expect.poll(brightness).toBeLessThan(50);
+});
+
+test('a black logo is drawn light on a dark tile without a plate, and left as is on a plate', async ({context, newtab}) => {
+  // GitHub's favicon: a black octocat on a transparent background
+  await serveSite(context, 'https://octo.example', {
+    '/': {type: 'text/html', body: '<link rel="icon" type="image/svg+xml" href="/icon.svg">'},
+    '/icon.svg': {
+      type: 'image/svg+xml',
+      body: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="#24292E"/></svg>',
+    },
+  });
+  await enableSiteIcons(context, newtab, {theme: 'dark', iconStyle: 'fill'});
+  await seed(newtab, [{title: 'Octo', url: 'https://octo.example/'}]);
+
+  const icon = tile(newtab, 'Octo').locator('.tile__visual .site-icon');
+  await expect(icon.locator('.site-icon__image')).toHaveAttribute('src', /^blob:/);
+  await expect(icon).toHaveClass(/site-icon--lighten/);
+
+  // On the light plate the black logo is visible as it is
+  const dialog = await openSettings(newtab);
+  await dialog.getByLabel('Вид иконок').selectOption('plate');
+  await expect(icon).not.toHaveClass(/site-icon--lighten/);
+});
+
+test('a site that didn\'t answer is asked again; "Load again" fetches every icon anew', async ({context, newtab}) => {
+  // First the site doesn't answer (offline, VPN off)
+  await context.route('https://later.example/**', (route) => route.abort('connectionrefused'));
+  await enableSiteIcons(context, newtab);
+  await seed(newtab, [{title: 'Later', url: 'https://later.example/'}]);
+  const readCache = () => newtab.evaluate(() => new Promise((resolve) => {
+    const request = indexedDB.open('speeddial');
+    request.onsuccess = () => {
+      const get = request.result.transaction('icons').objectStore('icons').get('https://later.example');
+      get.onsuccess = () => resolve(get.result ? {blob: Boolean(get.result.blob), retrySoon: get.result.retrySoon ?? false} : null);
+    };
+  }));
+  // Remembered as "the site didn't answer", not as "the site has no icon"
+  await expect.poll(readCache).toEqual({blob: false, retrySoon: true});
+
+  // The site is back; loading again finds its large icon
+  await context.unroute('https://later.example/**');
+  await serveSite(context, 'https://later.example', {
+    '/': {type: 'text/html', body: '<link rel="apple-touch-icon" href="/touch.png">'},
+    '/touch.png': {type: 'image/png', body: await makePng(newtab, 180, '#3060d0')},
+  });
+  const dialog = await openSettings(newtab);
+  await dialog.getByRole('button', {name: 'Загрузить заново'}).click();
+  await expect(dialog.getByRole('status').filter({hasText: 'Иконки сайтов загружаются заново'})).toBeVisible();
+  await expect.poll(readCache).toEqual({blob: true, retrySoon: false});
+  await expect(tile(newtab, 'Later').locator('.site-icon__image')).toHaveAttribute('src', /^blob:/);
+});
+
+test('a worse icon taken because the best one didn\'t download is only a stand-in', async ({context, newtab}) => {
+  let busy = true;
+  await context.route('https://busy.example/**', async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    const headers = {'Access-Control-Allow-Origin': '*'};
+    if (path === '/') {
+      return route.fulfill({headers, contentType: 'text/html', body: '<link rel="icon" type="image/svg+xml" href="/icon.svg">'
+        + '<link rel="apple-touch-icon" href="/touch.png">'});
+    }
+    if (path === '/icon.svg') {
+      return route.fulfill({
+        headers,
+        contentType: 'image/svg+xml',
+        body: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"><rect width="1" height="1" fill="red"/></svg>',
+      });
+    }
+    // The app icon — the preferred one — is "busy" at first
+    if (path === '/touch.png') {
+      return busy
+        ? route.fulfill({headers, status: 503})
+        : route.fulfill({headers, contentType: 'image/png', body: await makePng(newtab, 180, '#30a030')});
+    }
+    return route.fulfill({headers, status: 404});
+  });
+  await enableSiteIcons(context, newtab);
+  await seed(newtab, [{title: 'Busy', url: 'https://busy.example/'}]);
+  const readCache = () => newtab.evaluate(() => new Promise((resolve) => {
+    const request = indexedDB.open('speeddial');
+    request.onsuccess = () => {
+      const get = request.result.transaction('icons').objectStore('icons').get('https://busy.example');
+      get.onsuccess = () => resolve(get.result ? {type: get.result.blob?.type ?? null, retrySoon: get.result.retrySoon ?? false} : null);
+    };
+  }));
+  // The app icon answered "busy" — the SVG is used for now and asked again soon
+  await expect.poll(readCache).toEqual({type: 'image/svg+xml', retrySoon: true});
+
+  busy = false;
+  const dialog = await openSettings(newtab);
+  await dialog.getByRole('button', {name: 'Загрузить заново'}).click();
+  await expect.poll(readCache).toEqual({type: 'image/png', retrySoon: false});
+});
+
+test('an icon found while the site\'s manifest was "busy" is only a stand-in', async ({context, newtab}) => {
+  await context.route('https://manifest.example/**', async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    const headers = {'Access-Control-Allow-Origin': '*'};
+    if (path === '/') {
+      return route.fulfill({headers, contentType: 'text/html', body: '<link rel="manifest" href="/manifest.json">'
+        + '<link rel="apple-touch-icon" href="/touch.png">'});
+    }
+    if (path === '/manifest.json') return route.fulfill({headers, status: 429});
+    if (path === '/touch.png') return route.fulfill({headers, contentType: 'image/png', body: await makePng(newtab, 180, '#a03060')});
+    return route.fulfill({headers, status: 404});
+  });
+  await enableSiteIcons(context, newtab);
+  await seed(newtab, [{title: 'Manifest', url: 'https://manifest.example/'}]);
+  await expect.poll(() => newtab.evaluate(() => new Promise((resolve) => {
+    const request = indexedDB.open('speeddial');
+    request.onsuccess = () => {
+      const get = request.result.transaction('icons').objectStore('icons').get('https://manifest.example');
+      get.onsuccess = () => resolve(get.result ? {blob: Boolean(get.result.blob), retrySoon: get.result.retrySoon ?? false} : null);
+    };
+  }))).toEqual({blob: true, retrySoon: true});
 });

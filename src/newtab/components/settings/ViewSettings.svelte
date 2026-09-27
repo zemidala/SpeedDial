@@ -4,6 +4,7 @@
   import {LANGUAGE_NAMES, LANGUAGES, t} from '../../../lib/i18n/index.svelte';
   import {icons} from '../../../lib/icons.svelte';
   import {LOGO_SERVICES} from '../../../lib/logoServices';
+  import {showNotice} from '../../../lib/notice.svelte';
   import {BING_ACCESS, SITE_ACCESS} from '../../../lib/permissionSets';
   import {permissions} from '../../../lib/permissions.svelte';
   import {
@@ -48,6 +49,11 @@
       settings.update({siteIcons: false});
       await icons.clearSiteIcons();
     }
+  }
+
+  async function reloadSiteIcons() {
+    await icons.refetchSiteIcons();
+    showNotice(t.view.siteIconsReloading, 'info');
   }
 
   async function changeBackground(value: Background) {
@@ -169,6 +175,12 @@
     checked={icons.siteIconsEnabled}
     onchange={(enabled) => toggleSiteIcons(enabled)}
   />
+  {#if icons.siteIconsEnabled}
+    <!-- Every browser keeps its own icon cache; starting over makes them pick icons by the same rules again -->
+    <SettingRow label={t.view.reloadSiteIcons} hint={t.view.reloadSiteIconsHint}>
+      <button type="button" class="button" onclick={reloadSiteIcons}>{t.view.reloadSiteIconsButton}</button>
+    </SettingRow>
+  {/if}
   <SelectRow
     label={t.view.logoService}
     hint={logoServiceHint}

@@ -48,9 +48,14 @@ export async function checkLink(
   url: string,
   {signal, fetcher = fetch, timeout = CHECK_TIMEOUT}: {signal: AbortSignal; fetcher?: Fetch; timeout?: number},
 ): Promise<LinkCheck> {
+  // Some servers and protections drop a HEAD request outright — that alone says nothing, the page is asked for too
   try {
     const head = await request(url, 'HEAD', fetcher, signal, timeout);
     if (head < 400) return {problem: null, status: head};
+  } catch (error) {
+    if (signal.aborted) throw error;
+  }
+  try {
     const status = await request(url, 'GET', fetcher, signal, timeout);
     return {problem: classifyStatus(status), status};
   } catch (error) {
@@ -58,6 +63,9 @@ export async function checkLink(
     return {problem: 'unreachable'};
   }
 }
+
+/** The second attempt for sites that didn't answer: one at a time and with more patience */
+export const RECHECK_TIMEOUT = 30_000;
 
 /** Runs worker over items, at most `concurrency` at a time; stops taking new items once signal is aborted */
 export async function runPool<T>(

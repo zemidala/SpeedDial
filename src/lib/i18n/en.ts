@@ -264,6 +264,11 @@ export const en = {
     iconTint: 'Tint tiles with the icon color',
     siteIcons: 'High-quality icons',
     siteIconsHint: 'The extension finds SVG icons, app icons and large favicons on bookmarked sites. Needs access to sites',
+    reloadSiteIcons: 'Load site icons again',
+    reloadSiteIconsHint: 'Each browser remembers the icons it found. If icons in Chrome and Edge differ, '
+      + 'or a site was unavailable when its icon was looked for, load them again',
+    reloadSiteIconsButton: 'Load again',
+    siteIconsReloading: 'Site icons are being loaded again',
     logoService: 'Icon service',
     logoServiceHint: 'A fallback when the site itself has no large icon. The service will see your bookmark addresses',
     logoServiceNone: 'Don’t use',
@@ -465,11 +470,14 @@ export const en = {
     stoppedClean: (done: number, total: number) => `Stopped: checked ${done} of ${total}, all of them work`,
     notFound: (status: number) => `Page not found (${status})`,
     serverError: (status: number) => `Server error (${status})`,
-    unreachable: 'The site doesn’t respond',
+    unreachable: 'The site didn’t respond',
     alreadyMarked: 'marked',
     select: (title: string) => `Select “${title}”`,
-    actionsHint: 'Server errors are often temporary, so they aren’t selected. A marked bookmark stays, but its tile shows '
-      + 'a “doesn’t work” icon; the mark goes away when a later check finds the link working',
+    rechecking: (count: number) => `Asking again the sites that didn’t respond: ${count} left`,
+    actionsHint: 'Only pages the site says are gone are selected. Server errors are often temporary, and a site that '
+      + 'didn’t respond to the extension may still open in the browser — internal company sites, sites behind a VPN. '
+      + 'A marked bookmark stays, but its tile shows a “doesn’t work” icon; the mark goes away when a later check '
+      + 'finds the link working',
     mark: (count: number) => `Mark (${count})`,
     delete: (count: number) => `Delete (${count})`,
     marked: (count: number) => `Marked as not working: ${count}`,
