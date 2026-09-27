@@ -58,10 +58,10 @@ When the release changes, the next new tab tells the user what's new. The list o
 ### Releasing
 
 1. Set the new version (three parts) in `public/manifest.json` and `package.json`, add its changes to
-   `whatsNew.releases`, commit.
+   `whatsNew.releases`, write the release notes with install steps in `docs/releases/v2.1.0.md`, commit.
 2. Tag the commit and push the tag: `git tag -a v2.1.0 -m "SpeedDial 2.1.0"`, then `git push origin v2.1.0`.
-3. On GitHub, create a release from the tag (Releases → Draft a new release) with the same list of changes, and
-   attach the package from `npm run package`.
+3. The Release workflow (`.github/workflows/release.yml`) checks and builds it, packs the zip and publishes the
+   GitHub release with those notes. It stops if the tag doesn't match the manifest version or the notes are missing.
 4. Upload the same package to the stores; texts, permission notes and assets are in
    [docs/store/listing.md](docs/store/listing.md), the privacy policy in [docs/privacy-policy.md](docs/privacy-policy.md).
 

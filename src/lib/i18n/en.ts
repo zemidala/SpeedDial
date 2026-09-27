@@ -646,6 +646,13 @@ export const en = {
       {
         release: '2.0.0',
         changes: [
+          'Bookmarks from another browser merge with yours: same-named folders join, repeats are skipped, and it can be undone',
+          'Search: folders in the results, recent searches and optional search engine suggestions',
+          '“Add to folder” in the browser’s context menu, with recent folders and any other one',
+          'The toolbar button opens a popup: how many bookmarks, the version and a check for updates',
+          'Name alignment and Word-like buttons for tile names; a choice of the folder preview grid',
+          'Placeholders while loading, a “Back to top” button',
+          'Thumbnails are made out of the way, in the corner of the window, without taking the focus',
           'Most visited and recently closed shelves at the bottom of every folder; they tuck away to a tab',
           'Link check: all bookmarks, one folder or one bookmark; broken ones can be marked or deleted',
           'Duplicate bookmark finder',
