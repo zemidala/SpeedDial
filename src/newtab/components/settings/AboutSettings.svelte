@@ -4,6 +4,7 @@
   import {formatDateTime, t} from '../../../lib/i18n/index.svelte';
   import {SUPPORT_URL, WELCOME_PAGE} from '../../../lib/links';
   import {releaseOf} from '../../../lib/whatsNew';
+  import UpdateCheck from '../ui/UpdateCheck.svelte';
   import SettingRow from './SettingRow.svelte';
   import SettingsGroup from './SettingsGroup.svelte';
 
@@ -41,6 +42,12 @@
       <p class="about__version">{t.about.versionLine(info.version)}</p>
     </div>
   </div>
+
+  <SettingsGroup title={t.updates.title}>
+    <div class="about__updates">
+      <UpdateCheck development={info.development}/>
+    </div>
+  </SettingsGroup>
 
   <SettingsGroup title={t.about.details}>
     <SettingRow label={t.about.version}>
@@ -91,6 +98,10 @@
 {/if}
 
 <style>
+  .about__updates {
+    padding: 10px 0;
+  }
+
   .about__changes {
     margin: 0;
     padding: 8px 0 8px 20px;

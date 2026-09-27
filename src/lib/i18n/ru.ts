@@ -646,6 +646,29 @@ export const ru: Messages = {
     welcomePage: 'Страница приветствия',
   },
 
+  updates: {
+    title: 'Обновления',
+    checking: 'Проверяю обновления…',
+    available: (version: string) => `Доступна версия ${version}`,
+    latest: 'Установлена последняя версия',
+    throttled: 'Слишком частые проверки — попробуйте позже',
+    failed: (error: string) => `Не удалось проверить: ${error}`,
+    update: 'Обновить',
+    updateHint: 'SpeedDial перезапустится с новой версией',
+    checkAgain: 'Проверить снова',
+    developmentAvailable: (version: string) => `На диске новая сборка: ${version}`,
+    developmentLatest: 'Загружена сборка с диска',
+    reload: 'Перезагрузить',
+    reloadHint: 'SpeedDial перезапустится и прочитает файлы с диска',
+  },
+
+  popup: {
+    sites: 'Сайты',
+    folders: 'Папки',
+    broken: 'Не работают',
+    open: 'Открыть SpeedDial',
+  },
+
   support: {
     title: 'Поддержать автора',
     button: 'Поддержать автора',

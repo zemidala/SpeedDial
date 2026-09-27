@@ -10,6 +10,7 @@ import {showNotice} from '../lib/notice.svelte';
 import {descriptions, iconOnly} from '../lib/perBookmark.svelte';
 import {permissions} from '../lib/permissions.svelte';
 import {settings} from '../lib/settings/store.svelte';
+import {takeSettingsRequest} from '../lib/settingsRequest';
 import {shelves} from '../lib/shelves.svelte';
 import {thumbnails} from '../lib/thumbnails/store.svelte';
 import {openSettingsTab} from '../lib/ui.svelte';
@@ -40,6 +41,13 @@ takePendingRelease()
     if (release) showNotice(t.whatsNew.notice(release), 'info', {label: t.whatsNew.open, run: () => openSettingsTab('about')});
   })
   .catch(logError('Failed to check for an update'));
+
+// Opened from the toolbar popup's "Settings"
+takeSettingsRequest()
+  .then((tab) => {
+    if (tab) openSettingsTab(tab);
+  })
+  .catch(logError('Failed to read the settings request'));
 
 isManifestOutdated()
   .then((outdated) => {

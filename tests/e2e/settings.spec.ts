@@ -51,7 +51,7 @@ test('About shows the version and build and copies the details', async ({newtab}
     };
   });
   await dialog.getByRole('button', {name: 'Скопировать сведения'}).click();
-  await expect(dialog.getByRole('status')).toHaveText('Сведения скопированы');
+  await expect(dialog.getByRole('status').filter({hasText: 'Сведения скопированы'})).toBeVisible();
   expect(await newtab.evaluate(() => (window as unknown as {copied: string}).copied)).toMatch(new RegExp(`^SpeedDial ${version}\\nСборка: \\d+ \\(`));
 
   // Donation placeholder and the welcome page

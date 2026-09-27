@@ -8,7 +8,8 @@
     "build": "vite build",
     "check": "svelte-check && eslint .",
     "test": "vitest run",
-    "test:e2e": "vite build && playwright test"
+    "test:e2e": "vite build && playwright test",
+    "icons": "node icon/render.mjs"
   },
   "repository": {
     "type": "git",

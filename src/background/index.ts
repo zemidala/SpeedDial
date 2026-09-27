@@ -4,6 +4,7 @@ import {setLanguage} from '../lib/i18n/index.svelte';
 import {WELCOME_PAGE} from '../lib/links';
 import {onMessage, type RuntimeMessage, sendMessage} from '../lib/messages';
 import {descriptionStorage, iconOnlyStorage} from '../lib/perBookmark';
+import {rememberAvailableUpdate, restoreUpdateMark} from '../lib/updates';
 import {rememberUpdate} from '../lib/whatsNew';
 import {loadSettings, onSettingsChanged} from '../lib/settings/storage';
 import {deleteThumbnail} from '../lib/thumbnails/storage';
@@ -19,10 +20,11 @@ const applyLanguage = () => {
 applyLanguage();
 onSettingsChanged(applyLanguage);
 
-// Clicking the extension icon opens a new tab, i.e. SpeedDial
-chrome.action.onClicked.addListener(() => {
-  chrome.tabs.create({});
+// Updates: the browser downloaded one — the toolbar icon gets a mark until it's installed (see updates.ts)
+chrome.runtime.onUpdateAvailable.addListener(({version}) => {
+  rememberAvailableUpdate(version).catch((error) => console.error('Failed to remember the update', error));
 });
+restoreUpdateMark().catch((error) => console.error('Failed to restore the update mark', error));
 
 // Item in the browser's context menu: created on install and startup, updated when the setting changes
 setupContextMenu();

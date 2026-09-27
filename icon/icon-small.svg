@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+  <!-- 16 px: drawn on the pixel grid so the tiles stay apart -->
+  <rect width="16" height="16" rx="3.5" fill="#ffb703"/>
+  <path d="M3 1h10v14l-5-3.5L3 15z" fill="#1d3557"/>
+  <rect x="4" y="3" width="3" height="3" fill="#fff"/>
+  <rect x="9" y="3" width="3" height="3" fill="#fff"/>
+  <rect x="4" y="8" width="3" height="3" fill="#fff"/>
+  <rect x="9" y="8" width="3" height="3" fill="#fff"/>
+</svg>

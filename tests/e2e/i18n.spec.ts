@@ -69,5 +69,5 @@ test('manifest description comes from _locales, English by default', () => {
     const messages = read(`_locales/${locale}/messages.json`);
     expect(Object.keys(messages).sort()).toEqual(['actionTitle', 'extDescription']);
   }
-  expect(read('_locales/en/messages.json').actionTitle.message).toBe('Open SpeedDial');
+  expect(read('_locales/en/messages.json').actionTitle.message).toBe('SpeedDial');
 });

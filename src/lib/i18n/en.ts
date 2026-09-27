@@ -635,6 +635,29 @@ export const en = {
     welcomePage: 'Welcome page',
   },
 
+  updates: {
+    title: 'Updates',
+    checking: 'Checking for updates…',
+    available: (version: string) => `Version ${version} is available`,
+    latest: 'This is the latest version',
+    throttled: 'Checked too often — try again later',
+    failed: (error: string) => `Couldn’t check: ${error}`,
+    update: 'Update',
+    updateHint: 'SpeedDial restarts with the new version',
+    checkAgain: 'Check again',
+    developmentAvailable: (version: string) => `A newer build is on disk: ${version}`,
+    developmentLatest: 'The build on disk is loaded',
+    reload: 'Reload',
+    reloadHint: 'SpeedDial restarts and reads its files from disk',
+  },
+
+  popup: {
+    sites: 'Sites',
+    folders: 'Folders',
+    broken: 'Don’t work',
+    open: 'Open SpeedDial',
+  },
+
   support: {
     title: 'Support the author',
     button: 'Support the author',
