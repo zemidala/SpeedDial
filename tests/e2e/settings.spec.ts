@@ -35,9 +35,11 @@ test('About shows the version and build and copies the details', async ({newtab}
   const build = dialog.getByRole('tabpanel');
   await expect(build.getByRole('heading', {name: 'Сведения'})).toBeVisible();
   await expect(build).toContainText(version);
-  // Build number, the short commit hash (optionally marked -dirty) and the build date
-  await expect(build).toContainText(/\d+ \([0-9a-f]{7,}(-dirty)?\) · /);
-  await expect(build).toContainText(new RegExp(`Версия ${version.replaceAll('.', '\\.')}, сборка \\d+`));
+  // The build number is the fourth part of the version, and next to it the commit (maybe not committed yet) and date
+  const buildNumber = version.split('.')[3];
+  expect(buildNumber).toMatch(/^\d+$/);
+  await expect(build).toContainText(new RegExp(`${buildNumber}\\s*\\([0-9a-f]{7,}(, не закоммичена)?\\)\\s*· `));
+  await expect(build).toContainText(`Версия ${version}`);
   await expect(build).toContainText(await newtab.evaluate(() => chrome.runtime.id));
   await expect(build).toContainText('Разработка (распакованное)');
 
@@ -241,4 +243,83 @@ test('background image', async ({newtab}) => {
 
   await dialog.getByRole('button', {name: 'Убрать'}).click();
   await expect(newtab.locator('body')).not.toHaveClass(/page--background-image/);
+});
+
+test('background image from a link: checked before it\'s used', async ({context, newtab}) => {
+  const png = await makePng(newtab, 64, '#654321');
+  await context.route('https://pictures.example/**', (route) => (route.request().url().endsWith('/sky.png')
+    ? route.fulfill({contentType: 'image/png', body: png})
+    : route.fulfill({status: 404})));
+  const dialog = await openSettings(newtab);
+  await dialog.getByLabel('Фон', {exact: true}).selectOption('url');
+  const field = dialog.getByLabel('Ссылка на картинку');
+
+  // A link that doesn't lead to a picture is pointed out and not used
+  await field.fill('pictures.example/missing.png');
+  await field.blur();
+  await expect(dialog.getByText('Картинка по этой ссылке не загрузилась — проверьте адрес')).toBeVisible();
+  await expect(newtab.locator('body')).not.toHaveClass(/page--background-image/);
+
+  await field.fill('pictures.example/sky.png');
+  await field.blur();
+  await expect(field).toHaveValue('https://pictures.example/sky.png');
+  await expect(newtab.locator('body')).toHaveClass(/page--background-image/);
+  await expect.poll(backgroundLayer(newtab, 'background-image')).toContain('url("https://pictures.example/sky.png")');
+  // Blur and dimming work for it too
+  await expect(dialog.getByLabel('Размытие фона')).toBeVisible();
+});
+
+test('after an update to a new release the new tab tells what\'s new, once', async ({newtab}) => {
+  // What the service worker leaves after an update from 1.9.0 to this release
+  await newtab.evaluate(() => chrome.storage.local.set({whatsNewPending: '2.0.0'}));
+  await newtab.reload();
+  const notice = newtab.getByRole('status').filter({hasText: 'SpeedDial обновлён до версии 2.0.0'});
+  await notice.getByRole('button', {name: 'Что нового'}).click();
+
+  const dialog = newtab.getByRole('dialog', {name: 'Настройки'});
+  await expect(dialog.getByRole('heading', {name: 'Что нового в версии 2.0.0'})).toBeVisible();
+  await expect(dialog.getByText('Поиск дублей закладок')).toBeVisible();
+
+  // Told once
+  await newtab.reload();
+  await expect(tile(newtab, 'Example')).toBeVisible();
+  await newtab.waitForTimeout(500);
+  await expect(newtab.getByRole('status').filter({hasText: 'обновлён до версии'})).toHaveCount(0);
+});
+
+test('a click outside closes the settings if nothing was changed, and keeps them open otherwise', async ({newtab}) => {
+  let dialog = await openSettings(newtab);
+  await newtab.mouse.click(5, 5);
+  await expect(dialog).toHaveCount(0);
+
+  dialog = await openSettings(newtab);
+  await dialog.getByLabel('Количество колонок').selectOption('3');
+  await newtab.mouse.click(5, 5);
+  await expect(dialog).toBeVisible();
+  // Selecting text that ends outside the window doesn't close it either
+  await dialog.getByRole('button', {name: 'Готово'}).click();
+  await expect(dialog).toHaveCount(0);
+});
+
+test('changes since the settings opened are marked on their rows and tabs', async ({newtab}) => {
+  const dialog = await openSettings(newtab);
+  const viewTab = dialog.getByRole('tab', {name: /Вид/});
+  const changedMark = (tab: import('@playwright/test').Locator) => tab.locator('.settings-tabs__changed');
+  await expect(changedMark(viewTab)).toHaveCount(0);
+
+  await dialog.getByLabel('Количество колонок').selectOption('3');
+  const row = dialog.locator('.setting-row', {has: newtab.getByLabel('Количество колонок')});
+  await expect(row).toHaveClass(/setting-row--changed/);
+  await expect(changedMark(viewTab)).toHaveCount(1);
+
+  // Seen from another tab too
+  await dialog.getByRole('tab', {name: /Общие/}).click();
+  await expect(changedMark(viewTab)).toHaveCount(1);
+  await expect(changedMark(dialog.getByRole('tab', {name: /Общие/}))).toHaveCount(0);
+
+  // Put back as it was — nothing is marked any more
+  await viewTab.click();
+  await dialog.getByLabel('Количество колонок').selectOption('6');
+  await expect(changedMark(viewTab)).toHaveCount(0);
+  await expect(row).not.toHaveClass(/setting-row--changed/);
 });

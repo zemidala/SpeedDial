@@ -14,6 +14,8 @@
     SEARCH_ENGINES,
     type SearchEngine,
     SORT_ORDERS,
+    SUBFOLDER_STYLES,
+    type SubfolderStyle,
     type SortOrder,
     TYPE_ORDERS,
     type TypeOrder,
@@ -82,22 +84,35 @@
     label={t.general.defaultFolder}
     hint={t.general.defaultFolderHint}
     value={startFolderValue}
+    setting="defaultFolderId"
     options={folderOptions}
     placeholder={t.common.chooseFolder}
     onchange={(value) => settings.update({defaultFolderId: value === bookmarks.barId ? BOOKMARKS_BAR_ID : value})}
   />
   <SwitchRow key="rememberLastFolder" label={t.general.rememberLastFolder}/>
   <SwitchRow key="folderPreview" label={t.general.folderPreview} hint={t.general.folderPreviewHint}/>
+  {#if current.folderPreview}
+    <SelectRow
+      label={t.general.subfolderStyle}
+      hint={t.general.subfolderStyleHint}
+      value={current.subfolderStyle}
+      setting="subfolderStyle"
+      options={SUBFOLDER_STYLES.map((style) => ({value: style, label: t.general.subfolderStyles[style]}))}
+      onchange={(value) => settings.update({subfolderStyle: value as SubfolderStyle})}
+    />
+  {/if}
   <SwitchRow
     label={t.general.showMostVisited}
     hint={t.general.showMostVisitedHint}
     checked={current.showMostVisited && permissions.topSites}
+    setting="showMostVisited"
     onchange={(enabled) => toggleVirtualFolder(MOST_VISITED_ID, enabled)}
   />
   <SwitchRow
     label={t.general.showRecentlyClosed}
     hint={t.general.showRecentlyClosedHint}
     checked={current.showRecentlyClosed && permissions.sessions}
+    setting="showRecentlyClosed"
     onchange={(enabled) => toggleVirtualFolder(RECENTLY_CLOSED_ID, enabled)}
   />
 </SettingsGroup>
@@ -106,11 +121,12 @@
   <SelectRow
     label={t.general.searchEngine}
     value={current.searchEngine}
+    setting="searchEngine"
     options={SEARCH_ENGINES.map((engine) => ({value: engine, label: searchEngineName(engine)}))}
     onchange={(value) => settings.update({searchEngine: value as SearchEngine})}
   />
   {#if current.searchEngine === 'custom'}
-    <SettingRow label={t.general.customSearchUrl} hint={t.general.customSearchUrlHint}>
+    <SettingRow label={t.general.customSearchUrl} hint={t.general.customSearchUrlHint} setting="customSearchUrl">
       {#snippet children(id)}
         <input
           {id}
@@ -125,7 +141,7 @@
   {/if}
   <SwitchRow key="showServices" label={t.general.showServices} hint={t.general.showServicesHint}/>
   {#if current.showServices}
-    <SettingRow label={t.general.services} hint={t.general.servicesHint} stacked>
+    <SettingRow label={t.general.services} hint={t.general.servicesHint} stacked setting="services">
       {#snippet children(id)}
         <textarea {id} class="textarea" rows="6" bind:value={servicesText} onchange={saveServices}></textarea>
       {/snippet}
@@ -140,6 +156,7 @@
     label={t.advanced.confirmDelete}
     hint={t.advanced.confirmDeleteHint}
     checked={current.confirmDelete}
+    setting="confirmDelete"
     onchange={(confirmDelete) => settings.update({confirmDelete})}
   />
   <SwitchRow key="dragAndDrop" label={t.general.dragAndDrop}/>
@@ -153,6 +170,7 @@
     label={t.general.sortOrder}
     hint={t.general.sortHint}
     value={current.sortOrder}
+    setting="sortOrder"
     options={SORT_ORDERS.map((order) => ({value: order, label: t.sort.orders[order]}))}
     onchange={(value) => settings.update({sortOrder: value as SortOrder})}
   />
@@ -160,6 +178,7 @@
     label={t.general.typeOrder}
     hint={t.general.sortHint}
     value={current.typeOrder}
+    setting="typeOrder"
     options={TYPE_ORDERS.map((order) => ({value: order, label: t.sort.typeOrders[order]}))}
     onchange={(value) => settings.update({typeOrder: value as TypeOrder})}
   />
@@ -170,6 +189,7 @@
     label={t.general.autoCapture}
     hint={t.general.autoCaptureHint}
     value={current.autoCapture}
+    setting="autoCapture"
     options={AUTO_CAPTURES.map((mode) => ({value: mode, label: t.general.autoCaptureModes[mode]}))}
     onchange={(value) => changeAutoCapture(value as AutoCapture)}
   />

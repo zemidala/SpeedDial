@@ -101,9 +101,10 @@ test('name position: inside and outside, top and bottom', async ({newtab}) => {
     return `${top ? 'top' : 'bottom'}-${inside ? 'inside' : 'outside'}`;
   };
 
-  expect(await place()).toBe('bottom-inside');
+  // By default the names are above the tiles
+  expect(await place()).toBe('top-outside');
   const dialog = await openSettings(newtab);
-  for (const position of ['top-inside', 'bottom-outside', 'top-outside', 'bottom-inside']) {
+  for (const position of ['top-inside', 'bottom-outside', 'bottom-inside', 'top-outside']) {
     await dialog.getByLabel('Положение названий').selectOption(position);
     await expect.poll(place).toBe(position);
   }

@@ -74,10 +74,11 @@ export function imageToBlob(image: BackupImage): Blob {
 
 async function toBackupNode(node: chrome.bookmarks.BookmarkTreeNode, withImages: boolean): Promise<BackupNode> {
   const result: BackupNode = {title: node.title};
+  // A bookmark's thumbnail, or a folder's own picture
+  const thumbnail = withImages ? await getThumbnail(node.id).catch(() => undefined) : undefined;
+  if (thumbnail) result.thumbnail = {...await blobToImage(thumbnail.blob), source: thumbnail.source};
   if (node.url !== undefined) {
     result.url = node.url;
-    const thumbnail = withImages ? await getThumbnail(node.id).catch(() => undefined) : undefined;
-    if (thumbnail) result.thumbnail = {...await blobToImage(thumbnail.blob), source: thumbnail.source};
   } else {
     result.children = [];
     for (const child of node.children ?? []) result.children.push(await toBackupNode(child, withImages));
@@ -195,10 +196,9 @@ export async function restoreBookmarks(
       const match = existing.find((item) => sameNode(item, node));
       if (!match) {
         await create(node, parentId);
-      } else if (node.url !== undefined) {
-        await restoreImage(match.id, node);
       } else {
-        await merge(node.children ?? [], match.id);
+        await restoreImage(match.id, node);
+        if (node.url === undefined) await merge(node.children ?? [], match.id);
       }
     }
   };

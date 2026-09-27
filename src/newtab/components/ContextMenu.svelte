@@ -10,7 +10,7 @@
   import {search} from '../../lib/search.svelte';
   import {settings} from '../../lib/settings/store.svelte';
   import {shelves} from '../../lib/shelves.svelte';
-  import {openDuplicates, openLinkCheck, openSettings, requestDelete, ui} from '../../lib/ui.svelte';
+  import {openDuplicates, openLinkCheck, openSettings, requestDelete, requestOpenAll, ui} from '../../lib/ui.svelte';
   import {isWebUrl} from '../../lib/url';
   import {
     clearShelf,
@@ -54,6 +54,17 @@
     // Incognito opens only web pages: extension pages have no access in incognito
     if (node.url && isWebUrl(node.url)) {
       entries.push({label: t.menu.openIncognito, action: open('incognito')});
+    }
+    // A folder's bookmarks, like "Open all" in the browser: the ones right inside, subfolders aren't opened
+    if (!node.url) {
+      const hasBookmarks = bookmarks.previews[node.id]?.some((item) => item.url) ?? true;
+      const openAll = (where: 'tabs' | 'window') => async () =>
+        requestOpenAll(await chrome.bookmarks.getChildren(node.id), where);
+      entries.push(
+        'separator',
+        {label: t.menu.openAll, icon: 'external', disabled: !hasBookmarks, action: openAll('tabs')},
+        {label: t.menu.openAllInWindow, disabled: !hasBookmarks, action: openAll('window')},
+      );
     }
     return entries;
   }
@@ -182,9 +193,9 @@
     if (node.url) entries.push(copyLinkEntry(node.url), 'separator');
     entries.push(...createEntries(node), 'separator');
     entries.push({label: t.menu.edit, icon: 'pencil', action: () => (ui.dialog = {kind: 'edit', node})});
+    // A bookmark's icon and thumbnail, a folder's own picture
+    entries.push({label: node.url ? t.menu.icon : t.menu.folderImage, icon: 'image', action: () => (ui.dialog = {kind: 'icon', node})});
     if (node.url) {
-      const bookmark = node as BookmarkNode & {url: string};
-      entries.push({label: t.menu.icon, icon: 'image', action: () => (ui.dialog = {kind: 'icon', node: bookmark})});
       if (brokenLinks.get(node.id)) {
         entries.push({label: t.linkCheck.unmark, icon: 'check', action: () => brokenLinks.unmark([node.id])});
       }
@@ -231,6 +242,16 @@
       'separator',
       refreshEntry(),
     ];
+    // Inside a folder the check can also cover just this folder (with its subfolders)
+    const {id, title} = currentFolder();
+    if (id !== ROOT_FOLDER_ID && !isVirtualFolder(id) && !search.active) {
+      const all = entries.findIndex((entry) => entry !== 'separator' && entry.label === t.linkCheck.menuAll);
+      entries.splice(all + 1, 0, {
+        label: t.linkCheck.menuThisFolder,
+        icon: 'linkOff',
+        action: () => openLinkCheck({kind: 'folder', id, title}),
+      });
+    }
     // Inside most visited or recently closed: clearing the list
     if (isVirtualFolder(bookmarks.folderId)) entries.splice(-1, 0, ...listEntries(bookmarks.folderId), 'separator');
     // If the settings button is hidden, the settings open from here

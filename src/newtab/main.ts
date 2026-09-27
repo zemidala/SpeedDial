@@ -12,6 +12,8 @@ import {permissions} from '../lib/permissions.svelte';
 import {settings} from '../lib/settings/store.svelte';
 import {shelves} from '../lib/shelves.svelte';
 import {thumbnails} from '../lib/thumbnails/store.svelte';
+import {openSettingsTab} from '../lib/ui.svelte';
+import {takePendingRelease} from '../lib/whatsNew';
 import App from './App.svelte';
 import './styles/index.css';
 
@@ -31,6 +33,13 @@ brokenLinks.start();
 iconOnly.start();
 descriptions.start();
 background.load().catch(logError('Failed to load background'));
+
+// Updated to a new release: tell once, with a way to the list of changes
+takePendingRelease()
+  .then((release) => {
+    if (release) showNotice(t.whatsNew.notice(release), 'info', {label: t.whatsNew.open, run: () => openSettingsTab('about')});
+  })
+  .catch(logError('Failed to check for an update'));
 
 isManifestOutdated()
   .then((outdated) => {

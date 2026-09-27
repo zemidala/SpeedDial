@@ -3,9 +3,9 @@
 // when the extension is reloaded. After the files change, new code may run against the old manifest
 // and, for example, request permissions the browser doesn't know about yet
 
-// Fields the extension's behaviour depends on
+// Fields the extension's behaviour depends on. Not the version: it changes with every build (see vite.config.ts),
+// and a new version alone needs no reload
 const RELEVANT_KEYS = [
-  'version',
   'permissions',
   'optional_permissions',
   'host_permissions',

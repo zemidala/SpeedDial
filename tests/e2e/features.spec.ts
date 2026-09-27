@@ -104,17 +104,25 @@ test('while dragging, tiles make room and a ghost stays in the tile\'s place', a
   await expect(tile(newtab, 'Альфа')).toHaveClass(/tile--dragging/);
   expect(await browserOrder()).toEqual(['Бета', 'Альфа', 'Папка']);
 
-  // Over the middle of a folder it's highlighted, and tiles don't move
-  const folder = await center(tile(newtab, 'Папка'));
-  await newtab.mouse.move(folder.x, folder.y, {steps: 8});
-  await expect(tile(newtab, 'Папка')).toHaveClass(/tile--drop-into/);
-  await newtab.mouse.move(beta.box.x + 10, beta.y, {steps: 8});
-  await expect(tile(newtab, 'Папка')).not.toHaveClass(/tile--drop-into/);
-
   await dropAt(newtab, beta.box.x + 10, beta.y);
   await expect.poll(browserOrder).toEqual(['Альфа', 'Бета', 'Папка']);
   await expect(tile(newtab, 'Альфа')).not.toHaveClass(/tile--dragging/);
   expect(await titles(newtab)).toEqual(['Альфа', 'Бета', 'Папка']);
+
+  // Over the middle of a folder it's highlighted, and tiles don't move; away from it the highlight goes.
+  // A drag of its own: after tiles have made room, emulated dragging stops delivering dragover (a real browser doesn't)
+  await newtab.waitForTimeout(400); // Tiles finish sliding into place
+  const bravo = await center(tile(newtab, 'Бета'));
+  const folder = await center(tile(newtab, 'Папка'));
+  await newtab.mouse.move(bravo.x, bravo.y);
+  await newtab.mouse.down();
+  await newtab.mouse.move(folder.x, folder.y, {steps: 8});
+  await expect(tile(newtab, 'Папка')).toHaveClass(/tile--drop-into/);
+  expect(await titles(newtab)).toEqual(['Альфа', 'Бета', 'Папка']);
+  await newtab.mouse.move(bravo.x, bravo.y, {steps: 8});
+  await expect(tile(newtab, 'Папка')).not.toHaveClass(/tile--drop-into/);
+  await dropAt(newtab, bravo.x, bravo.y);
+  await expect.poll(browserOrder).toEqual(['Альфа', 'Бета', 'Папка']);
 });
 
 test('a tile can be dropped into a folder from the side; lingering at the folder edge places it next to it', async ({newtab}) => {

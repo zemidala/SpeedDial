@@ -71,6 +71,9 @@ export const en = {
     openInNewTab: 'Open in new tab',
     openInBackground: 'Open in background tab',
     openInNewWindow: 'Open in new window',
+    openAll: 'Open all bookmarks',
+    openAllInWindow: 'Open all in a new window',
+    folderImage: 'Image…',
     openIncognito: 'Open in incognito window',
     back: 'Back',
     forward: 'Forward',
@@ -165,6 +168,7 @@ export const en = {
 
   iconDialog: {
     title: (name: string) => `Icon for “${name}”`,
+    folderTitle: (name: string) => `Image for the folder “${name}”`,
     currentImage: 'Current image',
     refreshIcon: 'Reload site icon',
     iconUpdating: 'Loading the icon from the site…',
@@ -181,6 +185,7 @@ export const en = {
     pasted: 'Image pasted from the clipboard',
     removeImage: 'Remove image',
     removed: 'Image removed — the site icon is shown',
+    folderImageRemoved: 'Image removed — the tile shows the folder’s contents again',
     clipboardHint: 'To paste images from the clipboard, turn on that permission in Settings → Advanced.',
     showOnTile: 'Shown on the tile',
     showThumbnail: 'Thumbnail',
@@ -211,6 +216,7 @@ export const en = {
   settings: {
     title: 'Settings',
     sections: 'Settings sections',
+    changedHere: 'Changed here',
     tabs: {view: 'Appearance', general: 'General', backup: 'Backups', advanced: 'Advanced', about: 'About'},
     groups: {
       languageTheme: 'Language and theme',
@@ -316,6 +322,10 @@ export const en = {
     backgroundColor: 'Color',
     backgroundImage: 'Image',
     backgroundBing: 'Bing image of the day',
+    backgroundUrl: 'Image from a link',
+    backgroundUrlLabel: 'Image link',
+    backgroundUrlHint: 'The address of an image on the internet: JPG, PNG, WebP or SVG. It is loaded from that site each time a tab opens',
+    backgroundUrlFailed: 'The image at this link didn’t load — check the address',
     backgroundColorLabel: 'Background color',
     backgroundImageLabel: 'Background image',
     backgroundImageHint: 'Stored only on this device',
@@ -350,6 +360,9 @@ export const en = {
     servicesHint: 'One per line: “Name | URL”',
     folderPreview: 'Site previews on folders',
     folderPreviewHint: 'Icons of the folder’s first bookmarks instead of a folder icon',
+    subfolderStyle: 'Subfolders in previews',
+    subfolderStyleHint: 'How folders inside a folder look in its preview. A subfolder’s own picture is always shown',
+    subfolderStyles: {outline: 'Folder outline', filled: 'Filled folder', letter: 'First letter', contents: 'Its contents'},
     autoCapture: 'Automatic thumbnails',
     autoCaptureHint: 'When you open a bookmarked site, its tab is captured as the bookmark’s thumbnail — no extra windows. Your own images are never replaced',
     autoCaptureModes: {
@@ -450,6 +463,7 @@ export const en = {
     titleBookmark: (title: string) => `Check “${title}”`,
     menuAll: 'Check all links…',
     menuFolder: 'Check links in the folder…',
+    menuThisFolder: 'Check links in this folder…',
     menuBookmark: 'Check the link',
     checkingOne: 'Checking the link…',
     linkWorks: 'The link works',
@@ -581,11 +595,35 @@ export const en = {
     restoreUndone: 'Restore undone',
   },
 
+  whatsNew: {
+    notice: (release: string) => `SpeedDial was updated to version ${release}`,
+    open: 'What’s new',
+    title: (release: string) => `What’s new in version ${release}`,
+    // The newest release first; each release lists what users will notice
+    releases: [
+      {
+        release: '2.0.0',
+        changes: [
+          'Most visited and recently closed shelves at the bottom of every folder; they tuck away to a tab',
+          'Link check: all bookmarks, one folder or one bookmark; broken ones can be marked or deleted',
+          'Duplicate bookmark finder',
+          'HTML bookmarks import and export, export of selected tiles and folders',
+          'Automatic thumbnails from visited pages; thumbnail or icon, per bookmark',
+          'A bookmark’s name and description taken from the site itself',
+          'A picture of your own for a folder, “Open all” in the folder menu',
+          'Background image from a link',
+          'The same site icons in Chrome and Edge, in the light and dark theme',
+        ],
+      },
+    ] as Array<{release: string; changes: string[]}>,
+  },
+
   about: {
     tagline: 'Visual bookmarks for the new tab page',
     details: 'Details',
     version: 'Version',
-    versionBuild: (version: string, build: number) => `Version ${version}, build ${build}`,
+    versionLine: (version: string) => `Version ${version}`,
+    uncommitted: 'not committed',
     build: 'Build',
     browser: 'Browser',
     extensionId: 'Extension ID',

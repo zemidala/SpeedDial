@@ -12,7 +12,7 @@ export const CONTRASTS = ['auto', 'normal', 'high'] as const;
 export const FONT_SIZES = ['xs', 's', 'm', 'l', 'xl'] as const;
 /** Tile name size */
 export const TITLE_SIZES = ['s', 'm', 'l'] as const;
-export const BACKGROUNDS = ['none', 'color', 'image', 'bing'] as const;
+export const BACKGROUNDS = ['none', 'color', 'image', 'url', 'bing'] as const;
 export const ICON_STYLES = ['plate', 'fill'] as const;
 export const TITLE_POSITIONS = ['bottom-inside', 'top-inside', 'bottom-outside', 'top-outside'] as const;
 export const LOGO_SERVICE_IDS = ['none', 'google', 'duckduckgo', 'iconhorse', 'logodev', 'custom'] as const;
@@ -35,6 +35,9 @@ export type SearchEngine = (typeof SEARCH_ENGINES)[number];
 export type SortOrder = (typeof SORT_ORDERS)[number];
 export type TypeOrder = (typeof TYPE_ORDERS)[number];
 export type AutoCapture = (typeof AUTO_CAPTURES)[number];
+/** How a subfolder looks in a folder's preview: a folder outline, a filled folder, its first letter, its first sites */
+export const SUBFOLDER_STYLES = ['outline', 'filled', 'letter', 'contents'] as const;
+export type SubfolderStyle = (typeof SUBFOLDER_STYLES)[number];
 
 export interface ServiceLink {
   title: string;
@@ -82,6 +85,8 @@ export interface Settings {
   showTitleIcons: boolean;
   background: Background;
   backgroundColor: string;
+  /** Address of a picture on the internet for background = url */
+  backgroundUrl: string;
   /** Background image blur, px */
   backgroundBlur: number;
   /** Background image dimming, % */
@@ -112,6 +117,7 @@ export interface Settings {
   services: ServiceLink[];
   /** Site previews on a folder tile instead of a folder icon */
   folderPreview: boolean;
+  subfolderStyle: SubfolderStyle;
   /** Load large icons directly from sites */
   siteIcons: boolean;
   showThumbnailRefresh: boolean;
@@ -176,10 +182,11 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = {
   showBackTile: true,
   showAddTile: true,
   showTitles: true,
-  titlePosition: 'bottom-inside',
+  titlePosition: 'top-outside',
   showTitleIcons: false,
   background: 'none',
   backgroundColor: '#1f2933',
+  backgroundUrl: '',
   backgroundBlur: 0,
   backgroundDim: 0,
   tileColor: '',
@@ -200,6 +207,7 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = {
   showServices: true,
   services: DEFAULT_SERVICES,
   folderPreview: true,
+  subfolderStyle: 'outline',
   siteIcons: false,
   showThumbnailRefresh: true,
   captureOnCreate: false,
@@ -236,6 +244,7 @@ const ENUMS: Partial<Record<keyof Settings, readonly string[]>> = {
   sortOrder: SORT_ORDERS,
   typeOrder: TYPE_ORDERS,
   autoCapture: AUTO_CAPTURES,
+  subfolderStyle: SUBFOLDER_STYLES,
 };
 
 export const RANGES = {

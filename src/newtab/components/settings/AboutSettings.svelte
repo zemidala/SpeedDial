@@ -3,6 +3,7 @@
   import {type AboutInfo, aboutInfo, aboutText} from '../../../lib/about';
   import {formatDateTime, t} from '../../../lib/i18n/index.svelte';
   import {SUPPORT_URL, WELCOME_PAGE} from '../../../lib/links';
+  import {releaseOf} from '../../../lib/whatsNew';
   import SettingRow from './SettingRow.svelte';
   import SettingsGroup from './SettingsGroup.svelte';
 
@@ -13,6 +14,11 @@
   onMount(() => {
     aboutInfo().then((result) => (info = result)).catch((error) => console.error('Failed to read about info', error));
   });
+
+  // The changes of this release, or of the latest one described
+  const release = $derived(info
+    ? t.whatsNew.releases.find((item) => item.release === releaseOf(info!.version)) ?? t.whatsNew.releases[0]
+    : null);
 
   async function copy() {
     if (!info) return;
@@ -32,7 +38,7 @@
     <div>
       <h3 class="about__name">{info.name}</h3>
       <p class="about__tagline">{t.about.tagline}</p>
-      <p class="about__version">{t.about.versionBuild(info.version, info.build)}</p>
+      <p class="about__version">{t.about.versionLine(info.version)}</p>
     </div>
   </div>
 
@@ -41,7 +47,12 @@
       <span class="about__value">{info.version}</span>
     </SettingRow>
     <SettingRow label={t.about.build}>
-      <span class="about__value">{info.build} <span class="about__commit">({info.commit})</span> · {formatDateTime(info.builtAt)}</span>
+      <!-- The build number is also the last part of the version; an uncommitted build already has the next number -->
+      <span class="about__value">
+        {info.build}
+        <span class="about__commit">({info.commit.replace(/-dirty$/, `, ${t.about.uncommitted}`)})</span>
+        · {formatDateTime(info.builtAt)}
+      </span>
     </SettingRow>
     <SettingRow label={t.about.browser}>
       <span class="about__value">{info.browser}</span>
@@ -53,6 +64,16 @@
       <span class="about__value">{info.development ? t.about.installDevelopment : t.about.installStore}</span>
     </SettingRow>
   </SettingsGroup>
+
+  {#if release}
+    <SettingsGroup title={t.whatsNew.title(release.release)}>
+      <ul class="about__changes">
+        {#each release.changes as change (change)}
+          <li>{change}</li>
+        {/each}
+      </ul>
+    </SettingsGroup>
+  {/if}
 
   <div class="about__actions">
     <button type="button" class="button" onclick={copy}>{t.about.copy}</button>
@@ -70,6 +91,12 @@
 {/if}
 
 <style>
+  .about__changes {
+    margin: 0;
+    padding: 8px 0 8px 20px;
+    line-height: 1.6;
+  }
+
   .about {
     display: flex;
     align-items: center;

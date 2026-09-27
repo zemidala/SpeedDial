@@ -81,6 +81,9 @@ export const ru: Messages = {
     openInNewTab: 'Открыть в новой вкладке',
     openInBackground: 'Открыть в фоновой вкладке',
     openInNewWindow: 'Открыть в новом окне',
+    openAll: 'Открыть все закладки',
+    openAllInWindow: 'Открыть все в новом окне',
+    folderImage: 'Картинка…',
     openIncognito: 'Открыть в окне в режиме инкогнито',
     back: 'Назад',
     forward: 'Вперед',
@@ -175,6 +178,7 @@ export const ru: Messages = {
 
   iconDialog: {
     title: (name: string) => `Значок «${name}»`,
+    folderTitle: (name: string) => `Картинка папки «${name}»`,
     currentImage: 'Текущая картинка',
     refreshIcon: 'Обновить иконку сайта',
     iconUpdating: 'Иконка загружается с сайта…',
@@ -191,6 +195,7 @@ export const ru: Messages = {
     pasted: 'Картинка вставлена из буфера обмена',
     removeImage: 'Убрать картинку',
     removed: 'Картинка убрана — показывается иконка сайта',
+    folderImageRemoved: 'Картинка убрана — на плитке снова содержимое папки',
     clipboardHint: 'Чтобы вставлять картинки из буфера обмена, включите это разрешение в настройках, раздел «Расширенные».',
     showOnTile: 'Что показывать на плитке',
     showThumbnail: 'Миниатюра',
@@ -221,6 +226,7 @@ export const ru: Messages = {
   settings: {
     title: 'Настройки',
     sections: 'Разделы настроек',
+    changedHere: 'Здесь есть изменения',
     tabs: {view: 'Вид', general: 'Общие', backup: 'Копии', advanced: 'Расширенные', about: 'О программе'},
     groups: {
       languageTheme: 'Язык и тема',
@@ -326,6 +332,10 @@ export const ru: Messages = {
     backgroundColor: 'Цвет',
     backgroundImage: 'Изображение',
     backgroundBing: 'Картинка дня Bing',
+    backgroundUrl: 'Картинка по ссылке',
+    backgroundUrlLabel: 'Ссылка на картинку',
+    backgroundUrlHint: 'Адрес картинки в интернете: JPG, PNG, WebP или SVG. Картинка загружается с этого сайта при каждом открытии вкладки',
+    backgroundUrlFailed: 'Картинка по этой ссылке не загрузилась — проверьте адрес',
     backgroundColorLabel: 'Цвет фона',
     backgroundImageLabel: 'Фоновое изображение',
     backgroundImageHint: 'Хранится только на этом устройстве',
@@ -360,6 +370,9 @@ export const ru: Messages = {
     servicesHint: 'По одному на строку: «Название | адрес»',
     folderPreview: 'Миниатюры сайтов на папке',
     folderPreviewHint: 'Иконки первых закладок папки вместо значка папки',
+    subfolderStyle: 'Вложенные папки в превью',
+    subfolderStyleHint: 'Как в превью папки выглядят папки внутри неё. Своя картинка подпапки показывается всегда',
+    subfolderStyles: {outline: 'Контур папки', filled: 'Заливка', letter: 'Первая буква', contents: 'Её содержимое'},
     autoCapture: 'Автоматические миниатюры',
     autoCaptureHint: 'Когда вы открываете сайт из закладок, снимок его вкладки становится миниатюрой — без лишних окон. Свои картинки не заменяются',
     autoCaptureModes: {
@@ -460,6 +473,7 @@ export const ru: Messages = {
     titleBookmark: (title: string) => `Проверка «${title}»`,
     menuAll: 'Проверить все ссылки…',
     menuFolder: 'Проверить ссылки в папке…',
+    menuThisFolder: 'Проверить ссылки в этой папке…',
     menuBookmark: 'Проверить ссылку',
     checkingOne: 'Ссылка проверяется…',
     linkWorks: 'Ссылка работает',
@@ -592,11 +606,35 @@ export const ru: Messages = {
     restoreUndone: 'Восстановление отменено',
   },
 
+  whatsNew: {
+    notice: (release: string) => `SpeedDial обновлён до версии ${release}`,
+    open: 'Что нового',
+    title: (release: string) => `Что нового в версии ${release}`,
+    // The newest release first; each release lists what users will notice
+    releases: [
+      {
+        release: '2.0.0',
+        changes: [
+          'Полки «Часто посещаемые» и «Недавно закрытые» внизу каждой папки; их можно свернуть в ярлык',
+          'Проверка ссылок: вся коллекция, одна папка или одна закладка; нерабочие можно пометить или удалить',
+          'Поиск дублей закладок',
+          'Импорт и экспорт закладок в HTML, экспорт отмеченных плиток и папок',
+          'Автоматические миниатюры с посещённых страниц; выбор «миниатюра или иконка» для каждой закладки',
+          'Название и описание закладки — с самого сайта',
+          'Своя картинка на папку, «Открыть все» в меню папки',
+          'Фон по ссылке на картинку',
+          'Одинаковые иконки сайтов в Chrome и Edge, в светлой и тёмной теме',
+        ],
+      },
+    ],
+  },
+
   about: {
     tagline: 'Визуальные закладки на странице новой вкладки',
     details: 'Сведения',
     version: 'Версия',
-    versionBuild: (version: string, build: number) => `Версия ${version}, сборка ${build}`,
+    versionLine: (version: string) => `Версия ${version}`,
+    uncommitted: 'не закоммичена',
     build: 'Сборка',
     browser: 'Браузер',
     extensionId: 'ID расширения',

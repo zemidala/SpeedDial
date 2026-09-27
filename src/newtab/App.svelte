@@ -104,11 +104,21 @@
     });
   });
 
-  // Page background: a colour, a custom image or the Bing image of the day
+  /** The picture for the chosen background type; null — none */
+  function backgroundImage(): string | null {
+    const {background: type, backgroundUrl} = settings.current;
+    if (type === 'image') return background.imageUrl;
+    if (type === 'bing') return background.bing?.url ?? null;
+    // A quote would end the CSS url("…") early
+    if (type === 'url' && backgroundUrl) return backgroundUrl.replaceAll('"', '%22');
+    return null;
+  }
+
+  // Page background: a colour, a custom image, an image from a link or the Bing image of the day
   $effect(() => {
     const {background: type, backgroundColor, backgroundBlur, backgroundDim} = settings.current;
     const body = document.body;
-    const image = type === 'image' ? background.imageUrl : type === 'bing' ? background.bing?.url ?? null : null;
+    const image = backgroundImage();
 
     body.classList.toggle('page--background-color', type === 'color');
     body.classList.toggle('page--background-image', image !== null);

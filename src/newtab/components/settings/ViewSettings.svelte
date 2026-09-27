@@ -22,6 +22,7 @@
     type TitleSize,
   } from '../../../lib/settings/schema';
   import {settings} from '../../../lib/settings/store.svelte';
+  import {isWebUrl, normalizeUrl} from '../../../lib/url';
   import ColorRow from './ColorRow.svelte';
   import FontRow from './FontRow.svelte';
   import RangeRow from './RangeRow.svelte';
@@ -62,6 +63,31 @@
     settings.update({background: value});
   }
 
+  // A picture from a link: saved when the field is left; the picture is tried first, so a mistyped address is noticed
+  let backgroundUrlText = $state(settings.current.backgroundUrl);
+  let backgroundUrlError = $state('');
+
+  async function saveBackgroundUrl() {
+    const url = normalizeUrl(backgroundUrlText);
+    backgroundUrlError = '';
+    if (!url || !isWebUrl(url)) {
+      if (backgroundUrlText.trim()) backgroundUrlError = t.view.backgroundUrlFailed;
+      return;
+    }
+    backgroundUrlText = url;
+    const loads = await new Promise<boolean>((resolve) => {
+      const image = new Image();
+      image.onload = () => resolve(true);
+      image.onerror = () => resolve(false);
+      image.src = url;
+    });
+    if (!loads) {
+      backgroundUrlError = t.view.backgroundUrlFailed;
+      return;
+    }
+    settings.update({backgroundUrl: url});
+  }
+
   async function chooseBackgroundImage() {
     const file = await pickFile('image/*');
     if (file) await background.setImage(file);
@@ -72,6 +98,7 @@
   <SelectRow
     label={t.view.language}
     value={current.language}
+    setting="language"
     options={[
       {value: 'auto', label: t.view.languageAuto},
       ...LANGUAGES.map((language) => ({value: language, label: LANGUAGE_NAMES[language]})),
@@ -81,6 +108,7 @@
   <SelectRow
     label={t.view.theme}
     value={current.theme}
+    setting="theme"
     options={[
       {value: 'auto', label: t.view.themeAuto},
       {value: 'light', label: t.view.themeLight},
@@ -92,6 +120,7 @@
     label={t.view.contrast}
     hint={t.view.contrastHint}
     value={current.contrast}
+    setting="contrast"
     options={[
       {value: 'auto', label: t.view.contrastAuto},
       {value: 'normal', label: t.view.contrastNormal},
@@ -99,7 +128,7 @@
     ]}
     onchange={(value) => settings.update({contrast: value as Contrast})}
   />
-  <SettingRow label={t.view.preset} hint={t.view.presetHint} stacked>
+  <SettingRow label={t.view.preset} hint={t.view.presetHint} stacked setting="themePreset">
     <ThemePicker/>
   </SettingRow>
   <RangeRow key="lightDimming" label={t.view.lightDimming} hint={t.view.lightDimmingHint} unit="%"/>
@@ -113,6 +142,7 @@
   <SelectRow
     label={t.view.columns}
     value={current.columns}
+    setting="columns"
     options={columnOptions}
     onchange={(value) => settings.update({columns: Number(value)})}
   />
@@ -127,6 +157,7 @@
   <SelectRow
     label={t.view.titlePosition}
     value={current.titlePosition}
+    setting="titlePosition"
     options={[
       {value: 'bottom-inside', label: t.view.titleBottomInside},
       {value: 'top-inside', label: t.view.titleTopInside},
@@ -138,6 +169,7 @@
   <SelectRow
     label={t.view.titleSize}
     value={current.titleSize}
+    setting="titleSize"
     options={TITLE_SIZES.map((size) => ({value: size, label: t.view.titleSizes[size]}))}
     onchange={(value) => settings.update({titleSize: value as TitleSize})}
   />
@@ -150,6 +182,7 @@
     label={t.view.fontSize}
     hint={t.view.fontSizeHint}
     value={current.fontSize}
+    setting="fontSize"
     options={FONT_SIZES.map((size) => ({value: size, label: t.view.fontSizes[size]}))}
     onchange={(value) => settings.update({fontSize: value as FontSize})}
   />
@@ -161,6 +194,7 @@
     label={t.view.iconStyle}
     hint={t.view.iconStyleHint}
     value={current.iconStyle}
+    setting="iconStyle"
     options={[
       {value: 'plate', label: t.view.iconPlate},
       {value: 'fill', label: t.view.iconFill},
@@ -173,6 +207,7 @@
     label={t.view.siteIcons}
     hint={t.view.siteIconsHint}
     checked={icons.siteIconsEnabled}
+    setting="siteIcons"
     onchange={(enabled) => toggleSiteIcons(enabled)}
   />
   {#if icons.siteIconsEnabled}
@@ -185,6 +220,7 @@
     label={t.view.logoService}
     hint={logoServiceHint}
     value={current.logoService}
+    setting="logoService"
     options={[
       {value: 'none', label: t.view.logoServiceNone},
       ...Object.entries(LOGO_SERVICES).map(([value, service]) => ({value, label: service.name})),
@@ -193,7 +229,7 @@
     onchange={(value) => settings.update({logoService: value as LogoService})}
   />
   {#if current.logoService === 'logodev'}
-    <SettingRow label={t.view.logoDevToken} hint={t.view.logoDevTokenHint}>
+    <SettingRow label={t.view.logoDevToken} hint={t.view.logoDevTokenHint} setting="logoDevToken">
       {#snippet children(id)}
         <input
           {id}
@@ -207,7 +243,7 @@
       {/snippet}
     </SettingRow>
   {:else if current.logoService === 'custom'}
-    <SettingRow label={t.view.customLogoUrl} hint={t.view.customLogoUrlHint}>
+    <SettingRow label={t.view.customLogoUrl} hint={t.view.customLogoUrlHint} setting="externalLogoUrl">
       {#snippet children(id)}
         <input
           {id}
@@ -233,16 +269,32 @@
   <SelectRow
     label={t.view.background}
     value={current.background}
+    setting="background"
     options={[
       {value: 'none', label: t.view.backgroundNone},
       {value: 'color', label: t.view.backgroundColor},
       {value: 'image', label: t.view.backgroundImage},
+      {value: 'url', label: t.view.backgroundUrl},
       {value: 'bing', label: t.view.backgroundBing},
     ]}
     onchange={(value) => changeBackground(value as Background)}
   />
   {#if current.background === 'color'}
     <ColorRow key="backgroundColor" label={t.view.backgroundColorLabel}/>
+  {:else if current.background === 'url'}
+    <SettingRow label={t.view.backgroundUrlLabel} hint={backgroundUrlError || t.view.backgroundUrlHint} stacked setting="backgroundUrl">
+      {#snippet children(id)}
+        <input
+          {id}
+          class="input"
+          type="url"
+          placeholder="https://example.com/picture.jpg"
+          aria-invalid={backgroundUrlError ? true : undefined}
+          bind:value={backgroundUrlText}
+          onchange={saveBackgroundUrl}
+        >
+      {/snippet}
+    </SettingRow>
   {:else if current.background === 'image'}
     <SettingRow label={t.view.backgroundImageLabel} hint={t.view.backgroundImageHint}>
       <button type="button" class="button" onclick={chooseBackgroundImage}>{t.view.chooseFile}</button>
@@ -256,7 +308,7 @@
       <button type="button" class="button" onclick={() => permissions.request(BING_ACCESS)}>{t.common.allow}</button>
     </SettingRow>
   {/if}
-  {#if current.background === 'image' || current.background === 'bing'}
+  {#if current.background === 'image' || current.background === 'url' || current.background === 'bing'}
     <RangeRow key="backgroundBlur" label={t.view.backgroundBlur} hint={t.view.backgroundBlurHint} unit={t.view.pixels}/>
     <RangeRow key="backgroundDim" label={t.view.backgroundDim} unit="%"/>
   {/if}

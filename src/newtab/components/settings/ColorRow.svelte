@@ -24,7 +24,7 @@
   });
 </script>
 
-<SettingRow {label} {hint}>
+<SettingRow {label} {hint} setting={key}>
   {#snippet children(id)}
     <input
       {id}

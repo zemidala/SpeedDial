@@ -36,7 +36,7 @@
 </script>
 
 <div class="font-row">
-  <SettingRow label={t.view.font}>
+  <SettingRow label={t.view.font} setting="fontFamily">
     {#snippet children(id)}
       <select {id} class="input" value={selected} onchange={(event) => choose(event.currentTarget.value)}>
         <option value={SYSTEM_FONT}>{t.view.fontSystem}</option>

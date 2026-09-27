@@ -36,7 +36,7 @@ export type Dialog =
   | {kind: 'create'; type: 'bookmark' | 'folder'; parentId: string; parentTitle?: string; index?: number}
   | {kind: 'edit'; node: BookmarkNode}
   /** Bookmark icon and thumbnail */
-  | {kind: 'icon'; node: BookmarkNode & {url: string}}
+  | {kind: 'icon'; node: BookmarkNode}
   /** Sort the folder's contents in the browser */
   | {kind: 'sort'; folder: FolderRef}
   /** Move the selected bookmarks and folders to another folder */
@@ -129,10 +129,15 @@ export function requestDeleteMany(nodes: BookmarkNode[]): Promise<void> | void {
 /** Opening more tabs than this needs a confirmation */
 const OPEN_ALL_CONFIRM = 10;
 
-/** Opens bookmarks (folders are skipped) in background tabs */
-export function requestOpenAll(nodes: BookmarkNode[]): Promise<void> | void {
+/** Opens bookmarks (folders are skipped) in background tabs, or together in a new window */
+export function requestOpenAll(nodes: BookmarkNode[], where: 'tabs' | 'window' = 'tabs'): Promise<void> | void {
   const urls = nodes.flatMap((node) => (node.url ? [node.url] : []));
+  if (urls.length === 0) return;
   const open = async () => {
+    if (where === 'window') {
+      await chrome.windows.create({url: urls, focused: true});
+      return;
+    }
     for (const url of urls) await openUrl(url, 'background');
   };
   if (urls.length <= OPEN_ALL_CONFIRM) return open();

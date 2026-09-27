@@ -3,14 +3,25 @@
   import {modals} from '../../../lib/ui.svelte';
   import Notice from './Notice.svelte';
 
-  let {title, size = 'small', onclose, children, footer}: {
+  let {title, size = 'small', onclose, closeOnBackdrop, children, footer}: {
     title: string;
     size?: 'small' | 'large';
     onclose: () => void;
+    /** A click outside the dialog closes it when this says so (e.g. nothing was changed) */
+    closeOnBackdrop?: () => boolean;
     children: Snippet;
     /** Buttons at the bottom of the dialog */
     footer?: Snippet;
   } = $props();
+
+  // The backdrop belongs to the dialog element itself: a click whose press and release both land outside
+  // the dialog's box is a click on the backdrop (a drag that ends outside, e.g. selecting text, isn't)
+  let pressedOutside = false;
+  const outside = (event: MouseEvent) => {
+    const box = dialog.getBoundingClientRect();
+    return event.target === dialog && (event.clientX < box.left || event.clientX > box.right
+      || event.clientY < box.top || event.clientY > box.bottom);
+  };
 
   const titleId = $props.id();
   let dialog: HTMLDialogElement;
@@ -26,7 +37,16 @@
   });
 </script>
 
-<dialog bind:this={dialog} class="modal modal--{size}" aria-labelledby={titleId} {onclose}>
+<dialog
+  bind:this={dialog}
+  class="modal modal--{size}"
+  aria-labelledby={titleId}
+  {onclose}
+  onmousedown={(event) => (pressedOutside = outside(event))}
+  onclick={(event) => {
+    if (pressedOutside && outside(event) && closeOnBackdrop?.()) onclose();
+  }}
+>
   <h2 id={titleId} class="modal__title">{title}</h2>
   <div class="modal__body">
     {@render children()}

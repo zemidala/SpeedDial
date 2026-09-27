@@ -6,9 +6,10 @@
 </script>
 
 <script lang="ts">
+  import type {SettingKey} from '../../../lib/settings/changes.svelte';
   import SettingRow from './SettingRow.svelte';
 
-  let {label, hint, value, options, placeholder, onchange}: {
+  let {label, hint, value, options, placeholder, setting, onchange}: {
     label: string;
     hint?: string;
     value: string | number;
@@ -16,12 +17,14 @@
     /** Shown, and the field marked invalid, when value isn't among the options — e.g. the chosen folder is gone */
     placeholder?: string;
     onchange: (value: string) => void;
+    /** The setting this list changes — for marking the row as changed */
+    setting?: SettingKey;
   } = $props();
 
   const missing = $derived(placeholder !== undefined && !options.some((option) => option.value === String(value)));
 </script>
 
-<SettingRow {label} {hint}>
+<SettingRow {label} {hint} {setting}>
   {#snippet children(id)}
     <!-- The list is driven only by value: the previous choice is restored at once, the new one appears together
          with the state change (the handler may refuse, e.g. if a permission wasn't granted) -->

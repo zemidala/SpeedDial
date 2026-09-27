@@ -1,5 +1,5 @@
 import type {Page} from '@playwright/test';
-import {expect, getChildren, seed, test, tile} from './fixtures';
+import {expect, getChildren, makePng, seed, test, tile} from './fixtures';
 
 test.beforeEach(async ({context, newtab}) => {
   await context.route('https://*.example/**', (route) => route.fulfill({body: '<title>Страница</title>'}));
@@ -37,18 +37,21 @@ test('menu of a bookmark tile, a folder tile and an empty area', async ({newtab}
   ]);
   await newtab.keyboard.press('Escape');
 
-  // A folder has no incognito, copy link and icon
+  // A folder has no incognito and copy link; it opens all its bookmarks and gets a picture instead of an icon
   await tile(newtab, 'Папка').click({button: 'right'});
   await expect(menuItems(newtab)).toHaveText([
     'Открыть',
     'Открыть в новой вкладке',
     'Открыть в фоновой вкладке',
     'Открыть в новом окне',
+    'Открыть все закладки',
+    'Открыть все в новом окне',
     'Назад',
     'Вперед',
     'Новая закладка в этой папке…',
     'Новая папка в этой папке…',
     'Редактировать…',
+    'Картинка…',
     'Сортировать…',
     'Проверить ссылки в папке…',
     'Экспортировать папку в файл',
@@ -58,7 +61,7 @@ test('menu of a bookmark tile, a folder tile and an empty area', async ({newtab}
   await newtab.keyboard.press('Escape');
 
   await openPageMenu(newtab);
-  await expect(menuItems(newtab)).toHaveText(['Назад', 'Вперед', 'Новая закладка…', 'Новая папка…', 'Сортировать…', 'Найти дубли…', 'Проверить все ссылки…', 'Обновить']);
+  await expect(menuItems(newtab)).toHaveText(['Назад', 'Вперед', 'Новая закладка…', 'Новая папка…', 'Сортировать…', 'Найти дубли…', 'Проверить все ссылки…', 'Проверить ссылки в этой папке…', 'Обновить']);
 });
 
 test.describe(() => {
@@ -209,4 +212,57 @@ test('back and forward through folders, keyboard control', async ({newtab}) => {
   await newtab.keyboard.press('ArrowUp');
   await newtab.keyboard.press('Enter');
   await expect(tile(newtab, 'Гамма')).toBeVisible();
+});
+
+test.describe('opening a folder\'s bookmarks', () => {
+  // With site access the extension sees the addresses of the tabs it opened
+  test.use({hostAccess: true});
+
+  test('all at once — in tabs or in a new window', async ({newtab}) => {
+    await seed(newtab, [{title: 'Набор', children: [
+      {title: 'Один', url: 'https://one.example/'},
+      {title: 'Два', url: 'https://two.example/'},
+      {title: 'Вложенная', children: [{title: 'Не открывается', url: 'https://nested.example/'}]},
+    ]}]);
+    const openedTabs = () => newtab.evaluate(async () => {
+      const tabs = await chrome.tabs.query({url: 'https://*.example/*'});
+      return tabs.map((tab) => ({url: tab.url ?? tab.pendingUrl, windowId: tab.windowId}));
+    });
+
+    await tile(newtab, 'Набор').click({button: 'right'});
+    await newtab.getByRole('menuitem', {name: 'Открыть все закладки'}).click();
+    // Only the bookmarks right inside, like "Open all" in the browser
+    await expect.poll(async () => (await openedTabs()).map((tab) => tab.url).sort())
+      .toEqual(['https://one.example/', 'https://two.example/']);
+
+    await tile(newtab, 'Набор').click({button: 'right'});
+    await newtab.getByRole('menuitem', {name: 'Открыть все в новом окне'}).click();
+    // Both again, together in a window of their own
+    await expect.poll(async () => (await openedTabs()).length).toBe(4);
+    const tabs = await openedTabs();
+    const current = await newtab.evaluate(async () => (await chrome.windows.getCurrent()).id);
+    const inNewWindow = tabs.filter((tab) => tab.windowId !== current);
+    expect(inNewWindow.map((tab) => tab.url).sort()).toEqual(['https://one.example/', 'https://two.example/']);
+  });
+});
+
+test('a folder gets its own picture instead of the previews of its contents', async ({newtab}) => {
+  await tile(newtab, 'Папка').click({button: 'right'});
+  await newtab.getByRole('menuitem', {name: 'Картинка…'}).click();
+  const dialog = newtab.getByRole('dialog', {name: 'Картинка папки «Папка»'});
+  // Nothing about site icons or page screenshots for a folder
+  await expect(dialog.getByRole('button', {name: 'Обновить иконку сайта'})).toHaveCount(0);
+  await expect(dialog.getByRole('button', {name: 'Сделать снимок страницы'})).toHaveCount(0);
+
+  const chooser = newtab.waitForEvent('filechooser');
+  await dialog.getByRole('button', {name: 'Выбрать картинку…'}).click();
+  await (await chooser).setFiles({name: 'folder.png', mimeType: 'image/png', buffer: await makePng(newtab, 300, '#2080ff')});
+  const picture = tile(newtab, 'Папка').locator('.tile__thumbnail');
+  await expect(picture).toBeVisible();
+  await expect(tile(newtab, 'Папка').locator('.folder-preview')).toHaveCount(0);
+
+  await dialog.getByRole('button', {name: 'Убрать картинку'}).click();
+  await expect(dialog.getByRole('status')).toHaveText('Картинка убрана — на плитке снова содержимое папки');
+  await expect(picture).toHaveCount(0);
+  await expect(tile(newtab, 'Папка').locator('.folder-preview')).toBeVisible();
 });

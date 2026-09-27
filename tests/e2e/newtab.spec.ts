@@ -1,4 +1,4 @@
-import {expect, getChildren, openSettings, seed, test, tile} from './fixtures';
+import {expect, getChildren, makePng, openSettings, seed, test, tile} from './fixtures';
 
 test.beforeEach(async ({newtab}) => {
   await seed(newtab, [
@@ -243,4 +243,34 @@ test('a web bookmark opens in the current tab', async ({context, newtab}) => {
   await context.route('https://example.com/**', (route) => route.fulfill({body: '<title>Example page</title>'}));
   await tile(newtab, 'Example').click();
   await expect(newtab).toHaveURL('https://example.com/');
+});
+
+test('subfolders in a folder\'s preview: four looks; a subfolder\'s own picture shows there too', async ({newtab}) => {
+  await seed(newtab, [{title: 'Внешняя', children: [
+    {title: 'Сайт', url: 'https://site.example/'},
+    {title: 'Проекты', children: [{title: 'A', url: 'https://alpha.example/'}, {title: 'B', url: 'https://beta.example/'}]},
+  ]}]);
+  const cell = tile(newtab, 'Внешняя').locator('.folder-preview [title="Проекты"]');
+  await expect(cell.locator('svg')).toBeVisible(); // A folder outline by default
+
+  const dialog = await openSettings(newtab, 'Общие');
+  const style = dialog.getByLabel('Вложенные папки в превью');
+  await style.selectOption('letter');
+  await expect(cell.locator('.preview-cell__letter')).toHaveText('П');
+  await style.selectOption('contents');
+  await expect(cell.locator('.site-icon')).toHaveCount(2);
+  await style.selectOption('filled');
+  await expect(cell).toHaveClass(/preview-cell--filled/);
+  await dialog.getByRole('button', {name: 'Готово'}).click();
+
+  // A picture chosen for the subfolder replaces its look in the parent's preview
+  await tile(newtab, 'Внешняя').click();
+  await tile(newtab, 'Проекты').click({button: 'right'});
+  await newtab.getByRole('menuitem', {name: 'Картинка…'}).click();
+  const chooser = newtab.waitForEvent('filechooser');
+  await newtab.getByRole('dialog').getByRole('button', {name: 'Выбрать картинку…'}).click();
+  await (await chooser).setFiles({name: 'p.png', mimeType: 'image/png', buffer: await makePng(newtab, 200, '#ff6600')});
+  await newtab.getByRole('dialog').getByRole('button', {name: 'Готово'}).click();
+  await newtab.goBack();
+  await expect(tile(newtab, 'Внешняя').locator(`.folder-preview [title="Проекты"] img`)).toBeVisible();
 });

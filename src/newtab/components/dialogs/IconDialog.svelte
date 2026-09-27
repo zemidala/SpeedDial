@@ -9,12 +9,16 @@
   import {thumbnails} from '../../../lib/thumbnails/store.svelte';
   import {isWebUrl} from '../../../lib/url';
   import SiteIcon from '../grid/SiteIcon.svelte';
+  import Icon from '../ui/Icon.svelte';
   import Modal from '../ui/Modal.svelte';
 
-  // Bookmark icon and thumbnail: a preview and every way to change them
-  let {node, onclose}: {node: BookmarkNode & {url: string}; onclose: () => void} = $props();
+  // Bookmark icon and thumbnail: a preview and every way to change them. A folder gets only its own picture —
+  // shown on its tile instead of the previews of what's inside
+  let {node, onclose}: {node: BookmarkNode; onclose: () => void} = $props();
 
-  const icon = $derived(icons.get(node.url));
+  const url = $derived(node.url ?? '');
+  const isFolder = $derived(!node.url);
+  const icon = $derived(isFolder ? null : icons.get(url));
   const thumbnail = $derived(thumbnails.get(node.id));
 
   let status = $state('');
@@ -40,7 +44,7 @@
 
   async function refreshIcon() {
     working = 'icon';
-    await run(() => icons.refresh(node.url), t.iconDialog.iconUpdated);
+    await run(() => icons.refresh(url), t.iconDialog.iconUpdated);
     working = null;
   }
 
@@ -55,7 +59,7 @@
     }
     thumbnailBefore = thumbnail.url;
     working = 'capture';
-    await thumbnails.capture([{id: node.id, url: node.url}]);
+    await thumbnails.capture([{id: node.id, url}]);
   }, '');
 
   $effect(() => {
@@ -100,12 +104,16 @@
   const removeThumbnail = () => run(async () => {
     await thumbnails.remove(node.id);
     await useThumbnail();
-  }, t.iconDialog.removed);
+  }, isFolder ? t.iconDialog.folderImageRemoved : t.iconDialog.removed);
 </script>
 
-<Modal title={t.iconDialog.title(node.title)} {onclose}>
-  <div class="icon-dialog__preview" class:icon-dialog__preview--choice={thumbnail.url} aria-busy={working !== null}>
-    {#if thumbnail.url}
+<Modal title={isFolder ? t.iconDialog.folderTitle(node.title) : t.iconDialog.title(node.title)} {onclose}>
+  <div class="icon-dialog__preview" class:icon-dialog__preview--choice={thumbnail.url && icon} aria-busy={working !== null}>
+    {#if thumbnail.url && !icon}
+      <img class="icon-dialog__thumbnail" src={thumbnail.url} alt={t.iconDialog.currentImage}>
+    {:else if !icon}
+      <Icon name="folder" class="icon-dialog__folder"/>
+    {:else if thumbnail.url}
       <!-- There's a thumbnail: the tile can show it or the site icon — for this bookmark only -->
       <div class="icon-dialog__choices" role="radiogroup" aria-label={t.iconDialog.showOnTile}>
         <label class="icon-dialog__choice">
@@ -143,10 +151,12 @@
   </div>
 
   <div class="icon-dialog__actions">
-    <button type="button" class="button" disabled={busy || working !== null} onclick={refreshIcon}>
-      {t.iconDialog.refreshIcon}
-    </button>
-    {#if isWebUrl(node.url)}
+    {#if !isFolder}
+      <button type="button" class="button" disabled={busy || working !== null} onclick={refreshIcon}>
+        {t.iconDialog.refreshIcon}
+      </button>
+    {/if}
+    {#if isWebUrl(url)}
       <button
         type="button"
         class="button"
@@ -193,6 +203,13 @@
     background: var(--tile-bg);
     container-type: inline-size;
     --site-icon-size: 88px;
+  }
+
+  .icon-dialog__preview :global(.icon-dialog__folder) {
+    width: 72px;
+    height: 72px;
+    color: var(--accent);
+    stroke-width: 1.5;
   }
 
   .icon-dialog__thumbnail {

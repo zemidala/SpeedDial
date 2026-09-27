@@ -128,9 +128,10 @@
   white-space: nowrap;
 }
 
-/* Inside the card — a strip with a divider */
+/* Inside the card — the same plain caption as outside (icon and name, no strip or divider),
+   just with room from the card's edge */
 .tile--title-bottom-inside .tile__title {
-  border-top: 1px solid var(--border);
+  padding: 0 8px 8px;
 }
 
 .tile--title-top-inside .tile__card {
@@ -138,7 +139,7 @@
 }
 
 .tile--title-top-inside .tile__title {
-  border-bottom: 1px solid var(--border);
+  padding: 8px 8px 0;
 }
 
 /* Outside — below or above the card */

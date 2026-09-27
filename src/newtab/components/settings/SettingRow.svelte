@@ -1,12 +1,15 @@
 <script lang="ts">
   import type {Snippet} from 'svelte';
+  import {type SettingKey, settingsChanges} from '../../../lib/settings/changes.svelte';
 
   // A settings row: a label with a hint on the left, the control on the right.
   // children receives an id — pass it to the input so the label is linked to it.
   // Buttons don't get the id: the label would replace their name
-  let {label, hint, stacked = false, children}: {
+  let {label, hint, stacked = false, setting, children}: {
     label: string;
     hint?: string;
+    /** The setting(s) this row changes — the row is marked once they differ from when the dialog opened */
+    setting?: SettingKey | SettingKey[];
     /** The control below the label at full width (for multi-line fields) */
     stacked?: boolean;
     children: Snippet<[string]>;
@@ -15,7 +18,7 @@
   const id = $props.id();
 </script>
 
-<div class="setting-row" class:setting-row--stacked={stacked}>
+<div class="setting-row" class:setting-row--stacked={stacked} class:setting-row--changed={settingsChanges.changed(setting)}>
   <div class="setting-row__text">
     <label class="setting-row__label" for={id}>{label}</label>
     {#if hint}
@@ -34,6 +37,15 @@
     align-items: center;
     gap: 8px 24px;
     padding: 10px 0;
+  }
+
+  /* Changed since the dialog opened: an accent bar at the edge — easy to find when going over the changes */
+  .setting-row--changed {
+    margin: 0 -12px;
+    padding-inline: 12px;
+    border-radius: var(--radius-small);
+    background: color-mix(in oklab, var(--accent) 10%, transparent);
+    box-shadow: inset 3px 0 0 var(--accent);
   }
 
   .setting-row--stacked {

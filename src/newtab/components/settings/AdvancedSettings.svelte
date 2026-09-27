@@ -131,7 +131,7 @@
 </SettingsGroup>
 
 <SettingsGroup title={t.settings.groups.customCss}>
-  <SettingRow label={t.advanced.customCss} hint={t.advanced.customCssHint(MAX_CUSTOM_CSS_LENGTH)} stacked>
+  <SettingRow label={t.advanced.customCss} hint={t.advanced.customCssHint(MAX_CUSTOM_CSS_LENGTH)} stacked setting="customCss">
     {#snippet children(id)}
       <textarea
         {id}

@@ -19,10 +19,11 @@ describe('relevantManifestFields', () => {
     expect(relevantManifestFields(reordered)).toBe(relevantManifestFields(manifest));
   });
 
-  it('notices changes to permissions and version', () => {
+  it('notices changes to permissions, but not a new build number alone', () => {
     const base = relevantManifestFields(manifest);
     expect(relevantManifestFields({...manifest, permissions: ['bookmarks']})).not.toBe(base);
     expect(relevantManifestFields({...manifest, optional_permissions: ['clipboardRead']})).not.toBe(base);
-    expect(relevantManifestFields({...manifest, version: '2.0.1'})).not.toBe(base);
+    // Every build has its own version (2.0.0.145) — that alone needs no reload of the extension
+    expect(relevantManifestFields({...manifest, version: '2.0.0.146'})).toBe(base);
   });
 });

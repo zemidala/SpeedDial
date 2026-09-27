@@ -1,5 +1,7 @@
 <script lang="ts">
   import {t} from '../../../lib/i18n/index.svelte';
+  import {onDestroy} from 'svelte';
+  import {settingsChanges, TAB_SETTINGS} from '../../../lib/settings/changes.svelte';
   import type {SettingsTab} from '../../../lib/ui.svelte';
   import Icon, {type IconName} from '../ui/Icon.svelte';
   import Modal from '../ui/Modal.svelte';
@@ -10,6 +12,12 @@
   import ViewSettings from './ViewSettings.svelte';
 
   let {initialTab = 'view', onclose}: {initialTab?: SettingsTab; onclose: () => void} = $props();
+
+  // Changes are counted from here: changed rows and tabs are marked, and a click outside closes the settings only
+  // if nothing was changed — then there's nothing to lose by accident
+  settingsChanges.start();
+  onDestroy(() => settingsChanges.stop());
+  const unchanged = () => !settingsChanges.any;
 
   const TABS = [
     {id: 'view', icon: 'palette'},
@@ -43,7 +51,7 @@
   }
 </script>
 
-<Modal title={t.settings.title} size="large" {onclose}>
+<Modal title={t.settings.title} size="large" {onclose} closeOnBackdrop={unchanged}>
   <!-- Segmented tab strip, like the segmented controls in Edge's settings -->
   <div class="settings-tabs">
     <div bind:this={tablist} class="settings-tabs__list" role="tablist" aria-label={t.settings.sections} tabindex="-1" {onkeydown}>
@@ -62,6 +70,10 @@
         >
           <Icon name={tab.icon} size={16}/>
           <span class="settings-tabs__label">{t.settings.tabs[tab.id]}</span>
+          {#if settingsChanges.changed(TAB_SETTINGS[tab.id])}
+            <!-- Something on this tab was changed since the settings opened -->
+            <span class="settings-tabs__changed" title={t.settings.changedHere} aria-label={t.settings.changedHere}></span>
+          {/if}
         </button>
       {/each}
     </div>
@@ -123,6 +135,14 @@
     font-weight: 600;
     cursor: pointer;
     transition: background-color 0.15s, color 0.15s, box-shadow 0.15s;
+  }
+
+  .settings-tabs__changed {
+    flex-shrink: 0;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
   }
 
   .settings-tabs__label {

@@ -4,6 +4,7 @@ import {setLanguage} from '../lib/i18n/index.svelte';
 import {WELCOME_PAGE} from '../lib/links';
 import {onMessage, type RuntimeMessage, sendMessage} from '../lib/messages';
 import {descriptionStorage, iconOnlyStorage} from '../lib/perBookmark';
+import {rememberUpdate} from '../lib/whatsNew';
 import {loadSettings, onSettingsChanged} from '../lib/settings/storage';
 import {deleteThumbnail} from '../lib/thumbnails/storage';
 import {autoCapture, forgetBookmarkIndex} from './autoCapture';
@@ -39,6 +40,12 @@ chrome.runtime.onInstalled.addListener(({reason}) => {
       if (self.installType !== 'development') return chrome.tabs.create({url: WELCOME_PAGE});
     })
     .catch((error) => console.error('Failed to open the welcome page', error));
+});
+// After an update to a new release the next new tab tells what's new (see whatsNew.ts)
+chrome.runtime.onInstalled.addListener(({reason, previousVersion}) => {
+  if (reason !== chrome.runtime.OnInstalledReason.UPDATE) return;
+  rememberUpdate(previousVersion, chrome.runtime.getManifest().version)
+    .catch((error) => console.error('Failed to remember the update', error));
 });
 chrome.runtime.onStartup.addListener(refreshContextMenu);
 onSettingsChanged(refreshContextMenu);
