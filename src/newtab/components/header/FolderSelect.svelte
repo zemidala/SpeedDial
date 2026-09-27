@@ -43,7 +43,7 @@
   {/if}
   <option value={ROOT_FOLDER_ID}>{t.common.home}</option>
   {#each options ?? [] as option (option.id)}
-    <option value={option.id}>{' '.repeat(option.depth)}{option.title} ({option.bookmarkCount})</option>
+    <option value={option.id}>{'\u00a0\u00a0\u00a0'.repeat(option.depth)}{option.title} ({option.bookmarkCount})</option>
   {/each}
   {#each enabledVirtualFolders() as folder (folder.id)}
     <option value={folder.id}>{folder.title}</option>

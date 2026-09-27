@@ -104,6 +104,17 @@ export const ru: Messages = {
     delete: 'Удалить',
     deleteConfirm: 'Удалить…',
     addToSpeedDial: 'Добавить в SpeedDial',
+    addToFolder: 'Добавить в папку',
+    otherFolder: 'Другая папка…',
+  },
+
+  addToFolder: {
+    title: 'Добавить в SpeedDial',
+    pageHeading: 'Добавить эту страницу в папку',
+    linkHeading: 'Добавить эту ссылку в папку',
+    add: 'Добавить',
+    untitled: 'Папка без названия',
+    folderGone: 'Эта папка удалена — выберите другую',
   },
 
   bookmark: {

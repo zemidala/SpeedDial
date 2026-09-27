@@ -48,7 +48,7 @@
     {value: ROOT_FOLDER_ID, label: t.common.home},
     ...folders.map((folder) => ({
       value: folder.id,
-      label: `${' '.repeat(folder.depth)}${folder.title} (${folder.bookmarkCount})`,
+      label: `${'\u00a0\u00a0\u00a0'.repeat(folder.depth)}${folder.title} (${folder.bookmarkCount})`,
     })),
     ...enabledVirtualFolders().map((folder) => ({value: folder.id, label: folder.title})),
   ]);

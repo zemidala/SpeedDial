@@ -58,6 +58,7 @@ export default defineConfig({
         newtab: resolve(import.meta.dirname, 'newtab.html'),
         welcome: resolve(import.meta.dirname, 'welcome.html'),
         popup: resolve(import.meta.dirname, 'popup.html'),
+        add: resolve(import.meta.dirname, 'add.html'),
         background: resolve(import.meta.dirname, 'src/background/index.ts'),
       },
       output: {

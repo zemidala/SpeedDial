@@ -67,7 +67,7 @@
     <label class="move-form__label" for="{formId}-folder">{t.selection.folder}</label>
     <select id="{formId}-folder" class="input" bind:value={folderId}>
       {#each folders as folder (folder.id)}
-        <option value={folder.id}>{' '.repeat(folder.depth)}{folder.title}</option>
+        <option value={folder.id}>{'\u00a0\u00a0\u00a0'.repeat(folder.depth)}{folder.title}</option>
       {/each}
     </select>
     {#if error}

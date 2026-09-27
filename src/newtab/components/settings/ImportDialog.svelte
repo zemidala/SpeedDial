@@ -73,7 +73,7 @@
     <label class="import-form__label" for="{formId}-parent">{t.importHtml.parent}</label>
     <select id="{formId}-parent" class="input" bind:value={parentId}>
       {#each folders as folder (folder.id)}
-        <option value={folder.id}>{' '.repeat(folder.depth)}{folder.title}</option>
+        <option value={folder.id}>{'\u00a0\u00a0\u00a0'.repeat(folder.depth)}{folder.title}</option>
       {/each}
     </select>
 

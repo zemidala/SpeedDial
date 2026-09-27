@@ -94,6 +94,17 @@ export const en = {
     delete: 'Delete',
     deleteConfirm: 'Delete…',
     addToSpeedDial: 'Add to SpeedDial',
+    addToFolder: 'Add to folder',
+    otherFolder: 'Other folder…',
+  },
+
+  addToFolder: {
+    title: 'Add to SpeedDial',
+    pageHeading: 'Add this page to a folder',
+    linkHeading: 'Add this link to a folder',
+    add: 'Add',
+    untitled: 'Untitled folder',
+    folderGone: 'This folder was removed — choose another one',
   },
 
   bookmark: {
