@@ -1,5 +1,18 @@
+# Dependencies and build output
 node_modules/
 dist/
+
+# Test reports
 test-results/
 playwright-report/
+
+# Local build settings: OAuth Client IDs and the support link (see .env.example)
 .env.local
+.env.*.local
+
+# Editors and OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.log

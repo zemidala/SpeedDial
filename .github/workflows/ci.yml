@@ -1,0 +1,34 @@
+# Checks every push and pull request: types, lint, unit tests and the build.
+# End-to-end tests (a browser with the extension) are run locally: npm run test:e2e
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The build number is the commit count: the whole history is needed
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+      - run: npm run check
+      - run: npm test
+      - run: npm run build
+
+      # The built extension, ready for "Load unpacked"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: speeddial-dist
+          path: dist/
+          retention-days: 14

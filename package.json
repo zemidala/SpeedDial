@@ -1,7 +1,7 @@
 {
   "name": "speeddial",
   "version": "2.0.0",
-  "description": "Визуальные закладки на странице новой вкладки",
+  "description": "Visual bookmarks on the new tab page — a Chrome and Edge extension",
   "private": true,
   "scripts": {
     "dev": "vite build --watch --mode development",
@@ -15,10 +15,19 @@
     "type": "git",
     "url": "git+https://github.com/zemidala/SpeedDial.git"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "browser-extension",
+    "chrome-extension",
+    "new-tab",
+    "speed-dial",
+    "bookmarks"
+  ],
+  "author": "zemidala",
+  "license": "UNLICENSED",
   "type": "module",
+  "engines": {
+    "node": ">=22.12"
+  },
   "bugs": {
     "url": "https://github.com/zemidala/SpeedDial/issues"
   },

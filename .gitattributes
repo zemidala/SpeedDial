@@ -1,0 +1,8 @@
+# Text files are stored with LF line endings; on checkout Git converts them to the platform's own (core.autocrlf)
+* text=auto
+
+# Binary files are never converted
+*.png binary
+*.jpg binary
+*.ico binary
+*.woff2 binary
