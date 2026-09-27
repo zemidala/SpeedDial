@@ -163,6 +163,8 @@ test('sorting disables dragging and doesn\'t change bookmarks', async ({newtab})
 
   // Dragging a tile explains why it doesn't move and offers to turn sorting off
   await dialog.getByRole('button', {name: 'Готово'}).click();
+  // Sorting moved the tiles: measure once they've arrived, or the drag may start beside the tile
+  await waitForTileAnimations(newtab);
   const from = (await tile(newtab, 'Альфа').boundingBox())!;
   await newtab.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
   await newtab.mouse.down();
@@ -272,7 +274,9 @@ test('a tile can be dropped into a folder from the side; lingering at the folder
   await expect(newtab.locator('.bookmark-grid__cell--insert-pending.bookmark-grid__cell--insert-after')).toHaveCount(1);
   await expect.poll(() => titles(newtab)).toEqual(['Папка', 'Бета']);
   await expect(tile(newtab, 'Папка')).not.toHaveClass(/tile--drop-into/);
-  // Tiles moved apart: drop on the freed place
+  // Tiles moved apart: drop on the freed place — once they've arrived, or on a busy machine the pointer
+  // is still over the moving folder
+  await waitForTileAnimations(newtab);
   await dropAt(newtab, folderNow.x + folderNow.width / 2, edge.y);
   await expect.poll(() => browserOrder()).toEqual(['Папка', 'Бета']);
 });

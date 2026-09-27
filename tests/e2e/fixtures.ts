@@ -128,8 +128,9 @@ export function tile(page: Page, title: string) {
 
 /** Waits for tiles to finish the reorder animation: until then their on-screen position is intermediate */
 export async function waitForTileAnimations(page: Page) {
+  // An animation cut short by the next reorder is cancelled — it counts as finished too
   await page.locator('.bookmark-grid').evaluate((grid) =>
-    Promise.all(grid.getAnimations({subtree: true}).map((animation) => animation.finished)));
+    Promise.all(grid.getAnimations({subtree: true}).map((animation) => animation.finished.catch(() => undefined))));
 }
 
 /**
