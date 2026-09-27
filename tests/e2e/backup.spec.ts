@@ -168,26 +168,30 @@ test('backup to a file and restore from a file', async ({newtab}) => {
   await expect(tile(newtab, 'Внутри')).toBeVisible();
 });
 
-test('cloud without a Client ID in the build — a hint and the redirect URL in development mode', async ({extensionId, newtab}) => {
-  const dialog = await openSettings(newtab, 'Копии');
-  for (const service of ['Google Диск', 'Dropbox', 'OneDrive']) {
-    await dialog.getByLabel('Сервис').selectOption({label: service});
-    await expect(dialog.getByText(`Вход в ${service} не настроен в этой сборке расширения`)).toBeVisible();
-    await expect(dialog.getByText(`https://${extensionId}.chromiumapp.org/`)).toBeVisible();
-    await expect(dialog.getByLabel('Пароль')).toHaveCount(0);
-  }
-  await dialog.getByLabel('Сервис').selectOption({label: 'Яндекс.Диск'});
-  await expect(dialog.getByLabel('Адрес сервера')).toHaveValue('https://webdav.yandex.ru');
-});
+// Unpacked and store installs alike, until sign-in works (OAUTH_IN_DEVELOPMENT)
+for (const installType of ['development', 'normal']) {
+  test(`Google Drive, Dropbox and OneDrive are listed as in development and can't be chosen (${installType})`, async ({context, newtab}) => {
+    await context.addInitScript((type) => {
+      Object.defineProperty(chrome.management, 'getSelf', {value: async () => ({installType: type})});
+    }, installType);
+    await newtab.reload();
+    const dialog = await openSettings(newtab, 'Копии');
+    const service = dialog.getByLabel('Сервис');
+    await expect(service.locator('option')).toHaveText([
+      'Яндекс.Диск',
+      'Google Диск — в разработке',
+      'Dropbox — в разработке',
+      'OneDrive — в разработке',
+      'Nextcloud / ownCloud',
+      'Другой WebDAV',
+    ]);
+    for (const label of ['Google Диск — в разработке', 'Dropbox — в разработке', 'OneDrive — в разработке']) {
+      await expect(service.locator('option', {hasText: label})).toBeDisabled();
+    }
+    await expect(dialog.getByText(/Google Диск, Dropbox и OneDrive в разработке/)).toBeVisible();
 
-test('store install — unconfigured clouds aren\'t listed', async ({context, newtab}) => {
-  await context.addInitScript(() => {
-    Object.defineProperty(chrome.management, 'getSelf', {
-      value: async () => ({installType: 'normal'}),
-    });
+    // WebDAV works as before
+    await expect(service).toHaveValue('yandex');
+    await expect(dialog.getByLabel('Адрес сервера')).toHaveValue('https://webdav.yandex.ru');
   });
-  await newtab.reload();
-  const dialog = await openSettings(newtab, 'Копии');
-  await expect(dialog.getByLabel('Сервис').locator('option'))
-    .toHaveText(['Яндекс.Диск', 'Nextcloud / ownCloud', 'Другой WebDAV']);
-});
+}

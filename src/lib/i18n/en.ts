@@ -561,6 +561,8 @@ export const en = {
     restoreEllipsis: 'Restore…',
     savedToFile: 'Backup saved to a file',
     cloud: 'Cloud backups',
+    inDevelopment: (service: string) => `${service} — in development`,
+    oauthInDevelopment: 'Google Drive, Dropbox and OneDrive are in development and will come in a future version. Yandex Disk, Nextcloud and other WebDAV services work already.',
     intro: 'Connect a cloud drive — backups are saved automatically after changes, and you can restore them on any computer and in any browser: Chrome, Edge.',
     service: 'Service',
     yandex: 'Yandex Disk',

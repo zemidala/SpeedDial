@@ -572,6 +572,8 @@ export const ru: Messages = {
     restoreEllipsis: 'Восстановить…',
     savedToFile: 'Копия сохранена в файл',
     cloud: 'Копии в облаке',
+    inDevelopment: (service: string) => `${service} — в разработке`,
+    oauthInDevelopment: 'Google Диск, Dropbox и OneDrive в разработке и появятся в одной из следующих версий. Яндекс.Диск, Nextcloud и другие WebDAV-сервисы уже работают.',
     intro: 'Подключите облачный диск — копии будут сохраняться сами после изменений, а восстановить их можно на любом компьютере и в любом браузере: Chrome, Edge.',
     service: 'Сервис',
     yandex: 'Яндекс.Диск',

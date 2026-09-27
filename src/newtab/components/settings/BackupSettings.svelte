@@ -3,7 +3,7 @@
   import {type Backup, backupFileName, createBackup, parseBackup} from '../../../lib/backup/backup';
   import {connectionLabel} from '../../../lib/backup/cloud';
   import {redirectUrl} from '../../../lib/backup/oauth';
-  import {OAUTH_PROVIDERS, type OAuthProviderId} from '../../../lib/backup/providers';
+  import {OAUTH_IN_DEVELOPMENT, OAUTH_PROVIDERS, type OAuthProviderId} from '../../../lib/backup/providers';
   import {cloud, restoreBackup} from '../../../lib/backup/store.svelte';
   import {serverOrigin} from '../../../lib/backup/webdav';
   import {bookmarksToHtml, type HtmlBookmark, parseBookmarksHtml} from '../../../lib/bookmarksHtml';
@@ -49,8 +49,11 @@
   // A store install shows only those with a Client ID in the build
   let developer = $state(false);
 
+  // While sign-in is in development, the OAuth clouds are listed in every build, but can't be chosen
   const presets = $derived(Object.entries(PRESETS).filter(([, item]) =>
-    !item.oauth || developer || OAUTH_PROVIDERS[item.oauth].clientId) as [PresetId, (typeof PRESETS)[PresetId]][]);
+    !item.oauth || OAUTH_IN_DEVELOPMENT || developer || OAUTH_PROVIDERS[item.oauth].clientId,
+  ) as [PresetId, (typeof PRESETS)[PresetId]][]);
+  const unavailable = (item: (typeof PRESETS)[PresetId]) => Boolean(item.oauth) && OAUTH_IN_DEVELOPMENT;
 
   onMount(() => {
     chrome.management.getSelf()
@@ -202,11 +205,16 @@
     {#snippet children(id)}
       <select {id} class="input" value={preset} onchange={(event) => choosePreset(event.currentTarget.value as PresetId)}>
         {#each presets as [id, item] (id)}
-          <option value={id}>{item.label}</option>
+          <option value={id} disabled={unavailable(item)}>
+            {unavailable(item) ? t.backup.inDevelopment(item.label) : item.label}
+          </option>
         {/each}
       </select>
     {/snippet}
   </SettingRow>
+  {#if OAUTH_IN_DEVELOPMENT}
+    <p class="backup-settings__note">{t.backup.oauthInDevelopment}</p>
+  {/if}
   {#if oauth?.clientId}
     <div class="backup-settings__actions">
       <button type="button" class="button button--primary" disabled={busy} onclick={signIn}>{t.backup.signIn(oauth.label)}</button>
