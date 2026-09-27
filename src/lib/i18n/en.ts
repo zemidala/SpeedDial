@@ -60,6 +60,7 @@ export const en = {
   grid: {
     bookmarks: 'Bookmarks',
     searchResults: 'Search results',
+    scrollTop: 'Back to top',
     addBookmark: 'Add bookmark',
     add: 'Add',
     nothingFound: (engine: string) => `Nothing found. Press Enter to search ${engine}.`,

@@ -223,6 +223,66 @@ test('only the tiles scroll: the header stays in place', async ({newtab}) => {
   await expect(tile(newtab, 'Tile 39')).toBeInViewport();
 });
 
+// The reload itself can't be run here: an extension loaded from the command line stays off after
+// chrome.runtime.reload(). The list is checked here, the restoring in openTabs.test.ts
+test('the service worker can open SpeedDial again in a tab without the "tabs" permission', async ({context, extensionId}) => {
+  const tab = await context.newPage();
+  await tab.route('https://example.com/**', (route) => route.fulfill({body: '<title>Example page</title>'}));
+  await tab.goto('https://example.com/');
+  const worker = context.serviceWorkers()[0];
+  await worker.evaluate(async () => {
+    const [tab] = await chrome.tabs.query({active: true, lastFocusedWindow: true});
+    await chrome.tabs.update(tab.id!, {url: 'chrome://newtab/'});
+  });
+  await expect.poll(() => tab.url()).toBe(`chrome-extension://${extensionId}/newtab.html`);
+  await expect(tab.getByRole('searchbox', {name: 'Поиск'})).toBeVisible();
+});
+
+test('a tab that left SpeedDial or was closed isn\'t taken back after a reload', async ({context, newtab}) => {
+  const worker = context.serviceWorkers()[0];
+  const stored = () => worker.evaluate(async () => (await chrome.storage.local.get('openNewTabs')).openNewTabs ?? []);
+  await expect.poll(stored).toHaveLength(1);
+
+  const other = await context.newPage();
+  await other.goto('chrome://newtab/');
+  await expect.poll(stored).toHaveLength(2);
+  await other.close();
+  await expect.poll(stored).toHaveLength(1);
+
+  await newtab.route('https://example.com/**', (route) => route.fulfill({body: '<title>Example page</title>'}));
+  await newtab.goto('https://example.com/');
+  await expect.poll(stored).toHaveLength(0);
+});
+
+test('"Back to top" shows up once the tiles are scrolled down and brings them back', async ({newtab}) => {
+  await newtab.setViewportSize({width: 1000, height: 600});
+  await seed(newtab, Array.from({length: 60}, (_, i) => ({title: `Tile ${i}`, url: `https://t${i}.example/`})));
+  await expect(tile(newtab, 'Tile 59')).toBeAttached();
+
+  const content = newtab.locator('.app__content');
+  const button = newtab.getByRole('button', {name: 'Наверх'});
+  await expect(button).toHaveCount(0); // Hidden at the top, also from screen readers
+
+  await content.evaluate((el) => el.scrollTo({top: 100, behavior: 'instant'}));
+  await expect(button).toHaveCount(0); // A little scroll isn't enough
+  await content.evaluate((el) => el.scrollTo({top: el.scrollHeight, behavior: 'instant'}));
+  await expect(button).toBeVisible();
+
+  await button.click();
+  await expect.poll(() => content.evaluate((el) => el.scrollTop)).toBe(0);
+  await expect(button).toHaveCount(0);
+  await expect(tile(newtab, 'Tile 0')).toBeInViewport();
+  // The focus doesn't stay on the hidden button: it goes on to the first tile
+  await expect(tile(newtab, 'Example')).toBeFocused();
+
+  // From the keyboard too
+  await newtab.locator('body').click({position: {x: 5, y: 5}});
+  await content.evaluate((el) => el.scrollTo({top: el.scrollHeight, behavior: 'instant'}));
+  await button.press('Enter');
+  await expect.poll(() => content.evaluate((el) => el.scrollTop)).toBe(0);
+  await expect(tile(newtab, 'Example')).toBeFocused();
+});
+
 test('the folder list is exactly as wide as the round buttons, even with long folder names', async ({newtab}) => {
   await seed(newtab, [{title: 'Очень длинное название папки, которое не должно расширять список', children: []}]);
   await expect(tile(newtab, 'Очень длинное название папки, которое не должно расширять список')).toBeVisible();

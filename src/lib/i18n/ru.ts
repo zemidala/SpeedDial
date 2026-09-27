@@ -70,6 +70,7 @@ export const ru: Messages = {
   grid: {
     bookmarks: 'Закладки',
     searchResults: 'Результаты поиска',
+    scrollTop: 'Наверх',
     addBookmark: 'Добавить закладку',
     add: 'Добавить',
     nothingFound: (engine: string) => `Ничего не найдено. Нажмите Enter, чтобы искать в ${engine}.`,

@@ -3,6 +3,7 @@ import {brokenLinkStorage} from '../lib/brokenLinks';
 import {setLanguage} from '../lib/i18n/index.svelte';
 import {WELCOME_PAGE} from '../lib/links';
 import {onMessage, type RuntimeMessage, sendMessage} from '../lib/messages';
+import {restoreOpenTabs, trackOpenTabs} from '../lib/openTabs';
 import {descriptionStorage, iconOnlyStorage} from '../lib/perBookmark';
 import {rememberAvailableUpdate, restoreUpdateMark} from '../lib/updates';
 import {rememberUpdate} from '../lib/whatsNew';
@@ -48,6 +49,12 @@ chrome.runtime.onInstalled.addListener(({reason, previousVersion}) => {
   if (reason !== chrome.runtime.OnInstalledReason.UPDATE) return;
   rememberUpdate(previousVersion, chrome.runtime.getManifest().version)
     .catch((error) => console.error('Failed to remember the update', error));
+});
+// After a reload or an update SpeedDial comes back into the new tabs it was open in (the browser resets them)
+trackOpenTabs();
+chrome.runtime.onInstalled.addListener(({reason}) => {
+  if (reason !== chrome.runtime.OnInstalledReason.UPDATE) return;
+  restoreOpenTabs().catch((error) => console.error('Failed to restore the new tabs', error));
 });
 chrome.runtime.onStartup.addListener(refreshContextMenu);
 onSettingsChanged(refreshContextMenu);

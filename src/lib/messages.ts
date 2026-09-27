@@ -20,7 +20,10 @@ export type RuntimeMessage =
   /** Page → service worker: load a site's page or manifest (reply — PageResponse), see requestSitePage */
   | {type: 'fetch-page'; url: string}
   /** Page → service worker: does the link work (reply — LinkCheck) */
-  | {type: 'check-link'; url: string; timeout?: number};
+  | {type: 'check-link'; url: string; timeout?: number}
+  /** Page → service worker: SpeedDial opened in this tab / the tab left it (see openTabs.ts) */
+  | {type: 'tab-opened'}
+  | {type: 'tab-left'};
 
 /** A site's answer as the service worker read it; text — only for HTML and JSON */
 export type PageResponse =

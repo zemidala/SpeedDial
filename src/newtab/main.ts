@@ -7,6 +7,7 @@ import {icons} from '../lib/icons.svelte';
 import {onDatabaseOutdated} from '../lib/idb';
 import {isManifestOutdated} from '../lib/manifestCheck';
 import {showNotice} from '../lib/notice.svelte';
+import {reportOpenTab} from '../lib/openTabs';
 import {descriptions, iconOnly} from '../lib/perBookmark.svelte';
 import {permissions} from '../lib/permissions.svelte';
 import {settings} from '../lib/settings/store.svelte';
@@ -41,6 +42,9 @@ takePendingRelease()
     if (release) showNotice(t.whatsNew.notice(release), 'info', {label: t.whatsNew.open, run: () => openSettingsTab('about')});
   })
   .catch(logError('Failed to check for an update'));
+
+// The service worker remembers this tab: after a reload of the extension SpeedDial comes back into it
+reportOpenTab();
 
 // Opened from the toolbar popup's "Settings"
 takeSettingsRequest()

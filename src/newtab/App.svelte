@@ -25,8 +25,12 @@
   import SettingsDialog from './components/settings/SettingsDialog.svelte';
   import ConfirmDialog from './components/ui/ConfirmDialog.svelte';
   import Notice from './components/ui/Notice.svelte';
+  import ScrollTopButton from './components/ui/ScrollTopButton.svelte';
 
   const CUSTOM_CSS_ID = 'custom-css'; // theme-init.js uses the same id
+
+  /** The tile area — the only thing that scrolls */
+  let scroller = $state<HTMLElement>();
 
   const systemHighContrast = new MediaQuery('(prefers-contrast: more)');
 
@@ -162,8 +166,11 @@
 
 <main class="app" class:app--centered={settings.current.verticalCenter}>
   <AppHeader/>
-  <div class="app__content">
-    <BookmarkGrid/>
+  <div class="app__scroll">
+    <div bind:this={scroller} class="app__content">
+      <BookmarkGrid/>
+    </div>
+    <ScrollTopButton {scroller}/>
   </div>
   <VirtualShelves/>
 </main>
@@ -209,6 +216,15 @@
     width: min(100%, var(--container-width));
     height: calc(100vh - 40px);
     margin: 0 auto;
+  }
+
+  /* Holds the scrolling area and the "Back to top" button over its corner */
+  .app__scroll {
+    position: relative;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
   }
 
   /* The scrolling area. The padding (offset by the negative margin) keeps hover lifts, focus rings
