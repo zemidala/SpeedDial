@@ -245,6 +245,31 @@ test('a web bookmark opens in the current tab', async ({context, newtab}) => {
   await expect(newtab).toHaveURL('https://example.com/');
 });
 
+test('folder preview grid: 4×3 by default, any size from the settings', async ({newtab}) => {
+  const sites = Array.from({length: 20}, (_, i) => ({title: `Сайт ${i + 1}`, url: `https://site${i + 1}.example/`}));
+  await seed(newtab, [{title: 'Много', children: sites}, {title: 'Мало', children: sites.slice(0, 3)}]);
+  const cells = (folder: string) => tile(newtab, folder).locator('.folder-preview > *');
+  const filled = (folder: string) => tile(newtab, folder).locator('.folder-preview > .preview-cell');
+  await expect(cells('Много')).toHaveCount(12);
+  await expect(filled('Много')).toHaveCount(12);
+
+  const dialog = await openSettings(newtab, 'Общие');
+  const buttons = dialog.getByRole('radiogroup', {name: 'Сетка превью'});
+  await expect(buttons.getByRole('radio', {name: '4 × 3'})).toBeChecked();
+  for (const [name, count] of [['2 × 2', 4], ['3 × 3', 9], ['4 × 2', 8], ['4 × 4', 16]] as const) {
+    await buttons.getByRole('radio', {name}).check();
+    await expect(cells('Много')).toHaveCount(count);
+    await expect(filled('Много')).toHaveCount(count);
+    // A folder with few sites is padded with empty cells to the full grid
+    await expect(cells('Мало')).toHaveCount(count);
+    await expect(filled('Мало')).toHaveCount(3);
+  }
+  // Columns follow the grid
+  const columns = await tile(newtab, 'Много').locator('.folder-preview')
+    .evaluate((el) => getComputedStyle(el).gridTemplateColumns.split(' ').length);
+  expect(columns).toBe(4);
+});
+
 test('subfolders in a folder\'s preview: four looks; a subfolder\'s own picture shows there too', async ({newtab}) => {
   await seed(newtab, [{title: 'Внешняя', children: [
     {title: 'Сайт', url: 'https://site.example/'},

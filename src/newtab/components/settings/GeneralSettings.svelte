@@ -11,6 +11,8 @@
   import {
     AUTO_CAPTURES,
     type AutoCapture,
+    FOLDER_PREVIEW_GRIDS,
+    type FolderPreviewGrid,
     SEARCH_ENGINES,
     type SearchEngine,
     SORT_ORDERS,
@@ -28,6 +30,7 @@
     VIRTUAL_FOLDER_PERMISSIONS,
     type VirtualFolderId,
   } from '../../../lib/virtualFolders';
+  import IconChoiceRow from './IconChoiceRow.svelte';
   import RangeRow from './RangeRow.svelte';
   import SelectRow from './SelectRow.svelte';
   import SettingRow from './SettingRow.svelte';
@@ -92,6 +95,14 @@
   <SwitchRow key="rememberLastFolder" label={t.general.rememberLastFolder}/>
   <SwitchRow key="folderPreview" label={t.general.folderPreview} hint={t.general.folderPreviewHint}/>
   {#if current.folderPreview}
+    <IconChoiceRow
+      label={t.general.folderPreviewGrid}
+      hint={t.general.folderPreviewGridHint}
+      value={current.folderPreviewGrid}
+      setting="folderPreviewGrid"
+      options={FOLDER_PREVIEW_GRIDS.map((grid) => ({value: grid, label: grid.replace('x', ' × '), icon: `grid${grid}` as const}))}
+      onchange={(value) => settings.update({folderPreviewGrid: value as FolderPreviewGrid})}
+    />
     <SelectRow
       label={t.general.subfolderStyle}
       hint={t.general.subfolderStyleHint}

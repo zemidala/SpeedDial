@@ -40,6 +40,9 @@ export type AutoCapture = (typeof AUTO_CAPTURES)[number];
 /** How a subfolder looks in a folder's preview: a folder outline, a filled folder, its first letter, its first sites */
 export const SUBFOLDER_STYLES = ['outline', 'filled', 'letter', 'contents'] as const;
 export type SubfolderStyle = (typeof SUBFOLDER_STYLES)[number];
+/** Size of the preview grid on a folder tile: columns x rows */
+export const FOLDER_PREVIEW_GRIDS = ['2x2', '3x3', '4x2', '4x3', '4x4'] as const;
+export type FolderPreviewGrid = (typeof FOLDER_PREVIEW_GRIDS)[number];
 
 export interface ServiceLink {
   title: string;
@@ -122,6 +125,7 @@ export interface Settings {
   /** Site previews on a folder tile instead of a folder icon */
   folderPreview: boolean;
   subfolderStyle: SubfolderStyle;
+  folderPreviewGrid: FolderPreviewGrid;
   /** Load large icons directly from sites */
   siteIcons: boolean;
   showThumbnailRefresh: boolean;
@@ -213,6 +217,7 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = {
   services: DEFAULT_SERVICES,
   folderPreview: true,
   subfolderStyle: 'outline',
+  folderPreviewGrid: '4x3',
   siteIcons: false,
   showThumbnailRefresh: true,
   captureOnCreate: false,
@@ -251,6 +256,7 @@ const ENUMS: Partial<Record<keyof Settings, readonly string[]>> = {
   typeOrder: TYPE_ORDERS,
   autoCapture: AUTO_CAPTURES,
   subfolderStyle: SUBFOLDER_STYLES,
+  folderPreviewGrid: FOLDER_PREVIEW_GRIDS,
 };
 
 export const RANGES = {

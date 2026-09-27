@@ -1,6 +1,5 @@
 <script lang="ts">
   import type {BookmarkNode} from '../../../lib/bookmarks.svelte';
-  import {FOLDER_PREVIEW_SIZE} from '../../../lib/constants';
   import {dragDrop} from '../../../lib/dragDrop.svelte';
   import {folderOpenHandlers} from '../../../lib/navigation';
   import {settings} from '../../../lib/settings/store.svelte';
@@ -11,8 +10,12 @@
 
   let {folder, preview}: {folder: BookmarkNode; preview: BookmarkNode[]} = $props();
 
-  // Empty cells pad the preview grid to its full size
-  const emptyCells = $derived(Math.max(0, FOLDER_PREVIEW_SIZE - preview.length));
+  // The preview grid size from the settings; empty cells pad it to its full size
+  const grid = $derived(settings.current.folderPreviewGrid.split('x').map(Number));
+  const columns = $derived(grid[0]);
+  const rows = $derived(grid[1]);
+  const shown = $derived(preview.slice(0, columns * rows));
+  const emptyCells = $derived(columns * rows - shown.length);
   const dropInto = $derived(dragDrop.target?.id === folder.id);
   const image = $derived(thumbnails.get(folder.id));
 </script>
@@ -30,8 +33,8 @@
       <!-- A picture chosen for the folder in the "Image" dialog -->
       <img class="tile__thumbnail" src={image.url} alt="">
     {:else if settings.current.folderPreview}
-      <span class="folder-preview" aria-hidden="true">
-        {#each preview as item (item.id)}
+      <span class="folder-preview" style:--preview-columns={columns} style:--preview-rows={rows} aria-hidden="true">
+        {#each shown as item (item.id)}
           <PreviewCell {item}/>
         {/each}
         {#each {length: emptyCells}, i (i)}
@@ -50,8 +53,8 @@
 <style>
   .folder-preview {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    grid-template-rows: repeat(3, 1fr);
+    grid-template-columns: repeat(var(--preview-columns), 1fr);
+    grid-template-rows: repeat(var(--preview-rows), 1fr);
     gap: 4px;
     width: 100%;
     height: 100%;

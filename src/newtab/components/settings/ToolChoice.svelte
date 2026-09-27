@@ -42,7 +42,7 @@
         onchange={() => onchange(option.value)}
       >
       {#if option.icon}
-        <Icon name={option.icon} size={18}/>
+        <Icon name={option.icon} size={22}/>
       {:else}
         <span class="tool-button__text" style:font-size={option.textSize}>{option.text}</span>
       {/if}

@@ -374,6 +374,8 @@ export const ru: Messages = {
     servicesHint: 'По одному на строку: «Название | адрес»',
     folderPreview: 'Миниатюры сайтов на папке',
     folderPreviewHint: 'Иконки первых закладок папки вместо значка папки',
+    folderPreviewGrid: 'Сетка превью',
+    folderPreviewGridHint: 'Сколько сайтов показывает плитка папки: столбцы × строки',
     subfolderStyle: 'Вложенные папки в превью',
     subfolderStyleHint: 'Как в превью папки выглядят папки внутри неё. Своя картинка подпапки показывается всегда',
     subfolderStyles: {outline: 'Контур папки', filled: 'Заливка', letter: 'Первая буква', contents: 'Её содержимое'},

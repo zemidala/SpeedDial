@@ -136,10 +136,11 @@
     font-size: clamp(16px, calc(var(--icon-scale) * 0.5cqi), 120px);
   }
 
-  /* ===== Fills a folder preview cell: the same size as the subfolder icon ===== */
+  /* ===== Fills a folder preview cell: the same size as the subfolder icon =====
+     A square by the cell's shorter side (the cell is a size container) — not stretched in tall or wide cells */
   .site-icon--cell {
-    height: 72%;
-    max-width: 72%;
+    width: min(72cqw, 72cqh);
+    height: min(72cqw, 72cqh);
     overflow: hidden;
     /* A light plate, as on large tiles: dark logos (GitHub, X) don't get lost in the dark theme */
     border-radius: 22%;

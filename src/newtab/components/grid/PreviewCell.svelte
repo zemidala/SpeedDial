@@ -79,6 +79,10 @@
     justify-content: center;
     min-height: 0;
     overflow: hidden;
+    /* What's inside is a square by the cell's shorter side (--cell-square): cells are tall in a 4×2 grid
+       and wide in a 3×3 one, but icons keep their shape */
+    container-type: size;
+    --cell-square: min(72cqw, 72cqh);
     border-radius: var(--radius-small);
     background: var(--cell-bg);
     color: var(--text-muted);
@@ -92,8 +96,8 @@
   }
 
   .preview-cell :global(.preview-cell__folder-icon) {
-    width: 72%;
-    height: 72%;
+    width: var(--cell-square);
+    height: var(--cell-square);
     fill: color-mix(in oklab, var(--accent) 45%, transparent);
     stroke-width: 2;
   }
@@ -124,8 +128,8 @@
     /* A little lower than the middle: the folder's tab takes the top */
     top: 55%;
     color: #fff;
-    /* The tile card is the size container: the letter grows with the tile */
-    font-size: clamp(8px, 5cqi, 22px);
+    /* Grows with the cell */
+    font-size: clamp(8px, 28cqmin, 22px);
     font-weight: 700;
     line-height: 1;
     transform: translateY(-50%);
@@ -136,8 +140,8 @@
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 2px;
-    width: 72%;
-    height: 72%;
+    width: var(--cell-square);
+    height: var(--cell-square);
     place-items: center;
   }
 
@@ -157,8 +161,8 @@
   }
 
   .preview-cell :global(.preview-cell__broken) {
-    width: 55%;
-    height: 55%;
+    width: min(55cqw, 55cqh);
+    height: min(55cqw, 55cqh);
   }
 
   /* High contrast: every cell has a border, a subfolder uses the full accent colour */

@@ -122,6 +122,11 @@
   cursor: pointer;
 }
 
+/* Thin lines: the small grids and tile pictures stay readable */
+.tool-button .icon {
+  stroke-width: 1.5;
+}
+
 .tool-button__text {
   font-family: Georgia, 'Times New Roman', serif;
   font-size: 1rem;

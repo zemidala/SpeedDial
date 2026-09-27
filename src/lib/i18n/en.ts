@@ -364,6 +364,8 @@ export const en = {
     servicesHint: 'One per line: “Name | URL”',
     folderPreview: 'Site previews on folders',
     folderPreviewHint: 'Icons of the folder’s first bookmarks instead of a folder icon',
+    folderPreviewGrid: 'Preview grid',
+    folderPreviewGridHint: 'How many sites a folder tile shows: columns × rows',
     subfolderStyle: 'Subfolders in previews',
     subfolderStyleHint: 'How folders inside a folder look in its preview. A subfolder’s own picture is always shown',
     subfolderStyles: {outline: 'Folder outline', filled: 'Filled folder', letter: 'First letter', contents: 'Its contents'},

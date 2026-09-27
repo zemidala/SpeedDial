@@ -1,5 +1,7 @@
 <script lang="ts" module>
   // Outline interface icons 24×24 (Lucide style)
+  /** A tile outline 20×15 (4:3, like the tiles) */
+  const TILE_43 = 'M4 4.5h16a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-11a2 2 0 0 1 2-2z';
   const PATHS = {
     settings: [
       'M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z',
@@ -66,6 +68,12 @@
     alignLeft: ['M21 5H3', 'M15 12H3', 'M17 19H3'],
     alignCenter: ['M21 5H3', 'M17 12H7', 'M19 19H5'],
     alignRight: ['M21 5H3', 'M21 12H9', 'M21 19H7'],
+    // Folder preview grids: a 4:3 tile divided into columns × rows
+    grid2x2: [TILE_43, 'M12 4.5v15', 'M2 12h20'],
+    grid3x3: [TILE_43, 'M8.67 4.5v15', 'M15.33 4.5v15', 'M2 9.5h20', 'M2 14.5h20'],
+    grid4x2: [TILE_43, 'M7 4.5v15', 'M12 4.5v15', 'M17 4.5v15', 'M2 12h20'],
+    grid4x3: [TILE_43, 'M7 4.5v15', 'M12 4.5v15', 'M17 4.5v15', 'M2 9.5h20', 'M2 14.5h20'],
+    grid4x4: [TILE_43, 'M7 4.5v15', 'M12 4.5v15', 'M17 4.5v15', 'M2 8.25h20', 'M2 12h20', 'M2 15.75h20'],
     // Name position: a tile and a name line above/below it or inside at the top/bottom
     titleTopOutside: ['M8 3h8', 'M5 8h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2z'],
     titleBottomOutside: ['M8 21h8', 'M5 3h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z'],
