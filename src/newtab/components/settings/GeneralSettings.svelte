@@ -147,7 +147,7 @@
     <button type="button" class="button" onclick={openDuplicates}>{t.duplicates.find}</button>
   </SettingRow>
   <SettingRow label={t.linkCheck.settingsRow} hint={t.linkCheck.settingsHint}>
-    <button type="button" class="button" onclick={openLinkCheck}>{t.linkCheck.menu}</button>
+    <button type="button" class="button" onclick={() => openLinkCheck()}>{t.linkCheck.menuAll}</button>
   </SettingRow>
   <SelectRow
     label={t.general.sortOrder}

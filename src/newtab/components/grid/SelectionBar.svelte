@@ -1,5 +1,6 @@
 <script lang="ts">
-  import type {BookmarkNode} from '../../../lib/bookmarks.svelte';
+  import {type BookmarkNode, bookmarks} from '../../../lib/bookmarks.svelte';
+  import {exportBookmarks} from '../../../lib/exportBookmarks';
   import {t} from '../../../lib/i18n/index.svelte';
   import {showNotice} from '../../../lib/notice.svelte';
   import {selection} from '../../../lib/selection.svelte';
@@ -10,6 +11,12 @@
   let {nodes}: {nodes: BookmarkNode[]} = $props();
 
   const hasBookmarks = $derived(nodes.some((node) => node.url));
+
+  async function exportSelected() {
+    const title = nodes.length === 1 ? nodes[0].title : bookmarks.path.at(-1)?.title ?? t.common.home;
+    const count = await exportBookmarks(nodes.map((node) => node.id), title);
+    showNotice(t.selection.exported(count), 'info');
+  }
 
   function run(action: () => Promise<unknown> | void) {
     Promise.resolve()
@@ -25,6 +32,10 @@
   </button>
   <button type="button" class="button" onclick={() => (ui.dialog = {kind: 'move', nodes})}>
     <Icon name="folderMove" size={16}/>{t.selection.move}
+  </button>
+  <!-- The selected bookmarks and folders with everything inside, as a file any browser can import -->
+  <button type="button" class="button" onclick={() => run(exportSelected)}>
+    <Icon name="download" size={16}/>{t.selection.export}
   </button>
   <button type="button" class="button button--danger" onclick={() => run(() => requestDeleteMany(nodes))}>
     <Icon name="trash" size={16}/>{t.selection.delete}

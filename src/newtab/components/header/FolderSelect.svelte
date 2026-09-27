@@ -51,11 +51,15 @@
 </select>
 
 <style>
+  /* As wide as the round buttons above, as tall as the search field. A list is as wide as its longest folder name
+     by itself; width 0 keeps the names from widening the column, min-width stretches it to the column's width */
   .folder-select {
-    width: auto;
-    max-width: 40%;
-    padding-block: 10px;
+    width: 0;
+    min-width: 100%;
+    height: 44px;
+    padding-block: 0;
     border-radius: var(--radius);
     box-shadow: var(--shadow);
+    text-overflow: ellipsis;
   }
 </style>

@@ -178,7 +178,7 @@
   {:else if dialog.kind === 'duplicates'}
     <DuplicatesDialog onclose={closeDialog}/>
   {:else if dialog.kind === 'linkCheck'}
-    <LinkCheckDialog onclose={closeDialog}/>
+    <LinkCheckDialog scope={dialog.scope} onclose={closeDialog}/>
   {:else}
     <BookmarkDialog {dialog} onclose={closeDialog}/>
   {/if}

@@ -223,6 +223,22 @@ test('only the tiles scroll: the header stays in place', async ({newtab}) => {
   await expect(tile(newtab, 'Tile 39')).toBeInViewport();
 });
 
+test('the folder list is exactly as wide as the round buttons, even with long folder names', async ({newtab}) => {
+  await seed(newtab, [{title: 'Очень длинное название папки, которое не должно расширять список', children: []}]);
+  await expect(tile(newtab, 'Очень длинное название папки, которое не должно расширять список')).toBeVisible();
+  const buttons = (await newtab.locator('.app-header__buttons').boundingBox())!;
+  const select = (await newtab.getByRole('combobox', {name: 'Папка'}).boundingBox())!;
+  expect(select.width).toBeCloseTo(buttons.width, 0);
+  expect(select.x + select.width).toBeCloseTo(buttons.x + buttons.width, 0);
+
+  // With some buttons hidden the list keeps the width of four buttons
+  const dialog = await openSettings(newtab, 'Общие');
+  await dialog.getByLabel('Кнопка обновления миниатюр').uncheck();
+  await dialog.getByRole('button', {name: 'Готово'}).click();
+  await expect(newtab.locator('.app-header__buttons .icon-button')).toHaveCount(3);
+  expect((await newtab.getByRole('combobox', {name: 'Папка'}).boundingBox())!.width).toBeCloseTo(select.width, 0);
+});
+
 test('a web bookmark opens in the current tab', async ({context, newtab}) => {
   await context.route('https://example.com/**', (route) => route.fulfill({body: '<title>Example page</title>'}));
   await tile(newtab, 'Example').click();

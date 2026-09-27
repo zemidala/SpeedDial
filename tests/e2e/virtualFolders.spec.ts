@@ -69,6 +69,11 @@ test('the invitation turns on the shelves below the start page tiles', async ({n
   await expect(newtab.getByRole('button', {name: 'Добавить закладку'})).toHaveCount(0);
   await expect(newtab.getByRole('checkbox', {name: 'Выбрать «Alpha site»'})).toHaveCount(0);
   await expect(newtab.getByRole('button', {name: 'Обновить миниатюры'})).toHaveCount(0);
+
+  // Back returns to the start page with the shelves, like Back in other folders
+  await newtab.locator('.tile--action', {hasText: 'Назад'}).click();
+  await expect(tile(newtab, 'Папка')).toBeVisible();
+  await expect(mostVisited).toBeVisible();
 });
 
 test('recently closed: the shelf updates by itself; turning it off hides it', async ({context, newtab}) => {
@@ -105,4 +110,49 @@ test('"Not now" hides the invitation for good', async ({newtab}) => {
   await newtab.reload();
   await expect(tile(newtab, 'Папка')).toBeVisible();
   await expect(invite(newtab)).toHaveCount(0);
+});
+
+test('shelf items can be removed one by one or all at once, and brought back', async ({newtab}) => {
+  await invite(newtab).getByRole('button', {name: 'Показать'}).click();
+  const mostVisited = shelf(newtab, 'Часто посещаемые');
+  await expect(mostVisited.getByRole('link', {name: 'Alpha site'})).toBeVisible();
+
+  // One site
+  await mostVisited.getByRole('link', {name: 'Alpha site'}).click({button: 'right'});
+  await newtab.getByRole('menuitem', {name: 'Убрать из списка'}).click();
+  await expect(mostVisited.getByRole('link', {name: 'Alpha site'})).toHaveCount(0);
+  await expect(mostVisited.getByRole('link', {name: 'Beta site'})).toBeVisible();
+
+  // The whole list, from the shelf's name; the cleared shelf stays with a way back
+  await mostVisited.getByRole('heading', {name: 'Часто посещаемые'}).click({button: 'right'});
+  await newtab.getByRole('menuitem', {name: 'Очистить список'}).click();
+  await expect(mostVisited.getByRole('link')).toHaveCount(0);
+  await expect(mostVisited).toContainText('Список очищен.');
+  // Still hidden after a reload
+  await newtab.reload();
+  await expect(mostVisited).toContainText('Список очищен.');
+
+  await mostVisited.getByRole('button', {name: 'Вернуть'}).click();
+  await expect(mostVisited.getByRole('link', {name: 'Alpha site'})).toBeVisible();
+  await expect(mostVisited.getByRole('link', {name: 'Beta site'})).toBeVisible();
+});
+
+test('the shelves tuck away to their tab and come back; the choice is remembered', async ({newtab}) => {
+  await invite(newtab).getByRole('button', {name: 'Показать'}).click();
+  const mostVisited = shelf(newtab, 'Часто посещаемые');
+  await expect(mostVisited).toBeVisible();
+
+  await newtab.getByRole('button', {name: 'Свернуть часто посещаемые и недавно закрытые'}).click();
+  await expect(mostVisited).toHaveCount(0);
+  const expand = newtab.getByRole('button', {name: 'Показать часто посещаемые и недавно закрытые'});
+  await expect(expand).toHaveAttribute('aria-expanded', 'false');
+  // Only the tab is left, on the bottom edge of the window
+  const tab = (await expand.boundingBox())!;
+  expect(tab.y + tab.height).toBeCloseTo(newtab.viewportSize()?.height ?? 0, -1);
+
+  await newtab.reload();
+  await expect(expand).toBeVisible();
+  await expect(mostVisited).toHaveCount(0);
+  await expand.click();
+  await expect(mostVisited.getByRole('link', {name: 'Alpha site'})).toBeVisible();
 });

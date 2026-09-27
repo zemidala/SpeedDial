@@ -51,10 +51,13 @@ export function cancelCapture(): void {
 }
 
 async function captureOne(url: string, delaySeconds: number): Promise<Blob> {
+  // A window opened in the background ends up behind the others: the browser doesn't draw it, and many pages
+  // don't even load until it's shown. So the screenshot window comes to the front, and focus goes back afterwards
+  const previous = await chrome.windows.getLastFocused().catch(() => undefined);
   const window = await chrome.windows.create({
     url,
     type: 'popup',
-    focused: false,
+    focused: true,
     width: WINDOW_WIDTH,
     height: WINDOW_HEIGHT,
   });
@@ -71,6 +74,7 @@ async function captureOne(url: string, delaySeconds: number): Promise<Blob> {
   } finally {
     currentWindowId = undefined;
     await chrome.windows.remove(window.id).catch(() => undefined);
+    if (previous?.id !== undefined) await chrome.windows.update(previous.id, {focused: true}).catch(() => undefined);
   }
 }
 

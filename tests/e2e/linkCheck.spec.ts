@@ -32,7 +32,7 @@ const dialogOf = (page: Page) => page.getByRole('dialog', {name: 'Проверк
 
 async function runCheck(page: Page) {
   await page.locator('main').click({button: 'right', position: {x: 5, y: 5}});
-  await page.getByRole('menuitem', {name: 'Проверить ссылки…'}).click();
+  await page.getByRole('menuitem', {name: 'Проверить все ссылки…'}).click();
   const dialog = dialogOf(page);
   await expect(dialog).toContainText('Для каждой из 5 закладок');
   await dialog.getByRole('button', {name: 'Проверить'}).click();
@@ -125,4 +125,33 @@ test('broken links are deleted and brought back with undo', async ({newtab}) => 
   await dialog.getByRole('status').filter({hasText: 'Удалено: 2'}).getByRole('button', {name: 'Отменить'}).click();
   await expect.poll(async () => (await getChildren(newtab, '1')).map((node) => node.title))
     .toEqual(['Works', 'Gone', 'No HEAD', 'Server', 'Папка']);
+});
+
+test('a folder\'s menu checks the links of that folder only', async ({newtab}) => {
+  await tile(newtab, 'Папка').click({button: 'right'});
+  await newtab.getByRole('menuitem', {name: 'Проверить ссылки в папке…'}).click();
+  const dialog = newtab.getByRole('dialog', {name: 'Проверка ссылок в «Папка»'});
+  await expect(dialog).toContainText('Для каждой из 1 закладки');
+  await dialog.getByRole('button', {name: 'Проверить'}).click();
+  await expect(dialog.getByRole('status').first()).toHaveText('Проверено ссылок: 1. Не работают: 1');
+  await expect(dialog.getByRole('checkbox')).toHaveCount(1);
+  // The folder chip shows the whole path
+  await expect(dialog.locator('.link-check__folder')).toHaveText(/Папка$/);
+});
+
+test('a bookmark\'s menu checks that link right away', async ({newtab}) => {
+  await tile(newtab, 'Works').click({button: 'right'});
+  await newtab.getByRole('menuitem', {name: 'Проверить ссылку'}).click();
+  let dialog = newtab.getByRole('dialog', {name: 'Проверка «Works»'});
+  await expect(dialog.getByRole('status').first()).toHaveText('Ссылка работает');
+  await dialog.getByRole('button', {name: 'Закрыть', exact: true}).click();
+
+  await tile(newtab, 'Gone').click({button: 'right'});
+  await newtab.getByRole('menuitem', {name: 'Проверить ссылку'}).click();
+  dialog = newtab.getByRole('dialog', {name: 'Проверка «Gone»'});
+  await expect(dialog.getByRole('status').first()).toHaveText('Ссылка не работает');
+  await expect(dialog.getByText('Страница не найдена (404)')).toBeVisible();
+  await dialog.getByRole('button', {name: 'Пометить (1)'}).click();
+  await dialog.getByRole('button', {name: 'Закрыть', exact: true}).click();
+  await expect(tile(newtab, 'Gone')).toHaveClass(/tile--broken/);
 });

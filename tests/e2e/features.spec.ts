@@ -47,6 +47,17 @@ test('sorting disables dragging and doesn\'t change bookmarks', async ({newtab})
   // The order in the browser itself is unchanged
   const order = (await getChildren(newtab, '1')).map((node) => node.title);
   expect(order).toEqual(['Бета', 'Альфа', 'Папка']);
+
+  // Dragging a tile explains why it doesn't move and offers to turn sorting off
+  await dialog.getByRole('button', {name: 'Готово'}).click();
+  const from = (await tile(newtab, 'Альфа').boundingBox())!;
+  await newtab.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+  await newtab.mouse.down();
+  await newtab.mouse.move(from.x + from.width * 2, from.y + from.height / 2, {steps: 8});
+  await newtab.mouse.up();
+  const notice = newtab.getByRole('status').filter({hasText: 'Плитки отсортированы'});
+  await notice.getByRole('button', {name: 'Выключить сортировку'}).click();
+  await expect.poll(() => titles(newtab)).toEqual(['Бета', 'Альфа', 'Папка']);
 });
 
 // Dragging is emulated in Playwright: dragover arrives only on mouse moves, and under heavy

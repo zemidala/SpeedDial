@@ -9,6 +9,7 @@ import {settings} from './settings/store.svelte';
 import {
   isVirtualFolder,
   MOST_VISITED_ID,
+  onHiddenShelvesChanged,
   RECENTLY_CLOSED_ID,
   type VirtualFolderId,
   virtualFolderItems,
@@ -116,6 +117,10 @@ class BookmarksStore {
       chrome.bookmarks.onChildrenReordered,
       chrome.bookmarks.onImportEnded,
     ].forEach((event) => event.addListener(this.#scheduleReload));
+    // Items of an open virtual folder hidden or brought back
+    onHiddenShelvesChanged(() => {
+      if (this.virtual) this.#scheduleReload();
+    });
 
     // Virtual folders appear, disappear and change with their settings, permissions and the interface language.
     // The effect also re-runs on unrelated settings changes, so reload only when the set of folders really changed

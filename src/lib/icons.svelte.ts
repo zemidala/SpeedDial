@@ -223,11 +223,12 @@ export class IconEntry {
     if (icon) await this.#offerSiteIcon(icon.blob, isCurrent);
   }
 
-  reload(): void {
+  /** Loads the icon anew; resolves once every source has been tried, including the site itself */
+  reload(): Promise<void> {
     this.#generation++;
     this.#setInfo(null);
     this.loaded = false;
-    this.load().catch((error) => console.error('Failed to load icon', error));
+    return this.load().catch((error) => console.error('Failed to load icon', error));
   }
 
   /** The site icon replaces the current one if it's not worse in quality */
@@ -310,15 +311,15 @@ class IconsStore {
     return entry;
   }
 
-  /** Forget the stored site icon and load it again */
+  /** Forget the stored site icon and load it again; resolves when the new icon is in place */
   async refresh(pageUrl: string): Promise<void> {
     const entry = this.get(pageUrl);
     await idbDelete('icons', entry.key);
-    entry.reload();
+    await entry.reload();
   }
 
   reloadAll(): void {
-    for (const entry of this.#entries.values()) entry.reload();
+    for (const entry of this.#entries.values()) void entry.reload();
   }
 
   /** Removes all icons loaded from sites */

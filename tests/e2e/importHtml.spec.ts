@@ -82,3 +82,52 @@ test('exports all bookmarks to a file browsers can import', async ({newtab}) => 
   expect(html).toContain('<A HREF="https://existing.example/"');
   await expect(dialog.getByRole('status')).toHaveText('Закладки сохранены в файл');
 });
+
+test('the browser\'s own import opens from the settings, with how-tos for other browsers', async ({newtab}) => {
+  const dialog = await openSettings(newtab, 'Копии');
+  const tabCount = () => newtab.evaluate(async () => (await chrome.tabs.query({})).length);
+  const before = await tabCount();
+  await dialog.getByRole('button', {name: 'Открыть импорт браузера'}).click();
+  // A new tab with the browser's settings page (Edge doesn't show its settings pages to the tests, so only the count)
+  await expect.poll(tabCount).toBe(before + 1);
+
+  await dialog.getByText('Как сохранить файл закладок в другом браузере').click();
+  await expect(dialog.getByText(/Firefox:.*Экспорт закладок в HTML-файл/)).toBeVisible();
+});
+
+test('selected tiles and folders are exported with everything inside', async ({newtab}) => {
+  await seed(newtab, [
+    {title: 'Chosen', url: 'https://chosen.example/'},
+    {title: 'Skipped', url: 'https://skipped.example/'},
+    {title: 'Work', children: [{title: 'Docs', url: 'https://docs.example/'}, {title: 'Inner', children: [
+      {title: 'Deep', url: 'https://deep.example/'},
+    ]}]},
+  ]);
+  await expect(tile(newtab, 'Work')).toBeVisible();
+  await tile(newtab, 'Chosen').hover();
+  await newtab.getByRole('checkbox', {name: 'Выбрать «Chosen»'}).check();
+  await tile(newtab, 'Work').hover();
+  await newtab.getByRole('checkbox', {name: 'Выбрать «Work»'}).check();
+
+  const download = newtab.waitForEvent('download');
+  await newtab.getByRole('toolbar', {name: 'Выделенные закладки'}).getByRole('button', {name: 'Экспорт'}).click();
+  const file = await download;
+  await expect(newtab.getByRole('status').filter({hasText: 'Сохранено в файл закладок: 3'})).toBeVisible();
+
+  const html = readFileSync((await file.path())!, 'utf8');
+  for (const text of ['https://chosen.example/', '>Work</H3>', '>Inner</H3>', 'https://deep.example/']) expect(html).toContain(text);
+  expect(html).not.toContain('skipped.example');
+  // Not marked as the bookmarks bar: importing it doesn't mix into the browser's own bar
+  expect(html).not.toContain('PERSONAL_TOOLBAR_FOLDER');
+});
+
+test('a folder is exported from its menu', async ({newtab}) => {
+  await seed(newtab, [{title: 'Work', children: [{title: 'Docs', url: 'https://docs.example/'}]}]);
+  await expect(tile(newtab, 'Work')).toBeVisible();
+  const download = newtab.waitForEvent('download');
+  await tile(newtab, 'Work').click({button: 'right'});
+  await newtab.getByRole('menuitem', {name: 'Экспортировать папку в файл'}).click();
+  const file = await download;
+  expect(file.suggestedFilename()).toMatch(/^Work \d{4}-\d{2}-\d{2}\.html$/);
+  expect(readFileSync((await file.path())!, 'utf8')).toContain('https://docs.example/');
+});

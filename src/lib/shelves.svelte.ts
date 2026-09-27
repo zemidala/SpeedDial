@@ -2,10 +2,19 @@
 // of the start pages (Home, the bookmarks bar, the default folder)
 import {untrack} from 'svelte';
 import {type BookmarkNode, enabledVirtualFolders} from './bookmarks.svelte';
-import {MOST_VISITED_ID, RECENTLY_CLOSED_ID, type VirtualFolderId, virtualFolderItems} from './virtualFolders';
+import {
+  hasHiddenItems,
+  MOST_VISITED_ID,
+  onHiddenShelvesChanged,
+  RECENTLY_CLOSED_ID,
+  type VirtualFolderId,
+  virtualFolderItems,
+} from './virtualFolders';
 
 class ShelvesStore {
   lists = $state.raw<Partial<Record<VirtualFolderId, BookmarkNode[]>>>({});
+  /** The list has hidden items the browser still lists — "Show hidden" is offered */
+  hasHidden = $state.raw<Partial<Record<VirtualFolderId, boolean>>>({});
 
   #watchingSessions = false;
 
@@ -22,6 +31,11 @@ class ShelvesStore {
       });
     });
 
+    // Items hidden or brought back — in this tab or another one
+    onHiddenShelvesChanged(() => {
+      for (const id of Object.keys(this.lists) as VirtualFolderId[]) this.#load(id);
+    });
+
     // The most visited list changes as the user browses: refresh when the tab becomes visible again
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible' && this.lists[MOST_VISITED_ID]) this.#load(MOST_VISITED_ID);
@@ -29,9 +43,11 @@ class ShelvesStore {
   }
 
   #load(id: VirtualFolderId): void {
-    virtualFolderItems(id)
-      .then((items) => {
-        if (enabledVirtualFolders().some((folder) => folder.id === id)) this.lists = {...this.lists, [id]: items};
+    Promise.all([virtualFolderItems(id), hasHiddenItems(id)])
+      .then(([items, hidden]) => {
+        if (!enabledVirtualFolders().some((folder) => folder.id === id)) return;
+        this.lists = {...this.lists, [id]: items};
+        this.hasHidden = {...this.hasHidden, [id]: hidden};
       })
       .catch((error) => console.error('Failed to load shelf', id, error));
   }

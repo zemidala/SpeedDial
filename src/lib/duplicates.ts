@@ -16,8 +16,8 @@ export interface DuplicateGroup {
   entries: BookmarkEntry[];
 }
 
-/** Every bookmark of the tree in order, with the path to its folder */
-export function bookmarkEntries(root: chrome.bookmarks.BookmarkTreeNode): BookmarkEntry[] {
+/** Every bookmark of the tree in order, with the path to its folder; rootPath — the path to root itself */
+export function bookmarkEntries(root: chrome.bookmarks.BookmarkTreeNode, rootPath: string[] = []): BookmarkEntry[] {
   const entries: BookmarkEntry[] = [];
   const visit = (node: chrome.bookmarks.BookmarkTreeNode, path: string[]) => {
     for (const child of node.children ?? []) {
@@ -25,7 +25,7 @@ export function bookmarkEntries(root: chrome.bookmarks.BookmarkTreeNode): Bookma
       else visit(child, [...path, child.title]);
     }
   };
-  visit(root, []);
+  visit(root, rootPath);
   return entries;
 }
 

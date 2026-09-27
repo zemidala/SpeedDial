@@ -6,6 +6,7 @@
   import {t} from '../../../lib/i18n/index.svelte';
   import {icons} from '../../../lib/icons.svelte';
   import {openUrl} from '../../../lib/navigation';
+  import {descriptions, iconOnly} from '../../../lib/perBookmark.svelte';
   import {settings} from '../../../lib/settings/store.svelte';
   import {thumbnails} from '../../../lib/thumbnails/store.svelte';
   import {displayHost, isWebUrl, siteName} from '../../../lib/url';
@@ -21,7 +22,14 @@
   const {iconStyle, iconTint, showTitleIcons, openInNewTab} = $derived(settings.current);
 
   const broken = $derived(brokenLinks.get(bookmark.id));
-  const hasThumbnail = $derived(Boolean(thumbnail.url) && !broken);
+  // The name, the description (if there is one) and why the link doesn't work (if marked)
+  const tooltip = $derived([
+    bookmark.title,
+    descriptions.get(bookmark.id),
+    broken && t.linkCheck.tileHint(describeProblem(broken.problem, broken.status)),
+  ].filter(Boolean).join('\n'));
+  // The thumbnail can be switched off for this bookmark in the "Icon" dialog — then the site icon is shown
+  const hasThumbnail = $derived(Boolean(thumbnail.url) && !broken && !iconOnly.get(bookmark.id));
   const tint = $derived(iconTint && !hasThumbnail ? icon.info?.color : null);
 
   // In "fill" mode the area is filled with the icon's edge colour — the icon blends into the tile
@@ -46,7 +54,7 @@
   visualBackground={broken ? null : fillColor}
   style={tint ? `--icon-color: ${tint}` : undefined}
   target={openInNewTab && isWebUrl(url) ? '_blank' : undefined}
-  title={broken ? `${bookmark.title}\n${t.linkCheck.tileHint(describeProblem(broken.problem, broken.status))}` : bookmark.title}
+  title={tooltip}
   data-bookmark-id={bookmark.id}
   onclick={(event: MouseEvent) => open(event, openInNewTab || event.ctrlKey || event.metaKey)}
   onauxclick={(event: MouseEvent) => event.button === 1 && open(event, true)}
@@ -55,7 +63,7 @@
     {#if broken}
       <!-- Marked by the link check: a placeholder instead of the site icon and the thumbnail -->
       <span class="tile__broken" aria-hidden="true"><Icon name="linkOff" size={24}/></span>
-    {:else if thumbnail.url}
+    {:else if hasThumbnail}
       <img class="tile__thumbnail" src={thumbnail.url} alt="">
     {:else}
       <SiteIcon entry={icon} appearance={iconStyle}/>

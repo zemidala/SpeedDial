@@ -7,6 +7,7 @@
   import {cloud, restoreBackup} from '../../../lib/backup/store.svelte';
   import {serverOrigin} from '../../../lib/backup/webdav';
   import {bookmarksToHtml, type HtmlBookmark, parseBookmarksHtml} from '../../../lib/bookmarksHtml';
+  import {currentBrowserImport} from '../../../lib/browserImport';
   import {downloadBlob, pickFile} from '../../../lib/files';
   import {formatDateTime, t} from '../../../lib/i18n/index.svelte';
   import {permissions} from '../../../lib/permissions.svelte';
@@ -141,6 +142,13 @@
     }
   }
 
+  // The browser's own import brings bookmarks from other browsers on this computer; they show up here by themselves
+  const browser = currentBrowserImport();
+
+  function openBrowserImport() {
+    chrome.tabs.create({url: browser.url}).catch((e) => (error = e instanceof Error ? e.message : String(e)));
+  }
+
   async function exportHtml() {
     await run(async () => {
       const [root] = await chrome.bookmarks.getTree();
@@ -163,9 +171,21 @@
 </SettingsGroup>
 
 <SettingsGroup title={t.importHtml.group}>
+  <SettingRow label={t.importHtml.browserRow} hint={t.importHtml.browserHint(browser.name)}>
+    <button type="button" class="button" onclick={openBrowserImport}>{t.importHtml.browserButton}</button>
+  </SettingRow>
   <SettingRow label={t.importHtml.importRow} hint={t.importHtml.importHint}>
     <button type="button" class="button" disabled={busy} onclick={importHtml}>{t.importHtml.importButton}</button>
   </SettingRow>
+  <!-- Where each browser saves its bookmarks file -->
+  <details class="backup-settings__howto">
+    <summary>{t.importHtml.howToTitle}</summary>
+    <ul>
+      {#each t.importHtml.howTo as [browserName, steps] (browserName)}
+        <li><strong>{browserName}:</strong> {steps}</li>
+      {/each}
+    </ul>
+  </details>
   <SettingRow label={t.importHtml.exportRow} hint={t.importHtml.exportHint}>
     <button type="button" class="button" disabled={busy} onclick={exportHtml}>{t.importHtml.exportButton}</button>
   </SettingRow>
@@ -302,6 +322,29 @@
 {/if}
 
 <style>
+
+  .backup-settings__howto {
+    padding: 4px 0 10px;
+    color: var(--text-muted);
+    font-size: 0.8125rem;
+    line-height: 1.5;
+  }
+
+  .backup-settings__howto summary {
+    width: fit-content;
+    color: var(--accent);
+    cursor: pointer;
+  }
+
+  .backup-settings__howto ul {
+    margin: 6px 0 0;
+    padding-left: 18px;
+  }
+
+  .backup-settings__howto strong {
+    color: var(--text);
+    font-weight: 600;
+  }
 
   .backup-settings__note {
     margin: 8px 0;

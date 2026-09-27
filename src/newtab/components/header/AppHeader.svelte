@@ -13,8 +13,8 @@
 </script>
 
 <header class="app-header">
-  <div class="app-header__row">
-    <Breadcrumbs/>
+  <Breadcrumbs/>
+  <div class="app-header__buttons">
     {#if settings.current.showServices}
       <ServicesMenu/>
     {/if}
@@ -31,23 +31,25 @@
   </div>
 
   {#if settings.current.showToolbar}
-    <div class="app-header__row">
-      <SearchBar/>
-      <FolderSelect/>
-    </div>
+    <SearchBar/>
+    <FolderSelect/>
   {/if}
 </header>
 
 <style>
+  /* Two columns: the path and the search stretch; the right column is exactly as wide as the round buttons,
+     and the folder list below takes that width — the same in every browser, whatever its font */
   .app-header {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    /* The right column is at least as wide as all four round buttons: hiding some of them doesn't shrink the folder list */
+    grid-template-columns: minmax(0, 1fr) minmax(calc(4 * 40px + 3 * 12px), auto);
+    align-items: center;
     gap: 12px;
   }
 
-  .app-header__row {
+  .app-header__buttons {
     display: flex;
-    align-items: center;
+    justify-content: flex-end;
     gap: 12px;
   }
 </style>

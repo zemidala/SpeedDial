@@ -4,6 +4,8 @@
 import {groupOrder, moveNodes, moveSteps} from './bookmarkActions';
 import {bookmarks} from './bookmarks.svelte';
 import {ROOT_FOLDER_ID} from './constants';
+import {t} from './i18n/index.svelte';
+import {showNotice} from './notice.svelte';
 import {search} from './search.svelte';
 import {selection} from './selection.svelte';
 import {settings} from './settings/store.svelte';
@@ -132,9 +134,40 @@ class DragDropStore {
       && !search.active && bookmarks.folderId !== ROOT_FOLDER_ID && !bookmarks.virtual;
   }
 
+  /**
+   * Why a tile can't be dragged right now, and how to allow it; null — it can be. Dragging turned off silently
+   * looks like a bug, so the reason is shown when a tile is dragged
+   */
+  #blockedReason(): {message: string; fix?: {label: string; run: () => void}} | null {
+    const {dragAndDrop, sortOrder, typeOrder} = settings.current;
+    if (!dragAndDrop) {
+      return {
+        message: t.dragDrop.turnedOff,
+        fix: {label: t.dragDrop.turnOn, run: () => settings.update({dragAndDrop: true})},
+      };
+    }
+    if (sortOrder !== 'none' || typeOrder !== 'none') {
+      return {
+        message: t.dragDrop.sorted,
+        fix: {label: t.dragDrop.stopSorting, run: () => settings.update({sortOrder: 'none', typeOrder: 'none'})},
+      };
+    }
+    if (bookmarks.folderId === ROOT_FOLDER_ID) return {message: t.dragDrop.home};
+    return null;
+  }
+
   onDragStart = (event: DragEvent): void => {
     const tile = (event.target as Element).closest?.<HTMLElement>('[data-bookmark-id]');
     const id = tile?.dataset.bookmarkId;
+    if (tile && id && !this.enabled && !search.active && !bookmarks.virtual) {
+      const blocked = this.#blockedReason();
+      if (blocked) {
+        // Not even the link is dragged — otherwise it looks like the tile is about to move
+        event.preventDefault();
+        showNotice(blocked.message, 'info', blocked.fix ?? null);
+      }
+      return;
+    }
     if (!this.enabled || !tile || !id || !event.dataTransfer) return;
 
     this.#dragging = id;

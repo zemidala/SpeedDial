@@ -4,6 +4,7 @@
   import {removeNodes, restoreNodes} from '../../../lib/bookmarkActions';
   import {bookmarks} from '../../../lib/bookmarks.svelte';
   import {brokenLinks, describeProblem} from '../../../lib/brokenLinks.svelte';
+  import {ROOT_FOLDER_ID} from '../../../lib/constants';
   import {type BookmarkEntry, bookmarkEntries} from '../../../lib/duplicates';
   import {t} from '../../../lib/i18n/index.svelte';
   import {icons} from '../../../lib/icons.svelte';
@@ -13,13 +14,19 @@
   import {SITE_ACCESS} from '../../../lib/permissionSets';
   import {permissions} from '../../../lib/permissions.svelte';
   import {thumbnails} from '../../../lib/thumbnails/store.svelte';
+  import type {LinkCheckScope} from '../../../lib/ui.svelte';
   import {isWebUrl} from '../../../lib/url';
   import SiteIcon from '../grid/SiteIcon.svelte';
   import Modal from '../ui/Modal.svelte';
 
-  // Checks every web bookmark: does the site answer and is the page still there. Found ones can be deleted,
-  // or marked — the tile then shows a "doesn't work" placeholder instead of the site icon
-  let {onclose}: {onclose: () => void} = $props();
+  // Checks web bookmarks — all of them, one folder with subfolders or one bookmark: does the site answer and is
+  // the page still there. Found ones can be deleted, or marked — the tile then shows a "doesn't work" placeholder
+  let {scope, onclose}: {scope?: LinkCheckScope; onclose: () => void} = $props();
+
+  const title = $derived(scope?.kind === 'folder'
+    ? t.linkCheck.titleFolder(scope.title)
+    : scope?.kind === 'bookmark' ? t.linkCheck.titleBookmark(scope.title) : t.linkCheck.title);
+  const single = $derived(scope?.kind === 'bookmark');
 
   /** Requests at once: fast enough, and doesn't flood one site with requests */
   const CONCURRENCY = 6;
@@ -39,9 +46,35 @@
   let error = $state('');
   let controller: AbortController | null = null;
 
+  /** Folder names from the top down to folderId, for the folder chips */
+  async function pathTo(folderId: string | undefined): Promise<string[]> {
+    const titles: string[] = [];
+    while (folderId && folderId !== ROOT_FOLDER_ID) {
+      const [folder] = await chrome.bookmarks.get(folderId);
+      titles.unshift(folder.title);
+      folderId = folder.parentId;
+    }
+    return titles;
+  }
+
+  async function loadEntries(): Promise<BookmarkEntry[]> {
+    if (scope?.kind === 'bookmark') {
+      const [node] = await chrome.bookmarks.get(scope.id);
+      if (!node.url) return [];
+      return [{id: node.id, parentId: node.parentId!, title: node.title, url: node.url, path: await pathTo(node.parentId)}];
+    }
+    const [root] = scope ? await chrome.bookmarks.getSubTree(scope.id) : await chrome.bookmarks.getTree();
+    return bookmarkEntries(root, scope ? await pathTo(scope.id) : []);
+  }
+
   onMount(() => {
-    chrome.bookmarks.getTree()
-      .then(([root]) => (entries = bookmarkEntries(root).filter((entry) => isWebUrl(entry.url))))
+    loadEntries()
+      .then((result) => {
+        entries = result.filter((entry) => isWebUrl(entry.url));
+        // One bookmark — nothing to confirm, the check starts at once (the menu click still counts as a gesture
+        // if site access has to be asked for)
+        if (single && entries.length > 0) void start();
+      })
       .catch((e) => (error = e instanceof Error ? e.message : String(e)));
   });
   onDestroy(() => controller?.abort());
@@ -149,14 +182,16 @@
   }
 </script>
 
-<Modal title={t.linkCheck.title} size="large" {onclose}>
+<Modal {title} size="large" {onclose}>
   {#if phase === 'idle'}
     <p class="link-check__text">{t.linkCheck.intro(entries.length)}</p>
   {:else}
     <div class="link-check__progress">
       <p class="link-check__text" role="status">
         {#if phase === 'running'}
-          {t.linkCheck.progress(checked, entries.length, problems.length)}
+          {single ? t.linkCheck.checkingOne : t.linkCheck.progress(checked, entries.length, problems.length)}
+        {:else if single && !stopped}
+          {problems.length === 0 ? t.linkCheck.linkWorks : t.linkCheck.linkBroken}
         {:else if problems.length === 0}
           {stopped ? t.linkCheck.stoppedClean(checked, entries.length) : t.linkCheck.allWork(checked)}
         {:else}
@@ -164,7 +199,7 @@
         {/if}
       </p>
       {#if phase === 'running'}
-        <progress max={entries.length} value={checked}></progress>
+        <progress max={entries.length} value={single ? undefined : checked}></progress>
       {/if}
     </div>
 

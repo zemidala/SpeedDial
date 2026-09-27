@@ -14,7 +14,7 @@
   import {settings} from '../../../lib/settings/store.svelte';
   import {sortNodes} from '../../../lib/sorting';
   import {modals, requestDelete, requestDeleteMany, ui} from '../../../lib/ui.svelte';
-  import {isVirtualNode} from '../../../lib/virtualFolders';
+  import {isVirtualFolder, isVirtualNode} from '../../../lib/virtualFolders';
   import Icon from '../ui/Icon.svelte';
   import AddTile from './AddTile.svelte';
   import BackTile from './BackTile.svelte';
@@ -46,9 +46,14 @@
 
   // Back only in nested folders: breadcrumbs lead out of the bookmarks bar and other root folders
   const parentFolderId = $derived.by(() => {
+    if (search.active || !settings.current.showBackTile) return null;
+    // Most visited and recently closed are opened from the shelves of the start page — Back returns there
+    if (bookmarks.virtual) {
+      const start = bookmarks.startFolder();
+      return isVirtualFolder(start) ? bookmarks.barId ?? ROOT_FOLDER_ID : start;
+    }
     const parent = bookmarks.parentFolderId;
-    if (search.active || !settings.current.showBackTile || parent === ROOT_FOLDER_ID) return null;
-    return parent;
+    return parent === ROOT_FOLDER_ID ? null : parent;
   });
   // Virtual folders (most visited, recently closed) are filled by the browser: nothing to add there
   const showAddTile = $derived(!search.active && settings.current.showAddTile && bookmarks.loaded && !bookmarks.virtual);

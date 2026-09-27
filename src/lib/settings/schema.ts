@@ -103,6 +103,8 @@ export interface Settings {
   showRecentlyClosed: boolean;
   /** "Not now" was pressed on the invitation to show these shelves */
   shelfInviteDismissed: boolean;
+  /** The shelves are tucked away at the bottom: only their tab shows */
+  shelvesCollapsed: boolean;
   searchEngine: SearchEngine;
   /** Search URL for searchEngine = custom; %s is replaced with the query */
   customSearchUrl: string;
@@ -192,6 +194,7 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = {
   showMostVisited: false,
   showRecentlyClosed: false,
   shelfInviteDismissed: false,
+  shelvesCollapsed: false,
   searchEngine: 'google',
   customSearchUrl: '',
   showServices: true,

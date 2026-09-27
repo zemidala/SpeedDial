@@ -89,6 +89,7 @@ export const ru: Messages = {
     newBookmark: 'Новая закладка…',
     newFolder: 'Новая папка…',
     sort: 'Сортировать…',
+    exportFolder: 'Экспортировать папку в файл',
     refresh: 'Обновить',
     copyLink: 'Копировать ссылку',
     edit: 'Редактировать…',
@@ -106,6 +107,13 @@ export const ru: Messages = {
     editBookmark: 'Изменить закладку',
     title: 'Название',
     titlePlaceholder: 'Введите название',
+    titleLoading: 'Загружается с сайта…',
+    titleFromSite: 'С сайта',
+    titleFromSiteHint: 'Взять название и описание страницы с сайта',
+    titleNeedsUrl: 'Сначала введите адрес',
+    titleNotFound: 'Сайт не сообщил название — подставлен адрес сайта',
+    description: 'Описание',
+    descriptionPlaceholder: 'Показывается в подсказке плитки',
     address: 'Адрес',
     invalidUrl: 'Неверный формат URL',
     deleted: (isFolder: boolean, title: string) => `${isFolder ? 'Папка' : 'Закладка'} «${title}» удалена`,
@@ -121,11 +129,26 @@ export const ru: Messages = {
     empty: 'Здесь пока пусто — этот список заполняет браузер.',
     addToBookmarks: 'Добавить в закладки',
     added: (folder: string) => `Добавлено в «${folder}»`,
+    hide: 'Убрать из списка',
+    clear: 'Очистить список',
+    showHidden: 'Вернуть убранные',
+    cleared: 'Список очищен.',
+    collapse: 'Свернуть часто посещаемые и недавно закрытые',
+    expand: 'Показать часто посещаемые и недавно закрытые',
+    restore: 'Вернуть',
     showAll: 'Все',
     inviteTitle: 'Часто посещаемые и недавно закрытые',
     inviteText: 'Показывать здесь, под закладками, сайты, которые вы открываете чаще всего, и недавно закрытые вкладки?',
     inviteEnable: 'Показать',
     inviteLater: 'Не сейчас',
+  },
+
+  dragDrop: {
+    turnedOff: 'Перетаскивание плиток выключено в настройках',
+    turnOn: 'Включить',
+    sorted: 'Плитки отсортированы, поэтому их нельзя перетаскивать: порядок задаёт сортировка',
+    stopSorting: 'Выключить сортировку',
+    home: 'Папки браузера на «Главной» переставлять нельзя',
   },
 
   selection: {
@@ -146,16 +169,21 @@ export const ru: Messages = {
     deleteManyTitle: (count: number) => `Удалить ${count} ${plural(count, 'элемент', 'элемента', 'элементов')}?`,
     deleteManyMessage: 'Выбранные закладки и папки будут удалены вместе с содержимым.',
     deletedMany: (count: number) => `Удалено: ${count}`,
+    export: 'Экспорт',
+    exported: (count: number) => `Сохранено в файл закладок: ${count}`,
   },
 
   iconDialog: {
     title: (name: string) => `Значок «${name}»`,
     currentImage: 'Текущая картинка',
     refreshIcon: 'Обновить иконку сайта',
-    iconReloading: 'Иконка загружается заново',
+    iconUpdating: 'Иконка загружается с сайта…',
+    iconUpdated: 'Иконка обновлена',
     capture: 'Сделать снимок страницы',
     captureNeedsAccess: 'Без доступа к сайтам снимок страницы сделать нельзя',
-    captureStarted: 'Снимок страницы делается — картинка обновится, когда он будет готов',
+    capturing: 'Делается снимок страницы…',
+    captureDone: 'Снимок страницы готов',
+    captureFailed: 'Снимок сделать не удалось: страница не открылась',
     chooseImage: 'Выбрать картинку…',
     imageUpdated: 'Картинка обновлена',
     paste: 'Вставить из буфера обмена',
@@ -164,6 +192,11 @@ export const ru: Messages = {
     removeImage: 'Убрать картинку',
     removed: 'Картинка убрана — показывается иконка сайта',
     clipboardHint: 'Чтобы вставлять картинки из буфера обмена, включите это разрешение в настройках, раздел «Расширенные».',
+    showOnTile: 'Что показывать на плитке',
+    showThumbnail: 'Миниатюра',
+    showIcon: 'Иконка сайта',
+    thumbnailShown: 'На плитке миниатюра',
+    iconShown: 'На плитке иконка сайта — миниатюра сохранена',
   },
 
   sort: {
@@ -418,7 +451,14 @@ export const ru: Messages = {
 
   linkCheck: {
     title: 'Проверка ссылок',
-    menu: 'Проверить ссылки…',
+    titleFolder: (folder: string) => `Проверка ссылок в «${folder}»`,
+    titleBookmark: (title: string) => `Проверка «${title}»`,
+    menuAll: 'Проверить все ссылки…',
+    menuFolder: 'Проверить ссылки в папке…',
+    menuBookmark: 'Проверить ссылку',
+    checkingOne: 'Ссылка проверяется…',
+    linkWorks: 'Ссылка работает',
+    linkBroken: 'Ссылка не работает',
     settingsRow: 'Нерабочие ссылки',
     settingsHint: 'Находит закладки, чей сайт не отвечает или страница удалена. Понадобится доступ к сайтам',
     intro: (count: number) =>
@@ -450,6 +490,10 @@ export const ru: Messages = {
 
   importHtml: {
     group: 'Закладки из других браузеров',
+    browserRow: 'Импорт из другого браузера',
+    browserHint: (browser: string) => `${browser} сам переносит закладки из Firefox, Safari, Edge и других браузеров `
+      + 'на этом компьютере. Они сразу появятся здесь — обычно в папке «Импортированные»',
+    browserButton: 'Открыть импорт браузера',
     importRow: 'Импорт из файла закладок',
     importHint: 'HTML-файл, который сохраняют Chrome, Edge, Firefox, Opera, Safari, Яндекс Браузер и другие через «Экспорт закладок»',
     importButton: 'Импортировать…',
@@ -458,6 +502,13 @@ export const ru: Messages = {
     exportButton: 'Экспортировать',
     exported: 'Закладки сохранены в файл',
     notBookmarks: (file: string) => `«${file}» — не файл закладок`,
+    howToTitle: 'Как сохранить файл закладок в другом браузере',
+    howTo: [
+      ['Chrome, Edge, Opera, Brave', 'Диспетчер закладок (Ctrl+Shift+O) → меню ⋮ → «Экспорт закладок»'],
+      ['Яндекс Браузер', 'Закладки (Ctrl+Shift+O) → меню ⋮ → «Экспорт закладок в файл HTML»'],
+      ['Firefox', 'Библиотека (Ctrl+Shift+O) → «Импорт и резервные копии» → «Экспорт закладок в HTML-файл…»'],
+      ['Safari', 'Файл → Экспортировать → Закладки…'],
+    ],
     title: (file: string) => `Импорт «${file}»`,
     summary: (bookmarks: number, folders: number) =>
       `Будет добавлено ${bookmarks} ${plural(bookmarks, 'закладка', 'закладки', 'закладок')}`

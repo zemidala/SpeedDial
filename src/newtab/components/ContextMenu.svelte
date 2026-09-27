@@ -2,6 +2,7 @@
   import {type BookmarkNode, bookmarks} from '../../lib/bookmarks.svelte';
   import {brokenLinks} from '../../lib/brokenLinks.svelte';
   import {ROOT_FOLDER_ID} from '../../lib/constants';
+  import {exportBookmarks} from '../../lib/exportBookmarks';
   import {existingFolder} from '../../lib/folders';
   import {t} from '../../lib/i18n/index.svelte';
   import {folderPageUrl, type OpenMode, openUrl} from '../../lib/navigation';
@@ -11,7 +12,15 @@
   import {shelves} from '../../lib/shelves.svelte';
   import {openDuplicates, openLinkCheck, openSettings, requestDelete, ui} from '../../lib/ui.svelte';
   import {isWebUrl} from '../../lib/url';
-  import {isVirtualFolder, isVirtualNode} from '../../lib/virtualFolders';
+  import {
+    clearShelf,
+    hideItem,
+    isVirtualFolder,
+    isVirtualNode,
+    restoreShelf,
+    type VirtualFolderId,
+    virtualFolderItems,
+  } from '../../lib/virtualFolders';
   import Icon, {type IconName} from './ui/Icon.svelte';
 
   interface MenuItem {
@@ -131,10 +140,38 @@
     };
   }
 
-  /** Menu of a virtual folder or an item in one: open, copy, add to bookmarks — nothing to edit */
+  /**
+   * Clearing a most visited or recently closed list, and bringing hidden items back. The browser doesn't let
+   * extensions remove anything from these lists — the items are only hidden here
+   */
+  function listEntries(id: VirtualFolderId): MenuItem[] {
+    return [
+      {
+        label: t.virtual.clear,
+        icon: 'trash',
+        action: async () => clearShelf(id, await virtualFolderItems(id)),
+      },
+      {
+        label: t.virtual.showHidden,
+        icon: 'refresh',
+        disabled: !shelves.hasHidden[id],
+        action: () => restoreShelf(id),
+      },
+    ];
+  }
+
+  /** Menu of a virtual folder or an item in one: open, copy, add to bookmarks, hide — nothing to edit */
   function virtualEntries(node: BookmarkNode): MenuEntry[] {
     const entries: MenuEntry[] = [...openEntries(node), 'separator', ...historyEntries()];
     if (node.url) entries.push('separator', copyLinkEntry(node.url), addToBookmarksEntry(node as BookmarkNode & {url: string}));
+    const list = isVirtualFolder(node.parentId) ? node.parentId : null;
+    if (list) {
+      entries.push(
+        'separator',
+        {label: t.virtual.hide, icon: 'close', action: () => hideItem(node as BookmarkNode & {parentId: VirtualFolderId})},
+        ...listEntries(list),
+      );
+    }
     entries.push('separator', refreshEntry());
     return entries;
   }
@@ -153,8 +190,26 @@
       }
     }
     // On a folder "Sort" sorts that folder, on a bookmark — the open folder
+    entries.push(sortEntry(node.url ? currentFolder() : {id: node.id, title: node.title}));
+    // The link check covers what was clicked: the bookmark or the folder with its subfolders
+    if (!node.url) {
+      entries.push({
+        label: t.linkCheck.menuFolder,
+        icon: 'linkOff',
+        action: () => openLinkCheck({kind: 'folder', id: node.id, title: node.title}),
+      }, {
+        label: t.menu.exportFolder,
+        icon: 'download',
+        action: async () => showNotice(t.selection.exported(await exportBookmarks([node.id], node.title)), 'info'),
+      });
+    } else if (isWebUrl(node.url)) {
+      entries.push({
+        label: t.linkCheck.menuBookmark,
+        icon: 'linkOff',
+        action: () => openLinkCheck({kind: 'bookmark', id: node.id, title: node.title}),
+      });
+    }
     entries.push(
-      sortEntry(node.url ? currentFolder() : {id: node.id, title: node.title}),
       'separator',
       {label: settings.current.confirmDelete ? t.menu.deleteConfirm : t.menu.delete, icon: 'trash', action: () => requestDelete(node)},
       'separator',
@@ -172,10 +227,12 @@
       'separator',
       sortEntry(currentFolder()),
       {label: t.duplicates.menu, icon: 'copy', action: openDuplicates},
-      {label: t.linkCheck.menu, icon: 'linkOff', action: openLinkCheck},
+      {label: t.linkCheck.menuAll, icon: 'linkOff', action: () => openLinkCheck()},
       'separator',
       refreshEntry(),
     ];
+    // Inside most visited or recently closed: clearing the list
+    if (isVirtualFolder(bookmarks.folderId)) entries.splice(-1, 0, ...listEntries(bookmarks.folderId), 'separator');
     // If the settings button is hidden, the settings open from here
     if (!settings.current.showSettingsButton) {
       entries.push({label: t.common.settings, icon: 'settings', action: openSettings});
@@ -209,7 +266,13 @@
     const id = target.closest<HTMLElement>('[data-bookmark-id]')?.dataset.bookmarkId;
     // Tiles, search results and items on the shelves below the tiles
     const node = [...bookmarks.items, ...search.results, ...Object.values(shelves.lists).flat()].find((item) => item.id === id);
-    menu = {x, y, entries: node ? tileEntries(node) : pageEntries()};
+    // A shelf's name or the space between its items
+    const shelf = target.closest<HTMLElement>('[data-shelf-id]')?.dataset.shelfId;
+    menu = {
+      x,
+      y,
+      entries: node ? tileEntries(node) : isVirtualFolder(shelf) ? [...listEntries(shelf), 'separator', refreshEntry()] : pageEntries(),
+    };
   }
 
   function onWindowKeydown(event: KeyboardEvent) {

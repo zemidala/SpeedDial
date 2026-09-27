@@ -37,7 +37,9 @@
     align-items: center;
     gap: 8px;
     min-width: 0;
-    padding: 12px 16px;
+    /* At least as tall as the round buttons next to it — the rows line up in every browser */
+    min-height: 44px;
+    padding: 6px 16px;
     border-radius: var(--radius);
     background: var(--surface);
     box-shadow: var(--shadow);

@@ -67,6 +67,8 @@
     align-items: center;
     gap: 10px;
     min-width: 0;
+    /* A fixed height: the same in every browser, and the same as the folder list next to it */
+    height: 44px;
     padding: 0 14px;
     border: 1px solid var(--border);
     border-radius: var(--radius);
@@ -83,7 +85,8 @@
   .search-bar__input {
     flex: 1;
     min-width: 0;
-    padding: 11px 0;
+    padding: 0;
+    height: 100%;
     border: none;
     outline: none;
     background: none;

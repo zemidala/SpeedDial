@@ -7,6 +7,7 @@ import {icons} from '../lib/icons.svelte';
 import {onDatabaseOutdated} from '../lib/idb';
 import {isManifestOutdated} from '../lib/manifestCheck';
 import {showNotice} from '../lib/notice.svelte';
+import {descriptions, iconOnly} from '../lib/perBookmark.svelte';
 import {permissions} from '../lib/permissions.svelte';
 import {settings} from '../lib/settings/store.svelte';
 import {shelves} from '../lib/shelves.svelte';
@@ -27,6 +28,8 @@ icons.start(settingsLoaded).catch(logError('Failed to start icons'));
 thumbnails.start();
 shelves.start();
 brokenLinks.start();
+iconOnly.start();
+descriptions.start();
 background.load().catch(logError('Failed to load background'));
 
 isManifestOutdated()

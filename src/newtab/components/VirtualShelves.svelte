@@ -7,7 +7,8 @@
   import {search} from '../../lib/search.svelte';
   import {settings} from '../../lib/settings/store.svelte';
   import {shelves} from '../../lib/shelves.svelte';
-  import {ALL_VIRTUAL_FOLDER_PERMISSIONS} from '../../lib/virtualFolders';
+  import {ALL_VIRTUAL_FOLDER_PERMISSIONS, restoreShelf} from '../../lib/virtualFolders';
+  import {slide} from 'svelte/transition';
   import SiteIcon from './grid/SiteIcon.svelte';
   import Icon from './ui/Icon.svelte';
 
@@ -21,9 +22,12 @@
   const folders = $derived(enabledVirtualFolders());
   const rows = $derived(folders
     .map((folder) => ({...folder, items: shelves.lists[folder.id] ?? []}))
-    .filter((row) => row.items.length > 0));
+    // A cleared list stays, so what was removed can be brought back
+    .filter((row) => row.items.length > 0 || shelves.hasHidden[row.id]));
   const showInvite = $derived(startPage && folders.length === 0 && !settings.current.shelfInviteDismissed);
   const visible = $derived(startPage && (rows.length > 0 || showInvite));
+  const collapsed = $derived(settings.current.shelvesCollapsed && rows.length > 0);
+  const panelId = $props.id();
 
   // Bars fixed to the bottom (selection, notifications) are lifted above the shelves
   let height = $state(0);
@@ -50,55 +54,117 @@
 </script>
 
 {#if visible}
-  <div class="shelves" bind:clientHeight={height}>
-    {#each rows as row (row.id)}
-      <section class="shelf" aria-label={row.title}>
-        <h2 class="shelf__title">{row.title}</h2>
-        <ul class="shelf__items" {onwheel}>
-          {#each row.items as item (item.id)}
-            <li>
-              <a
-                class="shelf__item"
-                href={item.url}
-                title={item.title === item.url ? item.url : `${item.title}\n${item.url}`}
-                draggable="false"
-                data-bookmark-id={item.id}
-                target={settings.current.openInNewTab ? '_blank' : undefined}
-              >
-                <SiteIcon entry={icons.get(item.url!)} appearance="mini"/>
-                <span class="shelf__name">{item.title}</span>
-              </a>
-            </li>
-          {/each}
-        </ul>
-        <!-- Opens the whole list as a folder; a compact version of the regular button -->
-        <button type="button" class="button shelf__all" onclick={() => bookmarks.navigate(row.id)}>
-          {t.virtual.showAll}
-          <span class="shelf__count">{row.items.length}</span>
-          <Icon name="forward" size={14}/>
-        </button>
-      </section>
-    {/each}
+  <div class="shelves-dock" class:shelves-dock--collapsed={collapsed} bind:clientHeight={height}>
+    <!-- The tab tucks the shelves away to the bottom of the page and brings them back; not for the invitation alone -->
+    {#if rows.length > 0}
+      <button
+        type="button"
+        class="shelves-dock__toggle"
+        aria-expanded={!collapsed}
+        aria-controls={panelId}
+        aria-label={collapsed ? t.virtual.expand : t.virtual.collapse}
+        title={collapsed ? t.virtual.expand : t.virtual.collapse}
+        onclick={() => settings.update({shelvesCollapsed: !collapsed})}
+      >
+        <Icon name="history" size={16}/>
+        <Icon name={collapsed ? 'chevronUp' : 'chevronDown'} size={14}/>
+      </button>
+    {/if}
+    {#if !collapsed || rows.length === 0}
+      <div class="shelves" id={panelId} transition:slide={{duration: 200}}>
+        {#each rows as row (row.id)}
+          <section class="shelf" aria-label={row.title} data-shelf-id={row.id}>
+            <h2 class="shelf__title">{row.title}</h2>
+            {#if row.items.length === 0}
+              <p class="shelf__cleared">
+                {t.virtual.cleared}
+                <button type="button" class="shelf__restore" onclick={() => restoreShelf(row.id)}>{t.virtual.restore}</button>
+              </p>
+            {:else}
+              <ul class="shelf__items" {onwheel}>
+                {#each row.items as item (item.id)}
+                  <li>
+                    <a
+                      class="shelf__item"
+                      href={item.url}
+                      title={item.title === item.url ? item.url : `${item.title}\n${item.url}`}
+                      draggable="false"
+                      data-bookmark-id={item.id}
+                      target={settings.current.openInNewTab ? '_blank' : undefined}
+                    >
+                      <SiteIcon entry={icons.get(item.url!)} appearance="mini"/>
+                      <span class="shelf__name">{item.title}</span>
+                    </a>
+                  </li>
+                {/each}
+              </ul>
+              <!-- Opens the whole list as a folder; a compact version of the regular button -->
+              <button type="button" class="button shelf__all" onclick={() => bookmarks.navigate(row.id)}>
+                {t.virtual.showAll}
+                <span class="shelf__count">{row.items.length}</span>
+                <Icon name="forward" size={14}/>
+              </button>
+            {/if}
+          </section>
+        {/each}
 
-    {#if showInvite}
-      <section class="shelf-invite" aria-label={t.virtual.inviteTitle}>
-        <p class="shelf-invite__text"><strong>{t.virtual.inviteTitle}.</strong> {t.virtual.inviteText}</p>
-        <div class="shelf-invite__actions">
-          <button type="button" class="button button--primary" onclick={enable}>{t.virtual.inviteEnable}</button>
-          <button type="button" class="button" onclick={() => settings.update({shelfInviteDismissed: true})}>
-            {t.virtual.inviteLater}
-          </button>
-        </div>
-      </section>
+        {#if showInvite}
+          <section class="shelf-invite" aria-label={t.virtual.inviteTitle}>
+            <p class="shelf-invite__text"><strong>{t.virtual.inviteTitle}.</strong> {t.virtual.inviteText}</p>
+            <div class="shelf-invite__actions">
+              <button type="button" class="button button--primary" onclick={enable}>{t.virtual.inviteEnable}</button>
+              <button type="button" class="button" onclick={() => settings.update({shelfInviteDismissed: true})}>
+                {t.virtual.inviteLater}
+              </button>
+            </div>
+          </section>
+        {/if}
+      </div>
     {/if}
   </div>
 {/if}
 
 <style>
   /* The bottom of the app layout: stays in place while the tiles above it scroll */
-  .shelves {
+  /* The shelves with their tab above, centred */
+  .shelves-dock {
     display: flex;
     flex-shrink: 0;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* Tucked away: the tab sits right on the bottom edge of the window (the page has a 20px margin) */
+  .shelves-dock--collapsed {
+    margin-bottom: -20px;
+  }
+
+  .shelves-dock__toggle {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    height: 24px;
+    padding: 0 12px;
+    border: 1px solid var(--border);
+    border-bottom: none;
+    border-radius: var(--radius-small) var(--radius-small) 0 0;
+    background: var(--surface);
+    color: var(--text-muted);
+    cursor: pointer;
+  }
+
+  .shelves-dock__toggle:hover {
+    color: var(--text);
+  }
+
+  .shelves-dock__toggle:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+
+  .shelves {
+    display: flex;
+    align-self: stretch;
     flex-direction: column;
     gap: 8px;
     padding: 10px 12px;
@@ -108,11 +174,25 @@
     box-shadow: var(--shadow);
   }
 
+  /* Everything lines up with the top of the cards: a horizontal scrollbar under the cards makes the row taller,
+     and centring would lift the cards above the name and the "All" button */
   .shelf {
+    --shelf-card-height: 32px;
     display: grid;
     grid-template-columns: 150px minmax(0, 1fr) auto;
-    align-items: center;
+    align-items: start;
     gap: 12px;
+  }
+
+  .shelf__title,
+  .shelf__all {
+    height: var(--shelf-card-height);
+    /* The same 2px as the row's top padding */
+    margin-top: 2px;
+  }
+
+  .shelf__title {
+    line-height: var(--shelf-card-height);
   }
 
   .shelf__title {
@@ -152,7 +232,8 @@
     align-items: center;
     gap: 8px;
     min-width: 0;
-    padding: 7px 10px;
+    height: var(--shelf-card-height);
+    padding: 0 10px;
     border: 1px solid var(--border);
     border-radius: var(--radius-small);
     background: var(--field-bg);
@@ -177,11 +258,32 @@
     white-space: nowrap;
   }
 
+  .shelf__cleared {
+    grid-column: 2 / -1;
+    margin: 2px 0 0;
+    color: var(--text-muted);
+    font-size: 0.8125rem;
+    line-height: var(--shelf-card-height);
+  }
+
+  .shelf__restore {
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--accent);
+    font-size: inherit;
+    cursor: pointer;
+  }
+
+  .shelf__restore:hover {
+    text-decoration: underline;
+  }
+
   .shelf__all {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 4px 8px 4px 12px;
+    padding: 0 8px 0 12px;
     font-size: 0.8125rem;
   }
 

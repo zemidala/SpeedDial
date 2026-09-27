@@ -2,6 +2,7 @@
 // thumbnail. No extra windows — the tab the user is looking at is captured
 import {coverTop, THUMBNAIL_HEIGHT, THUMBNAIL_WIDTH} from '../lib/images';
 import {sendMessage} from '../lib/messages';
+import {iconOnlyStorage} from '../lib/perBookmark';
 import {SITE_ACCESS} from '../lib/permissionSets';
 import {loadSettings} from '../lib/settings/storage';
 import {indexBookmarks, needsScreenshot} from '../lib/thumbnails/autoCapture';
@@ -73,8 +74,10 @@ export async function autoCapture(tabId: number): Promise<boolean> {
 
     const now = Date.now();
     const due: string[] = [];
+    // Bookmarks set to show the icon don't need screenshots
+    const showIcon = await iconOnlyStorage.load();
     for (const id of await bookmarksFor(url)) {
-      if (now - (lastAttempt.get(id) ?? 0) < RETRY_AFTER) continue;
+      if (id in showIcon || now - (lastAttempt.get(id) ?? 0) < RETRY_AFTER) continue;
       const stored = await getThumbnail(id).catch(() => undefined);
       if (needsScreenshot(stored, settings.autoCapture, now)) due.push(id);
     }

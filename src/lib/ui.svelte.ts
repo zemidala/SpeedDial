@@ -14,6 +14,13 @@ export interface ConfirmOptions {
   onConfirm: () => Promise<unknown> | void;
 }
 
+/** What the link check covers: one folder with its subfolders, or one bookmark */
+export interface LinkCheckScope {
+  kind: 'folder' | 'bookmark';
+  id: string;
+  title: string;
+}
+
 export type SettingsTab = 'view' | 'general' | 'backup' | 'advanced' | 'about';
 
 export interface FolderRef {
@@ -38,7 +45,7 @@ export type Dialog =
   /** Bookmarks of the same page in different folders */
   | {kind: 'duplicates'}
   /** Bookmarks whose site doesn't respond or whose page is gone */
-  | {kind: 'linkCheck'}
+  | {kind: 'linkCheck'; scope?: LinkCheckScope}
   | ({kind: 'confirm'} & ConfirmOptions);
 
 // The open dialog; at most one is shown at a time
@@ -63,10 +70,10 @@ export function openDuplicates(): void {
   ui.dialog = {kind: 'duplicates'};
 }
 
-/** Also from the settings — like openDuplicates */
-export function openLinkCheck(): void {
+/** Also from the settings — like openDuplicates. Without a scope every bookmark is checked */
+export function openLinkCheck(scope?: LinkCheckScope): void {
   settings.flush();
-  ui.dialog = {kind: 'linkCheck'};
+  ui.dialog = {kind: 'linkCheck', scope};
 }
 
 /** Deletes a bookmark or folder and offers to undo */

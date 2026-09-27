@@ -3,6 +3,7 @@ import {removeBrokenMarks} from '../lib/brokenLinks';
 import {setLanguage} from '../lib/i18n/index.svelte';
 import {WELCOME_PAGE} from '../lib/links';
 import {onMessage, type RuntimeMessage, sendMessage} from '../lib/messages';
+import {descriptionStorage, iconOnlyStorage} from '../lib/perBookmark';
 import {loadSettings, onSettingsChanged} from '../lib/settings/storage';
 import {deleteThumbnail} from '../lib/thumbnails/storage';
 import {autoCapture, forgetBookmarkIndex} from './autoCapture';
@@ -78,6 +79,9 @@ chrome.bookmarks.onRemoved.addListener((_id, {node}) => {
   };
   collect(node);
   removeBrokenMarks(ids).catch((error) => console.error('Failed to remove link marks', error));
+  for (const storage of [iconOnlyStorage, descriptionStorage]) {
+    storage.forget(ids).catch((error) => console.error('Failed to forget bookmark data', error));
+  }
   Promise.all(ids.map((id) => deleteThumbnail(id).catch(() => undefined)))
     .then(() => sendMessage({type: 'thumbnails-changed', ids}))
     .catch((error) => console.error('Failed to delete thumbnails', error));

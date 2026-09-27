@@ -77,7 +77,8 @@ export const test = base.extend<Fixtures>({
 
   context: async ({extensionPath, browserLocale}, use) => {
     const context = await chromium.launchPersistentContext('', {
-      channel: 'chromium',
+      // E2E_CHANNEL=msedge runs the tests in the installed Edge
+      channel: process.env.E2E_CHANNEL ?? 'chromium',
       // "System default" gives this locale's language
       locale: browserLocale,
       args: [

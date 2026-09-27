@@ -38,9 +38,16 @@ async function chooseImage(page: Page, title: string, color: string) {
 test('page screenshot from the "Icon" dialog and removing the thumbnail', async ({newtab}) => {
   const dialog = await openIconDialog(newtab, 'Shot');
   await dialog.getByRole('button', {name: 'Сделать снимок страницы'}).click();
+  // While it's being taken, the preview says so and the buttons wait
+  await expect(dialog.getByRole('status').filter({hasText: 'Делается снимок страницы…'})).toBeVisible();
+  await expect(dialog.getByRole('button', {name: 'Обновить иконку сайта'})).toBeDisabled();
 
   // The preview in the dialog and the tile update when the screenshot is ready
   await expect(dialog.getByRole('img', {name: 'Текущая картинка'})).toBeVisible({timeout: 20_000});
+  await expect(dialog.getByRole('status')).toHaveText('Снимок страницы готов');
+  // The screenshot window was in front; focus is back in the window with the new tab
+  expect(await newtab.evaluate(async () => (await chrome.windows.getLastFocused()).id))
+    .toBe(await newtab.evaluate(async () => (await chrome.windows.getCurrent()).id));
   const thumbnail = thumbnailOf(newtab, 'Shot');
   await expect(thumbnail).toHaveAttribute('src', /^blob:/);
   // The screenshot colour is the stub page's background
@@ -133,7 +140,9 @@ test('undoing a deletion brings back thumbnails too', async ({newtab}) => {
   await tile(newtab, 'Папка').click();
   const iconDialog = await chooseImage(newtab, 'Inner', '#ff00ff');
   await iconDialog.getByRole('button', {name: 'Готово'}).click();
-  await newtab.getByRole('navigation', {name: 'Путь к папке'}).getByRole('button', {name: 'Панель закладок'}).click();
+  // The bar's name depends on the browser: "Панель закладок" in Chrome, "Панель избранного" in Edge
+  const [bar] = await newtab.evaluate(() => chrome.bookmarks.get('1'));
+  await newtab.getByRole('navigation', {name: 'Путь к папке'}).getByRole('button', {name: bar.title}).click();
 
   await tile(newtab, 'Папка').click({button: 'right'});
   await newtab.getByRole('menuitem', {name: 'Удалить', exact: true}).click();
