@@ -3,7 +3,7 @@
   import {t} from '../../../lib/i18n/index.svelte';
   import Icon from './Icon.svelte';
 
-  // "Back to top" over the tile area: shows up once the tiles are scrolled down by half a screen
+  // "Back to top" over the tile area: shows up as soon as the tiles are scrolled down at all
   let {scroller}: {scroller: HTMLElement | undefined} = $props();
 
   const reducedMotion = new MediaQuery('(prefers-reduced-motion: reduce)');
@@ -13,7 +13,8 @@
     const element = scroller;
     if (!element) return;
     const update = () => {
-      visible = element.scrollTop > Math.max(200, element.clientHeight / 2);
+      // scrollTop may be fractional on a scaled screen: a pixel counts as scrolled
+      visible = element.scrollTop >= 1;
     };
     update();
     element.addEventListener('scroll', update, {passive: true});

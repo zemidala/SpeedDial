@@ -254,7 +254,7 @@ test('a tab that left SpeedDial or was closed isn\'t taken back after a reload',
   await expect.poll(stored).toHaveLength(0);
 });
 
-test('"Back to top" shows up once the tiles are scrolled down and brings them back', async ({newtab}) => {
+test('"Back to top" shows up as soon as the tiles are scrolled down and brings them back', async ({newtab}) => {
   await newtab.setViewportSize({width: 1000, height: 600});
   await seed(newtab, Array.from({length: 60}, (_, i) => ({title: `Tile ${i}`, url: `https://t${i}.example/`})));
   await expect(tile(newtab, 'Tile 59')).toBeAttached();
@@ -263,8 +263,11 @@ test('"Back to top" shows up once the tiles are scrolled down and brings them ba
   const button = newtab.getByRole('button', {name: 'Наверх'});
   await expect(button).toHaveCount(0); // Hidden at the top, also from screen readers
 
-  await content.evaluate((el) => el.scrollTo({top: 100, behavior: 'instant'}));
-  await expect(button).toHaveCount(0); // A little scroll isn't enough
+  // Any scroll down is enough
+  await content.evaluate((el) => el.scrollTo({top: 20, behavior: 'instant'}));
+  await expect(button).toBeVisible();
+  await content.evaluate((el) => el.scrollTo({top: 0, behavior: 'instant'}));
+  await expect(button).toHaveCount(0);
   await content.evaluate((el) => el.scrollTo({top: el.scrollHeight, behavior: 'instant'}));
   await expect(button).toBeVisible();
 
