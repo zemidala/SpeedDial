@@ -1,6 +1,6 @@
 import {describe, expect, it} from 'vitest';
 import {existingLinks, planImport, runImport} from './bookmarkImport';
-import {bookmarksToHtml, parseBookmarksHtml} from './bookmarksHtml';
+import {bookmarksToHtml, htmlMergeRoots, parseBookmarksHtml} from './bookmarksHtml';
 
 // Shortened from a real Chrome export: unclosed <DT> and <p>, entities, the bookmarks bar marker
 const CHROME_EXPORT = `<!DOCTYPE NETSCAPE-Bookmark-file-1>
@@ -44,7 +44,7 @@ const FIREFOX_EXPORT = `<!DOCTYPE NETSCAPE-Bookmark-file-1>
 describe('parseBookmarksHtml', () => {
   it('reads folders, bookmarks, entities and dates from a Chrome export', () => {
     expect(parseBookmarksHtml(CHROME_EXPORT)).toEqual([
-      {title: 'Панель закладок', dateAdded: 1_700_000_000_000, children: [
+      {title: 'Панель закладок', dateAdded: 1_700_000_000_000, toolbar: true, children: [
         {title: 'Tom & Jerry — "cartoon"', url: 'https://example.com/?a=1&b=2', dateAdded: 1_700_000_001_000},
         {title: 'Работа', dateAdded: 1_700_000_002_000, children: [
           {title: 'Docs', url: 'https://docs.example/'},
@@ -82,13 +82,40 @@ describe('bookmarksToHtml', () => {
     const html = bookmarksToHtml(tree);
     expect(html).toContain('PERSONAL_TOOLBAR_FOLDER="true">Bar &lt;main&gt;</H3>');
     expect(html.match(/PERSONAL_TOOLBAR_FOLDER/g)).toHaveLength(1);
+    expect(html).toContain('UNFILED_BOOKMARKS_FOLDER="true">Other</H3>');
     expect(parseBookmarksHtml(html)).toEqual([
-      {title: 'Bar <main>', dateAdded: 1_700_000_000_000, children: [
+      {title: 'Bar <main>', dateAdded: 1_700_000_000_000, toolbar: true, children: [
         {title: 'A & "B"', url: 'https://example.com/?a=1&b=2', dateAdded: 1_700_000_001_000},
         {title: 'Empty', children: []},
       ]},
-      {title: 'Other', children: [{title: 'C', url: 'https://c.example/'}]},
+      {title: 'Other', unfiled: true, children: [{title: 'C', url: 'https://c.example/'}]},
     ]);
+  });
+
+  it('a file of chosen folders marks nothing', () => {
+    const html = bookmarksToHtml([{id: '1', title: 'Bar', children: []}, {id: '2', title: 'Other', children: []}], false);
+    expect(html).not.toMatch(/PERSONAL_TOOLBAR_FOLDER|UNFILED_BOOKMARKS_FOLDER/);
+  });
+});
+
+describe('htmlMergeRoots', () => {
+  const a = {title: 'A', url: 'https://a.example/'};
+  const b = {title: 'B', url: 'https://b.example/'};
+
+  it('Chrome and Edge: the marked bar, and "Other bookmarks" loose at the top level', () => {
+    const roots = htmlMergeRoots([{title: 'Панель избранного', toolbar: true, children: [a]}, b, {title: 'Folder', children: []}]);
+    expect(roots).toEqual([
+      {kind: 'bookmarks-bar', children: [a]},
+      {kind: 'other', children: [b, {title: 'Folder', children: []}]},
+    ]);
+  });
+
+  it('Firefox and SpeedDial: "Other bookmarks" in a marked folder', () => {
+    expect(htmlMergeRoots([{title: 'Other', unfiled: true, children: [a]}])).toEqual([{kind: 'other', children: [a]}]);
+  });
+
+  it('no marks (Safari, a file of chosen folders): everything goes to "Other"', () => {
+    expect(htmlMergeRoots([{title: 'Folder', children: [a]}])).toEqual([{kind: 'other', children: [{title: 'Folder', children: [a]}]}]);
   });
 });
 

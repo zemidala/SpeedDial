@@ -67,11 +67,11 @@ describe('backup', () => {
     const backup = await backupOf(api);
 
     expect(backup.roots).toEqual([
-      {id: '1', title: 'Панель закладок', children: [
+      {id: '1', title: 'Панель закладок', kind: 'bookmarks-bar', children: [
         {title: 'Альфа', url: 'https://alpha.example/'},
         {title: 'Папка', children: [{title: 'Внутри', url: 'https://inside.example/'}]},
       ]},
-      {id: '2', title: 'Другие закладки', children: [{title: 'Прочее', url: 'https://other.example/'}]},
+      {id: '2', title: 'Другие закладки', kind: 'other', children: [{title: 'Прочее', url: 'https://other.example/'}]},
     ]);
     expect(backup.settings.columns).toBe(7);
     // Device-only settings aren't included in the backup
@@ -146,8 +146,23 @@ describe('backup', () => {
       return true;
     });
     expect(saved).toHaveLength(2);
-    expect(result).toEqual({created: 1, thumbnails: 2});
+    expect(result).toMatchObject({created: 1, thumbnails: 2});
+    expect(result.createdIds).toHaveLength(1);
   });
+  it('merging another browser\'s backup: roots by kind, not by id; folders by name without case', async () => {
+    // A backup made in Edge with account bookmarks: its bar has another id
+    const backup: Backup = {
+      ...await backupOf(fakeBookmarks([])),
+      roots: [{id: '7', title: 'Панель избранного', kind: 'bookmarks-bar', children: [
+        {title: 'папка', children: [{title: 'Внутри', url: 'http://inside.example'}, {title: 'Новая', url: 'https://new.example/'}]},
+      ]}],
+    };
+    const target = fakeBookmarks([{title: 'Папка', children: [{title: 'Внутри', url: 'https://inside.example/'}]}]);
+    const result = await restoreBookmarks(backup, 'merge', target, noImages);
+    expect(target.titles('1')).toEqual([{'Папка': ['Внутри', 'Новая']}]);
+    expect(result.created).toBe(1);
+  });
+
 
   it('images round-trip through base64 losslessly', async () => {
     const bytes = new Uint8Array(100_000).map((_, i) => (i * 7) % 256);

@@ -22,6 +22,15 @@ function isSupported(url: string): boolean {
 
 const linkKey = (url: string) => pageKey(url) ?? url;
 
+/** The file without links a browser can't bookmark; folders left empty by that go too */
+export function withoutUnsupported(nodes: HtmlBookmark[]): HtmlBookmark[] {
+  return nodes.flatMap((node) => {
+    if (node.url !== undefined) return isSupported(node.url) ? [node] : [];
+    const children = withoutUnsupported(node.children ?? []);
+    return (node.children?.length ?? 0) > 0 && children.length === 0 ? [] : [{...node, children}];
+  });
+}
+
 /** Keys of all links in the tree — for skipping ones that already exist */
 export function existingLinks(nodes: {url?: string; children?: unknown[]}[]): Set<string> {
   const keys = new Set<string>();

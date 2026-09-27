@@ -34,9 +34,36 @@ async function chooseFile(page: Page, name: string, content: string) {
   return dialog;
 }
 
+test('merges a bookmarks file: the bar into the bar, same-named folders merge, repeats skipped; can be undone', async ({newtab}) => {
+  await seed(newtab, [{title: 'work', children: [{title: 'Docs here', url: 'https://docs.example'}]}]);
+  await expect(tile(newtab, 'work')).toBeVisible();
+  const settings = await chooseFile(newtab, 'bookmarks.html', EXPORTED);
+  const dialog = newtab.getByRole('dialog', {name: 'Импорт «bookmarks.html»'});
+  // Merging is the default
+  await expect(dialog.getByRole('radio', {name: /Объединить с моими закладками/})).toBeChecked();
+  await expect(dialog.getByRole('status')).toContainText('Будет добавлено 1 закладка');
+  await expect(dialog.getByRole('status')).toContainText('Папок с тем же названием объединится: 1');
+  await expect(dialog.getByRole('status')).toContainText('Уже есть в тех же папках, будут пропущены: 2');
+
+  await dialog.getByRole('button', {name: 'Импортировать', exact: true}).click();
+  await expect(dialog).toHaveCount(0);
+  const notice = newtab.getByRole('status').filter({hasText: 'Добавлено закладок: 1. Пропущено повторов: 2'});
+  await expect(notice).toBeVisible();
+  await settings.getByRole('button', {name: 'Готово'}).click();
+
+  // The file's bar went into this bar: the new bookmark at the end, the folder not doubled
+  const bar = async () => (await getChildren(newtab, '1')).map((node) => node.title);
+  await expect.poll(bar).toEqual(['Existing', 'work', 'News & weather']);
+
+  // Undo removes what was added
+  await notice.getByRole('button', {name: 'Отменить'}).click();
+  await expect.poll(bar).toEqual(['Existing', 'work']);
+});
+
 test('imports a bookmarks file into a new folder, skipping existing bookmarks', async ({newtab}) => {
   const settings = await chooseFile(newtab, 'bookmarks.html', EXPORTED);
   const dialog = newtab.getByRole('dialog', {name: 'Импорт «bookmarks.html»'});
+  await dialog.getByRole('radio', {name: /Положить в отдельную папку/}).check();
   await expect(dialog.getByRole('status')).toContainText('Будет добавлено 2 закладки в 2 папках');
   await expect(dialog.getByRole('status')).toContainText('Уже есть в закладках: 1');
 
@@ -79,6 +106,8 @@ test('exports all bookmarks to a file browsers can import', async ({newtab}) => 
   const html = readFileSync((await file.path())!, 'utf8');
   expect(html).toMatch(/^<!DOCTYPE NETSCAPE-Bookmark-file-1>/);
   expect(html).toContain('PERSONAL_TOOLBAR_FOLDER="true"');
+  // "Other bookmarks" is marked too: SpeedDial and Firefox merge it into theirs
+  expect(html).toContain('UNFILED_BOOKMARKS_FOLDER="true"');
   expect(html).toContain('<A HREF="https://existing.example/"');
   await expect(dialog.getByRole('status')).toHaveText('Закладки сохранены в файл');
 });

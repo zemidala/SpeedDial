@@ -549,6 +549,19 @@ export const en = {
       ['Safari', 'File → Export → Bookmarks…'],
     ] as Array<[string, string]>,
     title: (file: string) => `Import “${file}”`,
+    modes: 'How to add',
+    merge: 'Merge with my bookmarks',
+    mergeHint: 'The bar into the bar, same-named folders merge, bookmarks already in the same folder are skipped. Nothing is deleted',
+    separate: 'Put into a separate folder',
+    separateHint: 'Everything from the file into one folder, as it is',
+    mergeSummary: (bookmarks: number, folders: number) =>
+      `${bookmarks} ${bookmarks === 1 ? 'bookmark' : 'bookmarks'} will be added`
+      + (folders > 0 ? `, new folders: ${folders}` : ''),
+    mergedFolders: (count: number) => `Folders with the same name to merge: ${count}`,
+    duplicatesInFolders: (count: number) => `Already in the same folders, will be skipped: ${count}`,
+    merged: (count: number, skipped: number) =>
+      `Bookmarks added: ${count}${skipped > 0 ? `. Repeats skipped: ${skipped}` : ''}`,
+    mergeUndone: 'Merge undone',
     summary: (bookmarks: number, folders: number) =>
       `${bookmarks} ${bookmarks === 1 ? 'bookmark' : 'bookmarks'} in ${folders} ${folders === 1 ? 'folder' : 'folders'} will be added`,
     nothing: 'Nothing new to add',
@@ -614,7 +627,7 @@ export const en = {
     restoreCopy: (date: string) => `Restore the backup from ${date}`,
     restoreModes: 'How to restore',
     merge: 'Add missing bookmarks',
-    mergeHint: 'Bookmarks and folders from the backup that aren’t here. Nothing is deleted, settings don’t change',
+    mergeHint: 'Same-named folders merge, bookmarks already in the same folder are skipped — to move bookmarks between browsers. Nothing is deleted, settings stay. Can be undone',
     replace: 'Restore everything',
     replaceHint: 'Bookmarks, their order, settings and background will be as in the backup. You can undo this',
     restore: 'Restore',

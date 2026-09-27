@@ -1,5 +1,6 @@
 // The browsers' bookmarks file (the Netscape format): what Chrome, Edge, Firefox, Opera, Safari and Yandex Browser
 // save with "Export bookmarks" and open with "Import bookmarks". No DOM — a small tag scanner, covered by unit tests
+import {type MergeRoot, rootKind} from './bookmarkMerge';
 
 export interface HtmlBookmark {
   title: string;
@@ -8,6 +9,10 @@ export interface HtmlBookmark {
   /** Milliseconds */
   dateAdded?: number;
   children?: HtmlBookmark[];
+  /** The browser's bookmarks bar (PERSONAL_TOOLBAR_FOLDER) */
+  toolbar?: boolean;
+  /** "Other bookmarks" as Firefox and SpeedDial mark it (UNFILED_BOOKMARKS_FOLDER) */
+  unfiled?: boolean;
 }
 
 const ENTITIES: Record<string, string> = {amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' '};
@@ -78,7 +83,13 @@ export function parseBookmarksHtml(html: string): HtmlBookmark[] {
     const dateAdded = parseDate(attributes.add_date);
 
     if (tag === 'h3') {
-      pendingFolder = {title: text, children: [], ...(dateAdded ? {dateAdded} : {})};
+      pendingFolder = {
+        title: text,
+        children: [],
+        ...(dateAdded ? {dateAdded} : {}),
+        ...(attributes.personal_toolbar_folder === 'true' ? {toolbar: true} : {}),
+        ...(attributes.unfiled_bookmarks_folder === 'true' ? {unfiled: true} : {}),
+      };
       current.children!.push(pendingFolder);
     } else if (attributes.href) {
       pendingFolder = null;
@@ -90,16 +101,39 @@ export function parseBookmarksHtml(html: string): HtmlBookmark[] {
   return root.children!;
 }
 
+/**
+ * The file's top level as the browser's root folders, for merging: the marked bar goes to the bar; "Other bookmarks"
+ * (marked, or — as Chrome and Edge write them — loose at the top level) and any other top-level folder go to "Other"
+ */
+export function htmlMergeRoots(nodes: HtmlBookmark[]): MergeRoot<HtmlBookmark>[] {
+  const bar = nodes.find((node) => node.toolbar && node.url === undefined);
+  const other: HtmlBookmark[] = [];
+  for (const node of nodes) {
+    if (node === bar) continue;
+    if (node.unfiled && node.url === undefined) other.push(...(node.children ?? []));
+    else other.push(node);
+  }
+  return [
+    ...(bar ? [{kind: 'bookmarks-bar' as const, children: bar.children ?? []}] : []),
+    ...(other.length > 0 ? [{kind: 'other' as const, children: other}] : []),
+  ];
+}
+
 interface ExportNode {
   id?: string;
+  folderType?: string;
   title: string;
   url?: string;
   dateAdded?: number;
   children?: ExportNode[];
 }
 
-/** A bookmarks file any browser can import. The bookmarks bar is marked so browsers put it back in its place */
-export function bookmarksToHtml(roots: ExportNode[], toolbarId = '1'): string {
+/**
+ * A bookmarks file any browser can import. markRoots — the browser's root folders at the top level are marked:
+ * the bar so browsers put it back in its place, "Other bookmarks" so SpeedDial and Firefox merge it into theirs.
+ * A file of chosen folders marks nothing: importing it shouldn't mix it into the browser's own bar
+ */
+export function bookmarksToHtml(roots: ExportNode[], markRoots = true): string {
   const lines = [
     '<!DOCTYPE NETSCAPE-Bookmark-file-1>',
     '<!-- This is an automatically generated file.',
@@ -119,8 +153,10 @@ export function bookmarksToHtml(roots: ExportNode[], toolbarId = '1'): string {
         lines.push(`${indent}<DT><A HREF="${escapeHtml(node.url)}"${date(node)}>${escapeHtml(node.title)}</A>`);
         continue;
       }
-      const toolbar = node.id === toolbarId ? ' PERSONAL_TOOLBAR_FOLDER="true"' : '';
-      lines.push(`${indent}<DT><H3${date(node)}${toolbar}>${escapeHtml(node.title)}</H3>`);
+      const kind = markRoots && depth === 1 ? rootKind(node) : null;
+      const marker = kind === 'bookmarks-bar' ? ' PERSONAL_TOOLBAR_FOLDER="true"'
+        : kind === 'other' ? ' UNFILED_BOOKMARKS_FOLDER="true"' : '';
+      lines.push(`${indent}<DT><H3${date(node)}${marker}>${escapeHtml(node.title)}</H3>`);
       lines.push(`${indent}<DL><p>`);
       write(node.children ?? [], depth + 1);
       lines.push(`${indent}</DL><p>`);

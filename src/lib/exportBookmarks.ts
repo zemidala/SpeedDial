@@ -16,7 +16,7 @@ function countBookmarks(nodes: chrome.bookmarks.BookmarkTreeNode[]): number {
 export async function exportBookmarks(ids: string[], fileTitle: string): Promise<number> {
   const nodes = (await Promise.all(ids.map((id) => chrome.bookmarks.getSubTree(id)))).flat();
   // No folder is marked as the bookmarks bar: importing the file shouldn't mix it into the browser's own bar
-  const html = bookmarksToHtml(nodes, '');
+  const html = bookmarksToHtml(nodes, false);
   downloadBlob(exportFileName(fileTitle), new Blob([html], {type: 'text/html'}));
   return countBookmarks(nodes);
 }

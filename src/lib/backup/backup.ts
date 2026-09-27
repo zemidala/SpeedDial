@@ -1,5 +1,6 @@
 // SpeedDial backup: settings, bookmarks with their order and (optionally) thumbnails and background.
 // No Svelte — also used by the service worker (automatic backups)
+import {planMerge, rootKind, type RootKind, runMerge} from '../bookmarkMerge';
 import {t} from '../i18n/index.svelte';
 import {idbGet, idbSet} from '../idb';
 import {LOCAL_KEYS, type Settings, splitSettings} from '../settings/schema';
@@ -29,6 +30,8 @@ export interface BackupNode {
 export interface BackupRoot {
   id: string;
   title: string;
+  /** Which root it is — matched by this in another browser; absent in older backups (then by the classic id) */
+  kind?: RootKind | null;
   children: BackupNode[];
 }
 
@@ -96,7 +99,7 @@ export async function createBackup(
   const roots: BackupRoot[] = [];
   for (const folder of root.children ?? []) {
     const {children = []} = await toBackupNode(folder, includeImages);
-    roots.push({id: folder.id, title: folder.title, children});
+    roots.push({id: folder.id, title: folder.title, kind: rootKind(folder), children});
   }
 
   const backup: Backup = {
@@ -148,24 +151,25 @@ export function settingsFromBackup(backup: Backup, current: Settings): Record<st
 export interface RestoreResult {
   /** Created bookmarks and folders */
   created: number;
+  /** Top-level created nodes (merge): removing them undoes it */
+  createdIds: string[];
   /** Restored thumbnails */
   thumbnails: number;
 }
 
-/** Where a backup root folder goes in the browser: by id, otherwise by position */
-function matchRoot(roots: chrome.bookmarks.BookmarkTreeNode[], backupRoot: BackupRoot, index: number) {
-  return roots.find((root) => root.id === backupRoot.id) ?? roots[index];
-}
+const kindOf = (backupRoot: BackupRoot) => backupRoot.kind ?? rootKind({id: backupRoot.id});
 
-/** Bookmarks match by URL, folders by name */
-function sameNode(existing: chrome.bookmarks.BookmarkTreeNode, node: BackupNode): boolean {
-  if (node.url !== undefined) return existing.url === node.url;
-  return existing.url === undefined && existing.title === node.title;
+/** Where a backup root folder goes in the browser: the same kind (another browser's ids differ), the id, the position */
+function matchRoot(roots: chrome.bookmarks.BookmarkTreeNode[], backupRoot: BackupRoot, index: number) {
+  const kind = kindOf(backupRoot);
+  return (kind ? roots.find((root) => rootKind(root) === kind) : undefined)
+    ?? roots.find((root) => root.id === backupRoot.id) ?? roots[index];
 }
 
 /**
  * Restores bookmarks from a backup.
- * merge — adds what's missing (bookmarks by URL, folders by name) and deletes nothing;
+ * merge — adds what's missing and deletes nothing: roots by kind, same-named folders merge, a bookmark whose address
+ * is already in that folder is skipped (see bookmarkMerge.ts);
  * replace — root folder contents become exactly as in the backup.
  * saveImage stores the thumbnail of a created or matched bookmark
  */
@@ -175,7 +179,7 @@ export async function restoreBookmarks(
   api: BookmarksApi = chrome.bookmarks,
   saveImage: (id: string, thumbnail: NonNullable<BackupNode['thumbnail']>) => Promise<boolean> = saveThumbnailIfMissing,
 ): Promise<RestoreResult> {
-  const result: RestoreResult = {created: 0, thumbnails: 0};
+  const result: RestoreResult = {created: 0, createdIds: [], thumbnails: 0};
   const [tree] = await api.getTree();
   const roots = tree.children ?? [];
 
@@ -190,28 +194,22 @@ export async function restoreBookmarks(
     for (const child of node.children ?? []) await create(child, created.id);
   };
 
-  const merge = async (nodes: BackupNode[], parentId: string) => {
-    const existing = await api.getChildren(parentId);
-    for (const node of nodes) {
-      const match = existing.find((item) => sameNode(item, node));
-      if (!match) {
-        await create(node, parentId);
-      } else {
-        await restoreImage(match.id, node);
-        if (node.url === undefined) await merge(node.children ?? [], match.id);
-      }
-    }
-  };
+  if (mode === 'merge') {
+    const plan = planMerge(backup.roots.map((root) => ({kind: kindOf(root), children: root.children})), tree);
+    // Bookmarks already here get the backup's thumbnail if they have none
+    for (const {id, node} of plan.matched) await restoreImage(id, node);
+    result.createdIds = await runMerge(plan, api, async (id, node) => {
+      result.created++;
+      await restoreImage(id, node);
+    });
+    return result;
+  }
 
   for (const [index, backupRoot] of backup.roots.entries()) {
     const root = matchRoot(roots, backupRoot, index);
     if (!root) continue;
-    if (mode === 'replace') {
-      for (const child of await api.getChildren(root.id)) await api.removeTree(child.id);
-      for (const node of backupRoot.children) await create(node, root.id);
-    } else {
-      await merge(backupRoot.children, root.id);
-    }
+    for (const child of await api.getChildren(root.id)) await api.removeTree(child.id);
+    for (const node of backupRoot.children) await create(node, root.id);
   }
   return result;
 }

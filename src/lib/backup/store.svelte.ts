@@ -14,30 +14,39 @@ import {normalizeServerUrl, type WebDavConfig} from './webdav';
 
 /**
  * Applies a backup. merge — only adds missing bookmarks; replace — bookmarks, settings and background
- * as in the backup. Returns the notification text
+ * as in the backup. Returns the notification text and, for a merge, what was added (to undo it)
  */
-async function applyBackup(backup: Backup, mode: RestoreMode): Promise<string> {
+async function applyBackup(backup: Backup, mode: RestoreMode): Promise<{message: string; createdIds: string[]}> {
   const result = await restoreBookmarks(backup, mode);
   if (mode === 'replace') {
     settings.replace(settingsFromBackup(backup, settings.snapshot()));
     if (await restoreBackground(backup)) await background.load();
   }
   await thumbnails.reloadAll();
-  if (mode === 'replace') return t.backup.restored;
-  return result.created > 0 ? t.backup.added(result.created) : t.backup.nothingToAdd;
+  if (mode === 'replace') return {message: t.backup.restored, createdIds: []};
+  const message = result.created > 0 ? t.backup.added(result.created) : t.backup.nothingToAdd;
+  return {message, createdIds: result.createdIds};
 }
 
 /**
- * Restores a backup with a notification. Before a full replace it saves the current state —
- * the restore can be undone from the notification
+ * Restores a backup with a notification that can undo it: before a full replace the current state is saved,
+ * after a merge what was added is removed
  */
 export async function restoreBackup(backup: Backup, mode: RestoreMode): Promise<void> {
   const previous = mode === 'replace' ? await createBackup({includeImages: true}, chrome.bookmarks, settings.snapshot()) : null;
-  const message = await applyBackup(backup, mode);
-  showNotice(message, 'info', previous && {
-    label: t.common.undo,
-    run: async () => showNotice(await applyBackup(previous, 'replace').then(() => t.backup.restoreUndone), 'info'),
-  });
+  const {message, createdIds} = await applyBackup(backup, mode);
+  const undo = previous
+    ? async () => {
+      await applyBackup(previous, 'replace');
+      showNotice(t.backup.restoreUndone, 'info');
+    }
+    : createdIds.length > 0
+      ? async () => {
+        for (const id of createdIds) await chrome.bookmarks.removeTree(id).catch(() => undefined);
+        showNotice(t.backup.restoreUndone, 'info');
+      }
+      : null;
+  showNotice(message, 'info', undo && {label: t.common.undo, run: undo});
 }
 
 class CloudStore {
