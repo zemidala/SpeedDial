@@ -1,0 +1,17 @@
+title: "[Idea] "
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: The idea / Идея
+      description: What you'd like SpeedDial to do. / Что бы вы хотели, чтобы SpeedDial умел.
+    validations:
+      required: true
+
+  - type: textarea
+    id: why
+    attributes:
+      label: Why it matters / Зачем это нужно
+      description: When you'd use it. / В каких случаях вы бы этим пользовались.
+    validations:
+      required: true

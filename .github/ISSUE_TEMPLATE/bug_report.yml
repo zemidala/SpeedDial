@@ -1,0 +1,62 @@
+name: Bug report / Ошибка
+description: Something doesn't work as it should / Что-то работает не так, как должно
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! One problem per report, please. / Спасибо, что сообщили! Одна ошибка — одно сообщение.
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened / Что произошло
+      description: What you saw, and what you expected instead. / Что вы увидели и что ожидали увидеть.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce / Как повторить
+      placeholder: |
+        1. Open Settings → View / Откройте Настройки → Вид
+        2. …
+    validations:
+      required: true
+
+  - type: dropdown
+    id: browser
+    attributes:
+      label: Browser / Браузер
+      options:
+        - Chrome
+        - Edge
+        - Other Chromium browser / Другой на Chromium
+    validations:
+      required: true
+
+  - type: textarea
+    id: details
+    attributes:
+      label: SpeedDial details / Сведения о SpeedDial
+      description: >
+        Settings → About → "Copy details", then paste here: the version, build and browser.
+        / Настройки → О программе → «Скопировать сведения» и вставьте сюда: версия, сборка и браузер.
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots / Скриншоты
+      description: If it's about how something looks, a screenshot helps a lot. / Если дело во внешнем виде, скриншот очень помогает.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before sending / Перед отправкой
+      options:
+        - label: I searched the existing issues and this one isn't there. / Я поискал среди существующих, такой ещё нет.
+          required: true

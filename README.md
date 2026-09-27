@@ -53,6 +53,20 @@ The version has four parts, e.g. `2.0.0.52`:
 When the release changes, the next new tab tells the user what's new. The list of changes for each release is in
 `whatsNew.releases` in `src/lib/i18n/en.ts` and `src/lib/i18n/ru.ts` — add the new release to both.
 
+### Releasing
+
+1. Set the new version (three parts) in `public/manifest.json` and `package.json`, add its changes to
+   `whatsNew.releases`, commit.
+2. Tag the commit and push the tag: `git tag -a v2.1.0 -m "SpeedDial 2.1.0"`, then `git push origin v2.1.0`.
+3. On GitHub, create a release from the tag (Releases → Draft a new release) with the same list of changes, and
+   attach the built extension (`dist` zipped, or the `speeddial-dist` artifact of the CI run).
+
+## Issues and discussions
+
+Bugs and planned features are GitHub issues, filled in through the forms in `.github/ISSUE_TEMPLATE`
+(bug report, feature request). Questions and new ideas go to Discussions (Q&A, Ideas), with forms in
+`.github/DISCUSSION_TEMPLATE`; an idea that's agreed on becomes a feature request.
+
 ## Project layout
 
 ```

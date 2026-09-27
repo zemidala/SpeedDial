@@ -1,0 +1,31 @@
+name: Feature request / Предложение
+description: An idea that's been discussed and is ready to be planned / Идея, которая обсуждена и готова к планированию
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Just an idea? Start in Discussions → Ideas: others can vote and add to it there.
+        / Просто идея? Начните с Discussions → Ideas: там её могут поддержать и дополнить.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What's missing / Чего не хватает
+      description: What you want to do and what gets in the way now. / Что вы хотите сделать и что сейчас мешает.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: How it could work / Как это могло бы работать
+      description: Where it would be in the interface, what it would do. / Где это было бы в интерфейсе, что бы делало.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Other ways / Другие варианты
+      description: Workarounds you use now, or how other extensions do it. / Как вы обходитесь сейчас или как это сделано в других расширениях.

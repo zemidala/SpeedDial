@@ -1,0 +1,9 @@
+# Issues are for bugs and planned features; questions and new ideas go to Discussions
+blank_issues_enabled: false
+contact_links:
+  - name: Question / Вопрос
+    url: https://github.com/zemidala/SpeedDial/discussions/categories/q-a
+    about: How to do something, or whether it's supposed to work this way / Как что-то сделать или так и задумано
+  - name: Idea / Идея
+    url: https://github.com/zemidala/SpeedDial/discussions/categories/ideas
+    about: Suggest and discuss a new feature / Предложить и обсудить новую возможность

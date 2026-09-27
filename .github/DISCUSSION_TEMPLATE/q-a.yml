@@ -1,0 +1,17 @@
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: Question / Вопрос
+      description: What you're trying to do and what you tried. / Что вы пытаетесь сделать и что уже пробовали.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: browser
+    attributes:
+      label: Browser / Браузер
+      options:
+        - Chrome
+        - Edge
+        - Other Chromium browser / Другой на Chromium
