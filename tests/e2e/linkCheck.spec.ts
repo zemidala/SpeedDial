@@ -97,6 +97,24 @@ test('a mark goes away when the link works again or its address changes', async 
   await expect(tile(newtab, 'Dead')).not.toHaveClass(/tile--broken/);
 });
 
+test('checking doesn\'t download what a site asks to preload', async ({context, newtab}) => {
+  const preloaded: string[] = [];
+  await context.route('https://ok.example/**', (route) => {
+    if (route.request().url().endsWith('.css')) {
+      preloaded.push(route.request().url());
+      return route.fulfill({contentType: 'text/css', body: 'body{}'});
+    }
+    return route.fulfill({status: 200, headers: {link: '<https://ok.example/app.css>; rel=preload; as=style'}, body: 'ok'});
+  });
+  const warnings: string[] = [];
+  newtab.on('console', (message) => warnings.push(message.text()));
+
+  await runCheck(newtab);
+  await newtab.waitForTimeout(3500); // Chrome warns about an unused preload a few seconds after it
+  expect(preloaded).toEqual([]);
+  expect(warnings.filter((text) => text.includes('preload'))).toEqual([]);
+});
+
 test('broken links are deleted and brought back with undo', async ({newtab}) => {
   const dialog = await runCheck(newtab);
   await dialog.getByRole('button', {name: 'Удалить (2)'}).click();

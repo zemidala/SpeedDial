@@ -1,4 +1,5 @@
 // Actions that change bookmarks in the browser itself
+import {fallbackFolder, findSystemFolder} from './folders';
 import type {SortOrder, TypeOrder} from './settings/schema';
 import {sortNodes} from './sorting';
 import {getThumbnail, type StoredThumbnail} from './thumbnails/storage';
@@ -64,9 +65,11 @@ export async function restoreNode({tree}: RemovedNode): Promise<Map<string, stri
     ids.set(node.id, created.id);
     for (const child of node.children ?? []) await create(child, created.id);
   };
-  // The bookmark's folder may have been removed too — then put it into "Other bookmarks"
+  // The bookmark's folder may have been removed too — then put it into "Other bookmarks" (or the bookmarks bar)
   const parentExists = await chrome.bookmarks.get(tree.parentId!).then(() => true, () => false);
-  await create(tree, parentExists ? tree.parentId! : '2', parentExists ? tree.index : undefined);
+  const parentId = parentExists ? tree.parentId! : await findSystemFolder('other') ?? await fallbackFolder();
+  if (!parentId) throw new Error('No folder to restore into');
+  await create(tree, parentId, parentExists ? tree.index : undefined);
   return ids;
 }
 

@@ -1,5 +1,5 @@
 // "Add to SpeedDial" item in the context menu of pages and links
-import {BOOKMARKS_BAR_ID} from '../lib/constants';
+import {existingFolder, fallbackFolder} from '../lib/folders';
 import {setLanguage, t} from '../lib/i18n/index.svelte';
 import {SITE_ACCESS} from '../lib/permissionSets';
 import {loadSettings} from '../lib/settings/storage';
@@ -22,14 +22,13 @@ export async function syncContextMenu(): Promise<void> {
   }
 }
 
-/** The default folder if it still exists; otherwise the bookmarks bar */
+/** The default folder if it still exists; otherwise the bookmarks bar (whatever its id is here) or another folder */
 async function resolveFolder(folderId: string): Promise<string> {
-  try {
-    const [folder] = await chrome.bookmarks.get(folderId);
-    return folder && !folder.url && folder.parentId !== undefined ? folder.id : BOOKMARKS_BAR_ID;
-  } catch {
-    return BOOKMARKS_BAR_ID;
-  }
+  const folder = await existingFolder(folderId);
+  if (folder) return folder.id;
+  const fallback = await fallbackFolder();
+  if (!fallback) throw new Error('No folder to add bookmarks to');
+  return fallback;
 }
 
 async function onMenuClick(info: chrome.contextMenus.OnClickData, tab?: chrome.tabs.Tab): Promise<void> {

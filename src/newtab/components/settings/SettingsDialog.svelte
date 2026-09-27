@@ -1,5 +1,6 @@
 <script lang="ts">
   import {t} from '../../../lib/i18n/index.svelte';
+  import type {SettingsTab} from '../../../lib/ui.svelte';
   import Icon, {type IconName} from '../ui/Icon.svelte';
   import Modal from '../ui/Modal.svelte';
   import AboutSettings from './AboutSettings.svelte';
@@ -8,7 +9,7 @@
   import GeneralSettings from './GeneralSettings.svelte';
   import ViewSettings from './ViewSettings.svelte';
 
-  let {onclose}: {onclose: () => void} = $props();
+  let {initialTab = 'view', onclose}: {initialTab?: SettingsTab; onclose: () => void} = $props();
 
   const TABS = [
     {id: 'view', icon: 'palette'},
@@ -16,12 +17,14 @@
     {id: 'backup', icon: 'cloud'},
     {id: 'advanced', icon: 'sliders'},
     {id: 'about', icon: 'info'},
-  ] as const satisfies ReadonlyArray<{id: string; icon: IconName}>;
+  ] as const satisfies ReadonlyArray<{id: SettingsTab; icon: IconName}>;
 
   type TabId = (typeof TABS)[number]['id'];
 
   const baseId = $props.id();
-  let activeTab = $state<TabId>('view');
+  // Only the tab the dialog opens on — later changes of the prop don't switch tabs
+  // svelte-ignore state_referenced_locally
+  let activeTab = $state<TabId>(initialTab);
   let tablist: HTMLElement;
 
   // Arrow keys, Home and End move between tabs, as in a native tab strip

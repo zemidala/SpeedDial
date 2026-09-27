@@ -14,6 +14,7 @@ export const ru: Messages = {
   common: {
     cancel: 'Отмена',
     close: 'Закрыть',
+    chooseFolder: 'Выберите папку…',
     done: 'Готово',
     save: 'Сохранить',
     create: 'Создать',
@@ -37,6 +38,8 @@ export const ru: Messages = {
     actionFailed: (action: string, error: string) => `Не удалось выполнить «${action}»: ${error}`,
     deleteFailed: (error: string) => `Не удалось удалить: ${error}`,
     reloadHint: 'Откройте страницу расширений (chrome://extensions или edge://extensions) и нажмите «Перезагрузить» у SpeedDial.',
+    noStartFolder: 'Папки закладок не найдены. Выберите стартовую папку в Настройках → Общие',
+    chooseFolder: 'Выбрать',
     extensionUpdated: (hint: string) => `Расширение обновилось, но браузер ещё не перезагрузил его настройки. ${hint}`,
     outdatedPermissions: (hint: string) => `Браузер использует устаревшую версию расширения. ${hint}`,
     permissionFailed: (error: string) => `Не удалось запросить разрешение: ${error}`,

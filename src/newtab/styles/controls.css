@@ -78,6 +78,18 @@
   border-color: color-mix(in oklab, var(--field-border), var(--text) 25%);
 }
 
+/* Nothing valid chosen (e.g. the chosen folder is gone) — the field asks for a choice */
+.input[aria-invalid='true'],
+.input[aria-invalid='true']:hover {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 1px var(--danger);
+  color: var(--danger);
+}
+
+.input[aria-invalid='true'] option {
+  color: var(--text);
+}
+
 .textarea {
   min-height: 96px;
   resize: vertical;

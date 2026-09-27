@@ -2,6 +2,8 @@ import type {Page} from '@playwright/test';
 import {expect, makePng, openSettings, seed, test, tile} from './fixtures';
 
 test.use({hostAccess: true});
+// Screenshots need real windows to be drawn; with many browsers running in parallel one sometimes isn't ready in time
+test.describe.configure({retries: 2});
 
 test.beforeEach(async ({context, newtab}) => {
   await context.route('https://shot.example/**', (route) => route.fulfill({

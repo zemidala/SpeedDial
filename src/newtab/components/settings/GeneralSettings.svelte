@@ -1,6 +1,7 @@
 <script lang="ts">
   import {onMount} from 'svelte';
-  import {enabledVirtualFolders} from '../../../lib/bookmarks.svelte';
+  import {bookmarks, enabledVirtualFolders} from '../../../lib/bookmarks.svelte';
+  import {BOOKMARKS_BAR_ID, ROOT_FOLDER_ID} from '../../../lib/constants';
   import {type FolderOption, getFolderOptions} from '../../../lib/folders';
   import {t} from '../../../lib/i18n/index.svelte';
   import {permissions} from '../../../lib/permissions.svelte';
@@ -38,12 +39,19 @@
     getFolderOptions().then((result) => (folders = result)).catch(() => undefined);
   });
   const folderOptions = $derived([
+    {value: ROOT_FOLDER_ID, label: t.common.home},
     ...folders.map((folder) => ({
       value: folder.id,
       label: `${' '.repeat(folder.depth)}${folder.title} (${folder.bookmarkCount})`,
     })),
     ...enabledVirtualFolders().map((folder) => ({value: folder.id, label: folder.title})),
   ]);
+
+  // The default setting means "the bookmarks bar" whatever its id is here (Home if there's none); choosing the bar keeps
+  // that meaning
+  const startFolderValue = $derived(current.defaultFolderId === BOOKMARKS_BAR_ID
+    ? bookmarks.barId ?? ROOT_FOLDER_ID
+    : current.defaultFolderId);
 
   /** Turning a virtual folder on asks for its permission first, while the click still counts as a gesture */
   async function toggleVirtualFolder(id: VirtualFolderId, enabled: boolean) {
@@ -73,9 +81,10 @@
   <SelectRow
     label={t.general.defaultFolder}
     hint={t.general.defaultFolderHint}
-    value={current.defaultFolderId}
+    value={startFolderValue}
     options={folderOptions}
-    onchange={(value) => settings.update({defaultFolderId: value})}
+    placeholder={t.common.chooseFolder}
+    onchange={(value) => settings.update({defaultFolderId: value === bookmarks.barId ? BOOKMARKS_BAR_ID : value})}
   />
   <SwitchRow key="rememberLastFolder" label={t.general.rememberLastFolder}/>
   <SwitchRow key="folderPreview" label={t.general.folderPreview} hint={t.general.folderPreviewHint}/>

@@ -1,6 +1,9 @@
 import {untrack} from 'svelte';
 import {BOOKMARKS_BAR_ID, FOLDER_PREVIEW_SIZE, ROOT_FOLDER_ID} from './constants';
+import {fallbackFolder, findSystemFolder} from './folders';
 import {t} from './i18n/index.svelte';
+import {showNotice} from './notice.svelte';
+import {openSettingsTab} from './ui.svelte';
 import {permissions} from './permissions.svelte';
 import {settings} from './settings/store.svelte';
 import {
@@ -30,14 +33,6 @@ function folderFromHash(): string | null {
   return /^#folder=([\w-]+)$/.exec(location.hash)?.[1] ?? null;
 }
 
-/** Folder shown in a new tab: the last opened one or the default folder */
-function startFolder(): string {
-  if (settings.current.rememberLastFolder) {
-    const last = localStorage.getItem(LAST_FOLDER_KEY);
-    if (last) return last;
-  }
-  return settings.current.defaultFolderId;
-}
 
 /** Virtual folders turned on in the settings and allowed on this device, with their localized names */
 export function enabledVirtualFolders(): Array<{id: VirtualFolderId; title: string}> {
@@ -83,6 +78,10 @@ class BookmarksStore {
   previews = $state.raw<Record<string, BookmarkNode[]>>({});
   /** The first load is done */
   loaded = $state(false);
+  /** The browser's bookmarks bar; its id differs between browsers and account bookmarks. null — there's none */
+  barId = $state<string | null>(BOOKMARKS_BAR_ID);
+  /** Where new bookmarks go when the open place can't hold them (Home, a virtual folder): the bar or another folder */
+  #writableId = BOOKMARKS_BAR_ID;
 
   #loadId = 0; // Number of the latest load, to drop stale ones
   #reloadTimer: ReturnType<typeof setTimeout> | undefined;
@@ -90,7 +89,7 @@ class BookmarksStore {
 
   /** Folder for new bookmarks: the current one, but not the root or a virtual folder — bookmarks can't go there */
   get targetFolderId(): string {
-    return this.folderId === ROOT_FOLDER_ID || isVirtualFolder(this.folderId) ? BOOKMARKS_BAR_ID : this.folderId;
+    return this.folderId === ROOT_FOLDER_ID || isVirtualFolder(this.folderId) ? this.#writableId : this.folderId;
   }
 
   /** The open folder is a read-only list from the browser (most visited, recently closed) */
@@ -106,7 +105,7 @@ class BookmarksStore {
 
   /** settingsLoaded — loading of the settings: the default folder depends on it */
   async start(settingsLoaded: Promise<unknown>): Promise<void> {
-    window.addEventListener('hashchange', () => this.#load(folderFromHash() ?? startFolder()));
+    window.addEventListener('hashchange', () => this.#load(folderFromHash() ?? this.startFolder()));
 
     // Reload on any bookmark change, including ones made in the browser itself
     [
@@ -134,8 +133,28 @@ class BookmarksStore {
       });
     });
 
-    await Promise.all([settingsLoaded.catch(() => undefined), permissions.ready]);
-    await this.#load(folderFromHash() ?? startFolder());
+    const [barId, writableId] = await Promise.all([
+      findSystemFolder('bookmarks-bar').catch(() => BOOKMARKS_BAR_ID),
+      fallbackFolder().catch(() => BOOKMARKS_BAR_ID),
+      settingsLoaded.catch(() => undefined),
+      permissions.ready,
+    ]);
+    this.barId = barId;
+    this.#writableId = writableId ?? BOOKMARKS_BAR_ID;
+    await this.#load(folderFromHash() ?? this.startFolder());
+  }
+
+  /**
+   * Folder shown in a new tab: the last opened one or the default folder. The default setting means
+   * "the bookmarks bar" — whatever its id is in this browser; without a bar — Home, where the user picks a folder
+   */
+  startFolder(): string {
+    if (settings.current.rememberLastFolder) {
+      const last = localStorage.getItem(LAST_FOLDER_KEY);
+      if (last) return last;
+    }
+    const preferred = settings.current.defaultFolderId;
+    return preferred === BOOKMARKS_BAR_ID ? this.barId ?? ROOT_FOLDER_ID : preferred;
   }
 
   navigate(folderId: string): void {
@@ -169,12 +188,12 @@ class BookmarksStore {
       previews = Object.fromEntries(folders.map((folder, i) => [folder.id, children[i]]));
     } catch (error) {
       if (loadId !== this.#loadId) return;
-      // The folder may have been removed (or a virtual folder turned off) — go back to the bookmarks bar
-      console.error('Failed to load folder', folderId, error);
-      if (folderId !== BOOKMARKS_BAR_ID) {
-        history.replaceState(null, '', location.pathname);
-        await this.#load(BOOKMARKS_BAR_ID);
-      }
+      // The folder may have been removed (or a virtual folder turned off) — go to the bookmarks bar,
+      // and if the browser has none — to Home, where every folder is shown
+      console.warn('Failed to load folder', folderId, error);
+      if (folderId === ROOT_FOLDER_ID) return;
+      history.replaceState(null, '', location.pathname);
+      await this.#load(this.barId && folderId !== this.barId ? this.barId : ROOT_FOLDER_ID);
       return;
     }
 
@@ -190,6 +209,11 @@ class BookmarksStore {
     this.previews = previews;
     this.loaded = true;
     if (opened) localStorage.setItem(LAST_FOLDER_KEY, folderId);
+
+    // Even Home has no folders the browser lets us show — the user picks the start folder by hand
+    if (opened && folderId === ROOT_FOLDER_ID && !items.some((item) => !item.url)) {
+      showNotice(t.notice.noStartFolder, 'info', {label: t.notice.chooseFolder, run: () => openSettingsTab('general')});
+    }
   }
 }
 

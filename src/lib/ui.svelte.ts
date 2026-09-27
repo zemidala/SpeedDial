@@ -14,6 +14,8 @@ export interface ConfirmOptions {
   onConfirm: () => Promise<unknown> | void;
 }
 
+export type SettingsTab = 'view' | 'general' | 'backup' | 'advanced' | 'about';
+
 export interface FolderRef {
   id: string;
   title: string;
@@ -32,7 +34,7 @@ export type Dialog =
   | {kind: 'sort'; folder: FolderRef}
   /** Move the selected bookmarks and folders to another folder */
   | {kind: 'move'; nodes: BookmarkNode[]}
-  | {kind: 'settings'}
+  | {kind: 'settings'; tab?: SettingsTab}
   /** Bookmarks of the same page in different folders */
   | {kind: 'duplicates'}
   /** Bookmarks whose site doesn't respond or whose page is gone */
@@ -48,6 +50,11 @@ export const modals = $state({depth: 0});
 
 export function openSettings(): void {
   ui.dialog = {kind: 'settings'};
+}
+
+/** The settings on a given tab — e.g. "General", where the start folder is chosen */
+export function openSettingsTab(tab: SettingsTab): void {
+  ui.dialog = {kind: 'settings', tab};
 }
 
 /** Also from the settings: they're replaced by this dialog, so their changes are saved first */

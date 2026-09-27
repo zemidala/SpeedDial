@@ -1,4 +1,5 @@
 // Messages between the new tab page and the service worker
+import type {LinkCheck} from './linkCheck';
 
 export interface CaptureItem {
   id: string;
@@ -15,7 +16,33 @@ export type RuntimeMessage =
   /** To everyone: thumbnails changed; empty ids — all changed */
   | {type: 'thumbnails-changed'; ids: string[]}
   /** Service worker → pages: thumbnail creation progress */
-  | {type: 'capture-progress'; done: number; total: number};
+  | {type: 'capture-progress'; done: number; total: number}
+  /** Page → service worker: load a site's page or manifest (reply — PageResponse), see requestSitePage */
+  | {type: 'fetch-page'; url: string}
+  /** Page → service worker: does the link work (reply — LinkCheck) */
+  | {type: 'check-link'; url: string};
+
+/** A site's answer as the service worker read it; text — only for HTML and JSON */
+export type PageResponse =
+  | {ok: boolean; status: number; url: string; contentType: string; text: string}
+  | {error: string};
+
+/**
+ * Sites are requested by the service worker, not the page: a page follows a site's "Link: rel=preload" headers
+ * and downloads its styles and scripts for nothing (with a console warning); the service worker ignores them
+ */
+export async function requestSitePage(url: string): Promise<PageResponse> {
+  const reply: unknown = await chrome.runtime.sendMessage({type: 'fetch-page', url} satisfies RuntimeMessage);
+  if (!reply || typeof reply !== 'object') throw new Error('The service worker didn\'t answer');
+  return reply as PageResponse;
+}
+
+/** The link check, done by the service worker for the same reason as requestSitePage */
+export async function requestLinkCheck(url: string): Promise<LinkCheck> {
+  const reply: unknown = await chrome.runtime.sendMessage({type: 'check-link', url} satisfies RuntimeMessage);
+  if (!reply || typeof reply !== 'object' || !('problem' in reply)) throw new Error('The service worker didn\'t answer');
+  return reply as LinkCheck;
+}
 
 export interface CaptureProgress {
   done: number;

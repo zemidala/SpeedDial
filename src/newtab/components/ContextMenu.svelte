@@ -1,7 +1,8 @@
 <script lang="ts">
   import {type BookmarkNode, bookmarks} from '../../lib/bookmarks.svelte';
   import {brokenLinks} from '../../lib/brokenLinks.svelte';
-  import {BOOKMARKS_BAR_ID, ROOT_FOLDER_ID} from '../../lib/constants';
+  import {ROOT_FOLDER_ID} from '../../lib/constants';
+  import {existingFolder} from '../../lib/folders';
   import {t} from '../../lib/i18n/index.svelte';
   import {folderPageUrl, type OpenMode, openUrl} from '../../lib/navigation';
   import {showNotice} from '../../lib/notice.svelte';
@@ -120,9 +121,10 @@
       label: t.virtual.addToBookmarks,
       icon: 'bookmarkPlus',
       action: async () => {
-        const preferred = settings.current.defaultFolderId;
-        const [folder] = await chrome.bookmarks.get(isVirtualFolder(preferred) ? BOOKMARKS_BAR_ID : preferred)
-          .catch(() => chrome.bookmarks.get(BOOKMARKS_BAR_ID));
+        const preferred = bookmarks.startFolder();
+        const folder = (isVirtualFolder(preferred) ? null : await existingFolder(preferred))
+          ?? await existingFolder(bookmarks.targetFolderId);
+        if (!folder) throw new Error(t.notice.noStartFolder);
         await chrome.bookmarks.create({parentId: folder.id, title: node.title, url: node.url});
         showNotice(t.virtual.added(folder.title), 'info');
       },

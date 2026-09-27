@@ -1,6 +1,6 @@
 <script lang="ts">
   import {bookmarks, enabledVirtualFolders} from '../../lib/bookmarks.svelte';
-  import {BOOKMARKS_BAR_ID, ROOT_FOLDER_ID} from '../../lib/constants';
+  import {ROOT_FOLDER_ID} from '../../lib/constants';
   import {t} from '../../lib/i18n/index.svelte';
   import {icons} from '../../lib/icons.svelte';
   import {permissions} from '../../lib/permissions.svelte';
@@ -16,7 +16,7 @@
   // a hidden setting would go unnoticed
   const startPage = $derived(
     bookmarks.loaded && !search.active && !bookmarks.virtual
-      && [ROOT_FOLDER_ID, BOOKMARKS_BAR_ID, settings.current.defaultFolderId].includes(bookmarks.folderId),
+      && [ROOT_FOLDER_ID, bookmarks.barId, bookmarks.startFolder()].includes(bookmarks.folderId),
   );
   const folders = $derived(enabledVirtualFolders());
   const rows = $derived(folders

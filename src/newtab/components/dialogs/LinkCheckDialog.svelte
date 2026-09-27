@@ -7,7 +7,8 @@
   import {type BookmarkEntry, bookmarkEntries} from '../../../lib/duplicates';
   import {t} from '../../../lib/i18n/index.svelte';
   import {icons} from '../../../lib/icons.svelte';
-  import {checkLink, type LinkCheck, runPool} from '../../../lib/linkCheck';
+  import {type LinkCheck, runPool} from '../../../lib/linkCheck';
+  import {requestLinkCheck} from '../../../lib/messages';
   import {showNotice} from '../../../lib/notice.svelte';
   import {SITE_ACCESS} from '../../../lib/permissionSets';
   import {permissions} from '../../../lib/permissions.svelte';
@@ -45,6 +46,11 @@
   });
   onDestroy(() => controller?.abort());
 
+  /** Rejects when the check is stopped: requests already sent to the service worker are simply not waited for */
+  const whenStopped = (signal: AbortSignal) => new Promise<never>((_resolve, reject) => {
+    signal.addEventListener('abort', () => reject(signal.reason), {once: true});
+  });
+
   async function start() {
     error = '';
     // Reading other sites' answers needs access to sites — asked right in the click
@@ -66,9 +72,10 @@
     await runPool(entries, CONCURRENCY, signal, async (entry) => {
       let check: LinkCheck;
       try {
-        check = await checkLink(entry.url, {signal});
+        check = await Promise.race([requestLinkCheck(entry.url), whenStopped(signal)]);
       } catch {
-        return; // Stopped
+        if (signal.aborted) return; // Stopped
+        check = {problem: 'unreachable'};
       }
       checked++;
       if (check.problem) {

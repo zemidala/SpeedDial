@@ -5,6 +5,7 @@ export const en = {
   common: {
     cancel: 'Cancel',
     close: 'Close',
+    chooseFolder: 'Choose a folder…',
     done: 'Done',
     save: 'Save',
     create: 'Create',
@@ -28,6 +29,8 @@ export const en = {
     actionFailed: (action: string, error: string) => `Couldn't complete “${action}”: ${error}`,
     deleteFailed: (error: string) => `Couldn't delete: ${error}`,
     reloadHint: 'Open the extensions page (chrome://extensions or edge://extensions) and click “Reload” on SpeedDial.',
+    noStartFolder: 'No bookmark folders were found. Choose the start folder in Settings → General',
+    chooseFolder: 'Choose',
     extensionUpdated: (hint: string) => `The extension was updated, but the browser hasn't reloaded its manifest yet. ${hint}`,
     outdatedPermissions: (hint: string) => `The browser is running an outdated version of the extension. ${hint}`,
     permissionFailed: (error: string) => `Couldn't request permission: ${error}`,

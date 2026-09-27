@@ -8,6 +8,7 @@ import {deleteThumbnail} from '../lib/thumbnails/storage';
 import {autoCapture, forgetBookmarkIndex} from './autoCapture';
 import {cancelCapture, captureStatus, captureThumbnails} from './capture';
 import {setupContextMenu, syncContextMenu} from './contextMenu';
+import {checkLinkHere, fetchPage} from './sitePages';
 
 // Language of service worker messages (backup errors, the menu item) — from the settings
 const applyLanguage = () => {
@@ -51,10 +52,20 @@ onMessage((message) => {
   }
 });
 
-// The capture-status request is answered right away; other messages don't expect a reply
+// Messages with a reply: the capture status right away, site requests when they finish (true keeps the channel open)
 chrome.runtime.onMessage.addListener((message: RuntimeMessage, _sender, sendResponse) => {
-  if (message.type !== 'capture-status') return false;
-  sendResponse(captureStatus());
+  if (message.type === 'capture-status') {
+    sendResponse(captureStatus());
+    return false;
+  }
+  if (message.type === 'fetch-page') {
+    fetchPage(message.url).then(sendResponse);
+    return true;
+  }
+  if (message.type === 'check-link') {
+    checkLinkHere(message.url).then(sendResponse);
+    return true;
+  }
   return false;
 });
 

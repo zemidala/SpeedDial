@@ -166,7 +166,7 @@
 {#if ui.dialog}
   {@const dialog = ui.dialog}
   {#if dialog.kind === 'settings'}
-    <SettingsDialog onclose={closeSettings}/>
+    <SettingsDialog initialTab={dialog.tab} onclose={closeSettings}/>
   {:else if dialog.kind === 'confirm'}
     <ConfirmDialog options={dialog} onclose={closeDialog}/>
   {:else if dialog.kind === 'icon'}

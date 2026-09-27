@@ -9,6 +9,7 @@ import {
   VECTOR_SIZE,
   WELL_KNOWN_ICONS,
 } from './iconCandidates';
+import {requestSitePage} from './messages';
 
 const REQUEST_TIMEOUT = 8000;
 const MAX_ICON_BYTES = 2_000_000;
@@ -26,13 +27,15 @@ function request(url: string): Promise<Response> {
 }
 
 async function readDeclaredIcons(pageUrl: string): Promise<{candidates: IconCandidate[]; baseUrl: string}> {
-  const response = await request(pageUrl);
-  if (!response.ok || !response.headers.get('content-type')?.includes('html')) {
-    return {candidates: [], baseUrl: response.url || pageUrl};
+  // The markup comes through the service worker — see requestSitePage
+  const response = await requestSitePage(pageUrl);
+  if ('error' in response) throw new Error(response.error);
+  if (!response.ok || !response.contentType.includes('html')) {
+    return {candidates: [], baseUrl: response.url};
   }
 
   // Page scripts don't run when parsed with DOMParser — only <link> is read
-  const doc = new DOMParser().parseFromString(await response.text(), 'text/html');
+  const doc = new DOMParser().parseFromString(response.text, 'text/html');
   const baseHref = doc.querySelector('base[href]')?.getAttribute('href');
   const baseUrl = baseHref ? new URL(baseHref, response.url).href : response.url;
 
@@ -48,9 +51,9 @@ async function readDeclaredIcons(pageUrl: string): Promise<{candidates: IconCand
   if (manifestHref) {
     try {
       const manifestUrl = new URL(manifestHref, baseUrl).href;
-      const manifestResponse = await request(manifestUrl);
-      if (manifestResponse.ok) {
-        candidates.push(...candidatesFromManifest(await manifestResponse.json(), manifestUrl));
+      const manifestResponse = await requestSitePage(manifestUrl);
+      if (!('error' in manifestResponse) && manifestResponse.ok) {
+        candidates.push(...candidatesFromManifest(JSON.parse(manifestResponse.text), manifestUrl));
       }
     } catch {
       // The manifest is unavailable or invalid — make do with icons from <link>

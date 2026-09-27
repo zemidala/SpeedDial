@@ -2,10 +2,9 @@
   import {onMount} from 'svelte';
   import {existingLinks, planImport, runImport} from '../../../lib/bookmarkImport';
   import type {HtmlBookmark} from '../../../lib/bookmarksHtml';
-  import {BOOKMARKS_BAR_ID} from '../../../lib/constants';
+  import {bookmarks} from '../../../lib/bookmarks.svelte';
   import {type FolderOption, flattenFolders} from '../../../lib/folders';
   import {t} from '../../../lib/i18n/index.svelte';
-  import {settings} from '../../../lib/settings/store.svelte';
   import Modal from '../ui/Modal.svelte';
 
   // Importing a browser's bookmarks file: where to put it and whether to skip bookmarks that already exist
@@ -33,8 +32,9 @@
       .then(([root]) => {
         folders = flattenFolders(root);
         existing = existingLinks([root]);
-        const preferred = settings.current.defaultFolderId;
-        parentId = folders.some((folder) => folder.id === preferred) ? preferred : BOOKMARKS_BAR_ID;
+        const exists = (id: string | null) => folders.some((folder) => folder.id === id);
+        const preferred = bookmarks.startFolder();
+        parentId = exists(preferred) ? preferred : exists(bookmarks.barId) ? bookmarks.barId! : folders[0]?.id ?? '';
       })
       .catch((e) => (error = e instanceof Error ? e.message : String(e)));
   });
