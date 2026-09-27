@@ -15,6 +15,7 @@ export const TITLE_SIZES = ['s', 'm', 'l'] as const;
 export const BACKGROUNDS = ['none', 'color', 'image', 'url', 'bing'] as const;
 export const ICON_STYLES = ['plate', 'fill'] as const;
 export const TITLE_POSITIONS = ['bottom-inside', 'top-inside', 'bottom-outside', 'top-outside'] as const;
+export const TITLE_ALIGNS = ['left', 'center', 'right'] as const;
 export const LOGO_SERVICE_IDS = ['none', 'google', 'duckduckgo', 'iconhorse', 'logodev', 'custom'] as const;
 export const SEARCH_ENGINES = ['google', 'yandex', 'bing', 'duckduckgo', 'custom'] as const;
 export const SORT_ORDERS = ['none', 'title', 'url', 'dateAdded'] as const;
@@ -30,6 +31,7 @@ export type TitleSize = (typeof TITLE_SIZES)[number];
 export type Background = (typeof BACKGROUNDS)[number];
 export type IconStyle = (typeof ICON_STYLES)[number];
 export type TitlePosition = (typeof TITLE_POSITIONS)[number];
+export type TitleAlign = (typeof TITLE_ALIGNS)[number];
 export type LogoService = (typeof LOGO_SERVICE_IDS)[number];
 export type SearchEngine = (typeof SEARCH_ENGINES)[number];
 export type SortOrder = (typeof SORT_ORDERS)[number];
@@ -82,6 +84,8 @@ export interface Settings {
   showTitles: boolean;
   /** Where the name goes: top or bottom, inside the tile or below/above it */
   titlePosition: TitlePosition;
+  /** Name alignment along the tile: left, center or right */
+  titleAlign: TitleAlign;
   showTitleIcons: boolean;
   background: Background;
   backgroundColor: string;
@@ -183,6 +187,7 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = {
   showAddTile: true,
   showTitles: true,
   titlePosition: 'top-outside',
+  titleAlign: 'center',
   showTitleIcons: false,
   background: 'none',
   backgroundColor: '#1f2933',
@@ -239,6 +244,7 @@ const ENUMS: Partial<Record<keyof Settings, readonly string[]>> = {
   background: BACKGROUNDS,
   iconStyle: ICON_STYLES,
   titlePosition: TITLE_POSITIONS,
+  titleAlign: TITLE_ALIGNS,
   logoService: LOGO_SERVICE_IDS,
   searchEngine: SEARCH_ENGINES,
   sortOrder: SORT_ORDERS,

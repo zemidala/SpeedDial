@@ -1,11 +1,14 @@
 // Fonts: text sizes and the interface font — like the font settings in Edge and Opera
-import type {FontSize, TitleSize} from './settings/schema';
+import type {FontSize, TitleAlign, TitleSize} from './settings/schema';
 
 /** Text scale of the whole page; 1 — medium (recommended) */
 export const FONT_SCALES: Record<FontSize, number> = {xs: 0.875, s: 0.9375, m: 1, l: 1.125, xl: 1.25};
 
 /** Tile name size */
 export const TITLE_FONT_SIZES: Record<TitleSize, string> = {s: '0.75rem', m: '0.8125rem', l: '0.9375rem'};
+
+/** Tile name alignment — justify-content of the name (icon and text) */
+export const TITLE_JUSTIFY: Record<TitleAlign, string> = {left: 'flex-start', center: 'center', right: 'flex-end'};
 
 /** The system interface font — always available */
 export const SYSTEM_FONT = 'system-ui';

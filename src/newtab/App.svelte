@@ -3,7 +3,7 @@
   import {background} from '../lib/background.svelte';
   import {readableTextColor} from '../lib/color';
   import {dragDrop} from '../lib/dragDrop.svelte';
-  import {FONT_SCALES, TITLE_FONT_SIZES} from '../lib/fonts';
+  import {FONT_SCALES, TITLE_FONT_SIZES, TITLE_JUSTIFY} from '../lib/fonts';
   import {currentLanguage, setLanguage, t} from '../lib/i18n/index.svelte';
   import {showNotice} from '../lib/notice.svelte';
   import {permissions} from '../lib/permissions.svelte';
@@ -66,6 +66,7 @@
     root.style.fontSize = `${FONT_SCALES[settings.current.fontSize] * 100}%`;
     root.style.setProperty('--title-font-size', TITLE_FONT_SIZES[settings.current.titleSize]);
     root.style.setProperty('--title-font-weight', settings.current.boldTitles ? '600' : '400');
+    root.style.setProperty('--title-justify', TITLE_JUSTIFY[settings.current.titleAlign]);
     setCustomColor(root.style, 'tile', tileColor);
     setCustomColor(root.style, 'folder', folderColor);
   });

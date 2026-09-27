@@ -104,10 +104,46 @@ test('name position: inside and outside, top and bottom', async ({newtab}) => {
   // By default the names are above the tiles
   expect(await place()).toBe('top-outside');
   const dialog = await openSettings(newtab);
-  for (const position of ['top-inside', 'bottom-outside', 'bottom-inside', 'top-outside']) {
-    await dialog.getByLabel('Положение названий').selectOption(position);
+  const buttons = dialog.getByRole('radiogroup', {name: 'Положение названий'});
+  const choices = {
+    'top-inside': 'Сверху, внутри плитки',
+    'bottom-outside': 'Под плиткой',
+    'bottom-inside': 'Снизу, внутри плитки',
+    'top-outside': 'Над плиткой',
+  };
+  for (const [position, name] of Object.entries(choices)) {
+    await buttons.getByRole('radio', {name}).check();
     await expect.poll(place).toBe(position);
   }
+});
+
+test('name alignment: left, center, right', async ({newtab}) => {
+  const example = tile(newtab, 'Example');
+  const card = example.locator('.tile__card');
+  const text = example.locator('.tile__title-text');
+  const side = async () => {
+    const cardBox = (await card.boundingBox())!;
+    const textBox = (await text.boundingBox())!;
+    const left = textBox.x - cardBox.x;
+    const right = cardBox.x + cardBox.width - (textBox.x + textBox.width);
+    if (Math.abs(left - right) < 2) return 'center';
+    return left < right ? 'left' : 'right';
+  };
+
+  expect(await side()).toBe('center');
+  const dialog = await openSettings(newtab);
+  const buttons = dialog.getByRole('radiogroup', {name: 'Выравнивание названий'});
+  await expect(buttons.getByRole('radio', {name: 'По центру'})).toBeChecked();
+  const choices = {left: 'По левому краю', right: 'По правому краю', center: 'По центру'};
+  for (const [align, name] of Object.entries(choices)) {
+    await buttons.getByRole('radio', {name}).check();
+    await expect.poll(side).toBe(align);
+  }
+
+  // Arrow keys move the choice, like in any group of radio buttons
+  await buttons.getByRole('radio', {name: 'По центру'}).press('ArrowRight');
+  await expect(buttons.getByRole('radio', {name: 'По правому краю'})).toBeChecked();
+  await expect.poll(side).toBe('right');
 });
 
 test('panel width, centring, names and service tiles', async ({newtab}) => {
@@ -190,8 +226,9 @@ test('fonts: text size, font sample, custom font, tile names', async ({newtab}) 
   await dialog.getByLabel('Название шрифта').fill('Comic Sans MS');
   await expect(newtab.locator('body')).toHaveCSS('font-family', /^"?Comic Sans MS/);
 
-  await dialog.getByLabel('Размер названий плиток').selectOption({label: 'Мелкий'});
-  await dialog.getByLabel('Жирные названия плиток').check();
+  // Size, bold and alignment are buttons in one row, like in Word
+  await dialog.getByRole('radiogroup', {name: 'Размер названий плиток'}).getByRole('radio', {name: 'Мелкий'}).check();
+  await dialog.getByRole('checkbox', {name: 'Жирные названия плиток'}).check();
   await expect(title).toHaveCSS('font-size', '13.5px'); // 0.75rem at 18px
   await expect(title).toHaveCSS('font-weight', '600');
 

@@ -63,6 +63,14 @@
       'm21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21',
     ],
     sort: ['m21 16-4 4-4-4', 'M17 20V4', 'm3 8 4-4 4 4', 'M7 4v16'],
+    alignLeft: ['M21 5H3', 'M15 12H3', 'M17 19H3'],
+    alignCenter: ['M21 5H3', 'M17 12H7', 'M19 19H5'],
+    alignRight: ['M21 5H3', 'M21 12H9', 'M21 19H7'],
+    // Name position: a tile and a name line above/below it or inside at the top/bottom
+    titleTopOutside: ['M8 3h8', 'M5 8h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2z'],
+    titleBottomOutside: ['M8 21h8', 'M5 3h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z'],
+    titleTopInside: ['M8 8h8', 'M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z'],
+    titleBottomInside: ['M8 16h8', 'M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z'],
     trash: ['M3 6h18', 'M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6', 'M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2'],
   } as const;
 

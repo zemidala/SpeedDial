@@ -63,6 +63,75 @@
   color: var(--text);
 }
 
+/* ===== Tool buttons — like the formatting buttons on Word's ribbon =====
+   .toolbar — a row of groups with dividers between them; .tool-button — an icon or letters
+   over an invisible radio/checkbox, highlighted when chosen */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.toolbar__group {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.toolbar__separator {
+  align-self: stretch;
+  width: 1px;
+  margin: 4px 4px;
+  background: var(--border);
+}
+
+.tool-button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 30px;
+  padding: 0 4px;
+  border-radius: var(--radius-small);
+  color: var(--text-muted);
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.tool-button:hover {
+  background: color-mix(in oklab, var(--text) 8%, transparent);
+  color: var(--text);
+}
+
+.tool-button:has(:checked) {
+  background: color-mix(in oklab, var(--accent) 16%, transparent);
+  color: var(--accent);
+}
+
+.tool-button:has(:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* The radio/checkbox covers the button, invisible: it takes the clicks and the focus */
+.tool-button__input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.tool-button__text {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.tool-button__text--bold {
+  font-weight: 700;
+}
+
 /* ===== Input fields ===== */
 .input,
 .textarea {

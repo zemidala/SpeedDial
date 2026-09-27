@@ -17,7 +17,9 @@
     type LogoService,
     RANGES,
     type Theme,
+    TITLE_ALIGNS,
     TITLE_SIZES,
+    type TitleAlign,
     type TitlePosition,
     type TitleSize,
   } from '../../../lib/settings/schema';
@@ -25,14 +27,21 @@
   import {isWebUrl, normalizeUrl} from '../../../lib/url';
   import ColorRow from './ColorRow.svelte';
   import FontRow from './FontRow.svelte';
+  import IconChoiceRow from './IconChoiceRow.svelte';
   import RangeRow from './RangeRow.svelte';
   import SelectRow from './SelectRow.svelte';
   import SettingRow from './SettingRow.svelte';
   import SettingsGroup from './SettingsGroup.svelte';
   import SwitchRow from './SwitchRow.svelte';
+  import ToolChoice from './ToolChoice.svelte';
+  import ToolToggle from './ToolToggle.svelte';
   import ThemePicker from './ThemePicker.svelte';
 
   const current = $derived(settings.current);
+
+  const ALIGN_ICONS = {left: 'alignLeft', center: 'alignCenter', right: 'alignRight'} as const;
+  /** The "A" on the name size buttons grows with the size */
+  const TITLE_SIZE_SAMPLES = {s: '0.8125rem', m: '1rem', l: '1.25rem'} as const;
 
   const logoServiceHint = $derived.by(() => {
     const base = t.view.logoServiceHint;
@@ -154,26 +163,43 @@
 
 <SettingsGroup title={t.settings.groups.names}>
   <SwitchRow key="showTitles" label={t.view.showTitles}/>
-  <SelectRow
+  <IconChoiceRow
     label={t.view.titlePosition}
     value={current.titlePosition}
     setting="titlePosition"
     options={[
-      {value: 'bottom-inside', label: t.view.titleBottomInside},
-      {value: 'top-inside', label: t.view.titleTopInside},
-      {value: 'bottom-outside', label: t.view.titleBottomOutside},
-      {value: 'top-outside', label: t.view.titleTopOutside},
+      {value: 'top-outside', label: t.view.titleTopOutside, icon: 'titleTopOutside'},
+      {value: 'top-inside', label: t.view.titleTopInside, icon: 'titleTopInside'},
+      {value: 'bottom-inside', label: t.view.titleBottomInside, icon: 'titleBottomInside'},
+      {value: 'bottom-outside', label: t.view.titleBottomOutside, icon: 'titleBottomOutside'},
     ]}
     onchange={(value) => settings.update({titlePosition: value as TitlePosition})}
   />
-  <SelectRow
-    label={t.view.titleSize}
-    value={current.titleSize}
-    setting="titleSize"
-    options={TITLE_SIZES.map((size) => ({value: size, label: t.view.titleSizes[size]}))}
-    onchange={(value) => settings.update({titleSize: value as TitleSize})}
-  />
-  <SwitchRow key="boldTitles" label={t.view.boldTitles}/>
+  <!-- Size, bold and alignment in one row, like the formatting buttons in Word -->
+  <SettingRow label={t.view.titleText} setting={['titleSize', 'boldTitles', 'titleAlign']}>
+    <div class="toolbar">
+      <ToolChoice
+        label={t.view.titleSize}
+        value={current.titleSize}
+        options={TITLE_SIZES.map((size) => ({
+          value: size,
+          label: t.view.titleSizes[size],
+          text: 'A',
+          textSize: TITLE_SIZE_SAMPLES[size],
+        }))}
+        onchange={(value) => settings.update({titleSize: value as TitleSize})}
+      />
+      <span class="toolbar__separator"></span>
+      <ToolToggle key="boldTitles" label={t.view.boldTitles} text={t.view.boldLetter}/>
+      <span class="toolbar__separator"></span>
+      <ToolChoice
+        label={t.view.titleAlign}
+        value={current.titleAlign}
+        options={TITLE_ALIGNS.map((align) => ({value: align, label: t.view.titleAligns[align], icon: ALIGN_ICONS[align]}))}
+        onchange={(value) => settings.update({titleAlign: value as TitleAlign})}
+      />
+    </div>
+  </SettingRow>
   <SwitchRow key="showTitleIcons" label={t.view.showTitleIcons} disabled={!current.showTitles}/>
 </SettingsGroup>
 

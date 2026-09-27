@@ -113,11 +113,11 @@
   display: flex;
   flex-shrink: 0;
   align-items: center;
-  justify-content: center;
   gap: 6px;
   min-width: 0;
   padding: 4px 8px;
-  /* Size and weight — from the settings (App.svelte) */
+  /* Alignment, size and weight — from the settings (App.svelte) */
+  justify-content: var(--title-justify, center);
   font-size: var(--title-font-size, 0.8125rem);
   font-weight: var(--title-font-weight, 400);
 }

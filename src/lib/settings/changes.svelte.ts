@@ -11,7 +11,7 @@ export const TAB_SETTINGS: Record<SettingsTab, SettingKey[]> = {
   view: [
     'language', 'theme', 'contrast', 'themePreset', 'lightDimming', 'customAccent', 'customTint', 'fontFamily',
     'fontSize', 'titleSize', 'boldTitles', 'columns', 'containerWidth', 'verticalCenter', 'tileColor', 'folderColor',
-    'titlePosition', 'showTitles', 'showTitleIcons', 'iconStyle', 'iconScale', 'iconTint', 'siteIcons', 'logoService',
+    'titlePosition', 'titleAlign', 'showTitles', 'showTitleIcons', 'iconStyle', 'iconScale', 'iconTint', 'siteIcons', 'logoService',
     'externalLogoUrl', 'logoDevToken', 'showToolbar', 'autofocusSearch', 'showSettingsButton', 'showBackTile',
     'showAddTile', 'background', 'backgroundColor', 'backgroundUrl', 'backgroundBlur', 'backgroundDim',
   ],
