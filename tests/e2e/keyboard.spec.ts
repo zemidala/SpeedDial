@@ -22,7 +22,7 @@ const focusedTitle = (page: Page) => page.evaluate(() => (document.activeElement
 test('"/" — to search, arrow down — to tiles, Enter opens', async ({newtab}) => {
   await newtab.locator('main').click({position: {x: 5, y: 5}});
   await newtab.keyboard.press('/');
-  const searchInput = newtab.getByRole('searchbox', {name: 'Поиск'});
+  const searchInput = newtab.getByRole('combobox', {name: 'Поиск'});
   await expect(searchInput).toBeFocused();
   await expect(searchInput).toHaveValue('');
 
@@ -36,7 +36,7 @@ test('"/" — to search, arrow down — to tiles, Enter opens', async ({newtab})
 });
 
 test('arrows across the grid, Home and End', async ({newtab}) => {
-  await newtab.getByRole('searchbox', {name: 'Поиск'}).focus();
+  await newtab.getByRole('combobox', {name: 'Поиск'}).focus();
   await newtab.keyboard.press('ArrowDown');
   await expect(tile(newtab, 'Альфа')).toBeFocused();
 

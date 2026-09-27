@@ -1,7 +1,7 @@
 // Optional permissions: requested only when the user turns a feature on
 import {t} from './i18n/index.svelte';
 import {hideNotice, showNotice} from './notice.svelte';
-import {BING_ACCESS, CLIPBOARD_ACCESS, SITE_ACCESS} from './permissionSets';
+import {BING_ACCESS, CLIPBOARD_ACCESS, SITE_ACCESS, SUGGEST_ACCESS} from './permissionSets';
 import {MOST_VISITED_ID, RECENTLY_CLOSED_ID, VIRTUAL_FOLDER_PERMISSIONS} from './virtualFolders';
 
 /** A clear explanation of a permission request error */
@@ -23,6 +23,8 @@ class PermissionsStore {
   sessions = $state(false);
   /** Access to Bing — on its own or as part of access to all sites */
   bing = $state(false);
+  /** The search engines' suggestion services — on their own or as part of access to all sites */
+  suggest = $state(false);
   /** Permission state has been checked */
   ready: Promise<void>;
 
@@ -79,6 +81,7 @@ class PermissionsStore {
       chrome.permissions.contains(VIRTUAL_FOLDER_PERMISSIONS[MOST_VISITED_ID]),
       chrome.permissions.contains(VIRTUAL_FOLDER_PERMISSIONS[RECENTLY_CLOSED_ID]),
     ]);
+    this.suggest = await chrome.permissions.contains(SUGGEST_ACCESS);
   }
 }
 

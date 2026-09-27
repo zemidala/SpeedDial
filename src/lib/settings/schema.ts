@@ -121,6 +121,10 @@ export interface Settings {
   searchEngine: SearchEngine;
   /** Search URL for searchEngine = custom; %s is replaced with the query */
   customSearchUrl: string;
+  /** Suggestions of the search engine under the search box; the query goes to it while typing */
+  searchSuggestions: boolean;
+  /** Recent web searches under the search box, kept on this device */
+  searchHistory: boolean;
   showServices: boolean;
   services: ServiceLink[];
   /** Site previews on a folder tile instead of a folder icon */
@@ -214,6 +218,9 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = {
   shelvesCollapsed: false,
   searchEngine: 'google',
   customSearchUrl: '',
+  // The query would leave the device while typing: only when turned on
+  searchSuggestions: false,
+  searchHistory: true,
   showServices: true,
   services: DEFAULT_SERVICES,
   folderPreview: true,

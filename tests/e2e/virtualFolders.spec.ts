@@ -50,9 +50,9 @@ test('the invitation turns on the shelves below the start page tiles', async ({n
   await expect(tile(newtab, 'Внутри')).toBeVisible();
   await expect(mostVisited.getByRole('link', {name: 'Alpha site'})).toBeVisible();
   // ...but not in search results
-  await newtab.getByRole('searchbox', {name: 'Поиск'}).fill('Внутри');
+  await newtab.getByRole('combobox', {name: 'Поиск'}).fill('Внутри');
   await expect(mostVisited).toHaveCount(0);
-  await newtab.getByRole('searchbox', {name: 'Поиск'}).fill('');
+  await newtab.getByRole('combobox', {name: 'Поиск'}).fill('');
   await newtab.getByRole('navigation', {name: 'Путь к папке'}).getByRole('button', {name: 'Главная'}).click();
   await expect(mostVisited).toBeVisible();
 

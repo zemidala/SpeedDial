@@ -12,7 +12,7 @@ test.describe('English browser', () => {
   test('interface in English', async ({newtab}) => {
     await expect(newtab).toHaveTitle('New Tab');
     await expect(newtab.locator('html')).toHaveAttribute('lang', 'en');
-    await expect(newtab.getByRole('searchbox', {name: 'Search'})).toHaveAttribute('placeholder', 'Search bookmarks, Enter to search Google');
+    await expect(newtab.getByRole('combobox', {name: 'Search'})).toHaveAttribute('placeholder', 'Search bookmarks, Enter to search Google');
 
     await tile(newtab, 'Example').click({button: 'right'});
     await expect(newtab.getByRole('menuitem', {name: 'Open in new tab'})).toBeVisible();

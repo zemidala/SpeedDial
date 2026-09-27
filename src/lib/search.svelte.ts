@@ -1,17 +1,25 @@
 import type {BookmarkNode} from './bookmarks.svelte';
-import {buildSearchUrl} from './search';
+import {FOLDER_PREVIEW_SIZE} from './constants';
+import {buildSearchUrl, orderResults} from './search';
+import {searchHistory} from './searchHistory.svelte';
 import {settings} from './settings/store.svelte';
 
 const SEARCH_DELAY = 150;
-const MAX_RESULTS = 60;
 
 /** Searching bookmarks from the search box; Enter — web search */
 class SearchStore {
   query = $state('');
   results = $state.raw<BookmarkNode[]>([]);
+  /** First items of the folders among the results — for their tile previews */
+  previews = $state.raw<Record<string, BookmarkNode[]>>({});
 
   #timer: ReturnType<typeof setTimeout> | undefined;
   #searchId = 0;
+
+  constructor() {
+    // A folder opened from the results (or any other navigation) ends the search
+    if (typeof window !== 'undefined') window.addEventListener('hashchange', () => this.clear());
+  }
 
   get active(): boolean {
     return this.query.trim() !== '';
@@ -23,13 +31,18 @@ class SearchStore {
     const trimmed = query.trim();
     if (!trimmed) {
       this.results = [];
+      this.previews = {};
       return;
     }
     const searchId = ++this.#searchId;
     this.#timer = setTimeout(async () => {
-      const found = await chrome.bookmarks.search(trimmed).catch(() => []);
+      const found = orderResults(await chrome.bookmarks.search(trimmed).catch(() => []));
+      const folders = found.filter((node) => !node.url);
+      const children = await Promise.all(folders.map((folder) =>
+        chrome.bookmarks.getChildren(folder.id).then((items) => items.slice(0, FOLDER_PREVIEW_SIZE), () => [])));
       if (searchId !== this.#searchId) return;
-      this.results = found.filter((node) => node.url).slice(0, MAX_RESULTS);
+      this.results = found;
+      this.previews = Object.fromEntries(folders.map((folder, i) => [folder.id, children[i]]));
     }, SEARCH_DELAY);
   }
 
@@ -37,11 +50,13 @@ class SearchStore {
     this.setQuery('');
   }
 
-  /** Opens web search results */
-  searchWeb(): void {
-    if (!this.active) return;
+  /** Opens web search results — for the typed query or a chosen suggestion */
+  searchWeb(text = this.query): void {
+    const query = text.trim();
+    if (!query) return;
+    searchHistory.add(query);
     const {searchEngine, customSearchUrl, openInNewTab} = settings.current;
-    const url = buildSearchUrl(searchEngine, this.query, customSearchUrl);
+    const url = buildSearchUrl(searchEngine, query, customSearchUrl);
     if (openInNewTab) {
       chrome.tabs.create({url});
     } else {

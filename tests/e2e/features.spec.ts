@@ -13,7 +13,7 @@ const titles = (page: import('@playwright/test').Page) =>
   page.locator('[data-bookmark-id] .tile__title-text').allTextContents();
 
 test('searching bookmarks and the web', async ({context, newtab}) => {
-  const search = newtab.getByRole('searchbox', {name: 'Поиск'});
+  const search = newtab.getByRole('combobox', {name: 'Поиск'});
   await search.fill('гамма');
   await expect(newtab.getByRole('region', {name: 'Результаты поиска'})).toBeVisible();
   await expect.poll(() => titles(newtab)).toEqual(['Гамма']);
@@ -33,6 +33,119 @@ test('searching bookmarks and the web', async ({context, newtab}) => {
   await search.fill('svelte runes');
   await search.press('Enter');
   await expect(newtab).toHaveURL('https://duckduckgo.com/?q=svelte%20runes');
+});
+
+test('folders with a matching name come first in the results, with previews; opening one ends the search', async ({newtab}) => {
+  await seed(newtab, [{title: 'Папка для чтения', url: 'https://reading.example/'}]);
+  const search = newtab.getByRole('combobox', {name: 'Поиск'});
+  await search.fill('папка');
+  await expect.poll(() => titles(newtab)).toEqual(['Папка', 'Папка для чтения']);
+  await expect(tile(newtab, 'Папка').locator('.folder-preview .preview-cell')).toHaveCount(1);
+
+  await tile(newtab, 'Папка').click();
+  await expect(search).toHaveValue('');
+  await expect.poll(() => titles(newtab)).toEqual(['Гамма']);
+});
+
+test('recent searches: under the box, removable, cleared in the settings or when turned off', async ({context, newtab}) => {
+  await context.route('https://www.google.com/**', (route) => route.fulfill({body: 'ok'}));
+  const search = newtab.getByRole('combobox', {name: 'Поиск'});
+  for (const query of ['svelte runes', 'vite plugins']) {
+    await search.fill(query);
+    await search.press('Enter');
+    await expect(newtab).toHaveURL(/google\.com/);
+    await newtab.goBack();
+    await expect(tile(newtab, 'Альфа')).toBeVisible();
+  }
+
+  // A click on the box shows them, the latest first; nothing opens by itself
+  const list = newtab.getByRole('listbox', {name: 'Подсказки поиска'});
+  await expect(list).toHaveCount(0);
+  await search.click();
+  await expect(list.getByRole('option')).toHaveText(['vite plugins', 'svelte runes']);
+
+  // Typing leaves the matching ones; arrows and Enter search again
+  await search.fill('sv');
+  await expect(list.getByRole('option')).toHaveText(['svelte runes']);
+  await search.press('ArrowDown');
+  await expect(list.getByRole('option', {name: 'svelte runes'})).toHaveAttribute('aria-selected', 'true');
+  await search.press('Enter');
+  await expect(newtab).toHaveURL('https://www.google.com/search?q=svelte%20runes');
+  await newtab.goBack();
+  await expect(tile(newtab, 'Альфа')).toBeVisible();
+
+  // Esc closes the list first, then clears the box
+  await search.fill('s');
+  await expect(list).toBeVisible();
+  await search.press('Escape');
+  await expect(list).toHaveCount(0);
+  await expect(search).toHaveValue('s');
+  await search.press('Escape');
+  await expect(search).toHaveValue('');
+
+  // Removing one — the × on the row
+  await search.click();
+  await list.getByRole('option', {name: 'vite plugins'}).hover();
+  await list.getByRole('button', {name: 'Удалить «vite plugins» из недавних запросов'}).click();
+  await expect(list.getByRole('option')).toHaveText(['svelte runes']);
+
+  // The settings show how many there are and clear them; turned off, nothing is kept
+  const dialog = await openSettings(newtab, 'Общие');
+  await dialog.getByRole('button', {name: 'Очистить'}).click();
+  await expect(dialog.getByText(/Недавних запросов/)).toHaveCount(0);
+  await dialog.getByLabel('Запоминать недавние запросы').uncheck();
+  await dialog.getByRole('button', {name: 'Готово'}).click();
+  await search.fill('not kept');
+  await search.press('Enter');
+  await newtab.goBack();
+  await expect(tile(newtab, 'Альфа')).toBeVisible();
+  expect(await newtab.evaluate(async () => (await chrome.storage.local.get('searchHistory')).searchHistory)).toBeUndefined();
+});
+
+test.describe('search engine suggestions', () => {
+  // The suggestion services are within access to all sites, granted up front: a permission prompt can't be clicked
+  test.use({hostAccess: true});
+
+  test('off by default; turned on, they come from the chosen engine and are chosen like recent searches', async ({context, newtab}) => {
+    const asked: string[] = [];
+    await context.route('https://suggestqueries.google.com/**', (route) => {
+      asked.push(new URL(route.request().url()).searchParams.get('q') ?? '');
+      return route.fulfill({json: ['кот', ['кот', 'котики', 'котлета']]});
+    });
+    await context.route('https://www.google.com/**', (route) => route.fulfill({body: 'ok'}));
+    const search = newtab.getByRole('combobox', {name: 'Поиск'});
+    const list = newtab.getByRole('listbox', {name: 'Подсказки поиска'});
+
+    // Off: nothing leaves the page
+    await search.fill('кот');
+    await newtab.waitForTimeout(400);
+    expect(asked).toEqual([]);
+    await expect(list).toHaveCount(0);
+
+    const dialog = await openSettings(newtab, 'Общие');
+    await dialog.getByLabel('Подсказки поисковика').check();
+    await dialog.getByRole('button', {name: 'Готово'}).click();
+
+    await search.fill('ко');
+    await search.fill('кот');
+    // The query itself isn't repeated; the typed start is plain, the rest bold
+    await expect(list.getByRole('option')).toHaveText(['котики', 'котлета']);
+    await expect(list.getByRole('option', {name: 'котики'}).locator('b')).toHaveText('ики');
+    expect(asked.at(-1)).toBe('кот');
+
+    // Arrow down twice, Enter — that suggestion is searched
+    await search.press('ArrowDown');
+    await search.press('ArrowDown');
+    await search.press('Enter');
+    await expect(newtab).toHaveURL(`https://www.google.com/search?q=${encodeURIComponent('котлета')}`);
+  });
+
+  test('a custom search address has no suggestions', async ({newtab}) => {
+    const dialog = await openSettings(newtab, 'Общие');
+    await dialog.getByLabel('Поисковая система').selectOption('custom');
+    await expect(dialog.getByLabel('Подсказки поисковика')).toBeDisabled();
+    await expect(dialog.getByText('Недоступно для своего адреса поиска')).toBeVisible();
+  });
 });
 
 test('sorting disables dragging and doesn\'t change bookmarks', async ({newtab}) => {

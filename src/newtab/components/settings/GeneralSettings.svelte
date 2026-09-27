@@ -7,7 +7,8 @@
   import {permissions} from '../../../lib/permissions.svelte';
   import {searchEngineName} from '../../../lib/search';
   import {formatServices, parseServices} from '../../../lib/services';
-  import {SITE_ACCESS} from '../../../lib/permissionSets';
+  import {SITE_ACCESS, SUGGEST_ACCESS} from '../../../lib/permissionSets';
+  import {searchHistory} from '../../../lib/searchHistory.svelte';
   import {
     AUTO_CAPTURES,
     type AutoCapture,
@@ -70,6 +71,18 @@
   async function changeAutoCapture(mode: AutoCapture) {
     if (mode !== 'off' && !permissions.siteAccess && !(await permissions.request(SITE_ACCESS))) return;
     settings.update({autoCapture: mode});
+  }
+
+  /** Suggestions send the query to the search engine: its permission is asked first, while the click still counts */
+  async function toggleSuggestions(enabled: boolean) {
+    if (enabled && !permissions.suggest && !(await permissions.request(SUGGEST_ACCESS))) return;
+    settings.update({searchSuggestions: enabled});
+  }
+
+  /** Turned off — what was remembered goes too */
+  function toggleSearchHistory(enabled: boolean) {
+    if (!enabled) searchHistory.clear();
+    settings.update({searchHistory: enabled});
   }
 
   // Services are edited as text and saved when the field loses focus
@@ -148,6 +161,28 @@
           oninput={(event) => settings.update({customSearchUrl: event.currentTarget.value})}
         >
       {/snippet}
+    </SettingRow>
+  {/if}
+  <SwitchRow
+    label={t.general.searchSuggestions}
+    hint={current.searchEngine === 'custom'
+      ? t.general.searchSuggestionsCustom
+      : t.general.searchSuggestionsHint(searchEngineName(current.searchEngine))}
+    checked={current.searchSuggestions && permissions.suggest && current.searchEngine !== 'custom'}
+    disabled={current.searchEngine === 'custom'}
+    setting="searchSuggestions"
+    onchange={toggleSuggestions}
+  />
+  <SwitchRow
+    label={t.general.searchHistory}
+    hint={t.general.searchHistoryHint}
+    checked={current.searchHistory}
+    setting="searchHistory"
+    onchange={toggleSearchHistory}
+  />
+  {#if current.searchHistory && searchHistory.entries.length > 0}
+    <SettingRow label={t.general.searchHistoryCount(searchHistory.entries.length)}>
+      <button type="button" class="button" onclick={() => searchHistory.clear()}>{t.general.clearSearchHistory}</button>
     </SettingRow>
   {/if}
   <SwitchRow key="showServices" label={t.general.showServices} hint={t.general.showServicesHint}/>

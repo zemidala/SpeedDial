@@ -279,7 +279,7 @@
       {#if item.url}
         <BookmarkTile bookmark={item}/>
       {:else}
-        <FolderTile folder={item} preview={bookmarks.previews[item.id] ?? []}/>
+        <FolderTile folder={item} preview={(search.active ? search.previews : bookmarks.previews)[item.id] ?? []}/>
       {/if}
       <!-- Selection check mark: visible on hover and while something is selected. Keyboard — Space on the tile -->
       {#if !isVirtualNode(item)}

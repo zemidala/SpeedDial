@@ -211,7 +211,7 @@ test('only the tiles scroll: the header stays in place', async ({newtab}) => {
   await expect(tile(newtab, 'Tile 39')).toBeAttached();
 
   const content = newtab.locator('.app__content');
-  const header = newtab.getByRole('searchbox', {name: 'Поиск'});
+  const header = newtab.getByRole('combobox', {name: 'Поиск'});
   const headerTop = (await header.boundingBox())!.y;
   await newtab.mouse.move(500, 400);
   await newtab.mouse.wheel(0, 2000);
@@ -235,7 +235,7 @@ test('the service worker can open SpeedDial again in a tab without the "tabs" pe
     await chrome.tabs.update(tab.id!, {url: 'chrome://newtab/'});
   });
   await expect.poll(() => tab.url()).toBe(`chrome-extension://${extensionId}/newtab.html`);
-  await expect(tab.getByRole('searchbox', {name: 'Поиск'})).toBeVisible();
+  await expect(tab.getByRole('combobox', {name: 'Поиск'})).toBeVisible();
 });
 
 test('a tab that left SpeedDial or was closed isn\'t taken back after a reload', async ({context, newtab}) => {
