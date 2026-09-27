@@ -84,6 +84,8 @@ export const test = base.extend<Fixtures>({
       args: [
         `--disable-extensions-except=${extensionPath}`,
         `--load-extension=${extensionPath}`,
+        // The browser's own names (e.g. of the bookmarks bar) in the same language
+        `--lang=${browserLocale}`,
       ],
     });
     await use(context);

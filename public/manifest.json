@@ -18,11 +18,11 @@
     "bookmarks",
     "contextMenus",
     "favicon",
-    "identity",
     "storage"
   ],
   "optional_permissions": [
     "clipboardRead",
+    "identity",
     "sessions",
     "tabs",
     "topSites"

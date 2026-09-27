@@ -78,7 +78,8 @@
   async function signIn() {
     if (!oauth) return;
     // Permission first, while the button press still counts
-    if (!await permissions.request({origins: oauth.origins})) {
+    // The sign-in window (chrome.identity) is an optional permission too: asked only by those who sign in
+    if (!await permissions.request({permissions: ['identity'], origins: oauth.origins})) {
       error = t.backup.noAccess(oauth.label);
       return;
     }

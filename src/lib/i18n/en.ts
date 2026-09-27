@@ -712,7 +712,8 @@ export const en = {
     features: [
       'Folders, drag and drop, selecting several tiles',
       'Eleven themes, light and dark modes, fonts and background',
-      'Backups to a file or to the cloud: Google Drive, Dropbox, OneDrive, Yandex Disk',
+      'Backups to a file, a cloud drive or a NAS over WebDAV (Yandex Disk, Nextcloud)',
+      'Bookmarks from another browser merge with yours: same-named folders join, repeats are skipped',
       'Keyboard control and search across all bookmarks',
     ],
     open: 'Open SpeedDial',

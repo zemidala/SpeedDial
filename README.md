@@ -37,7 +37,9 @@ Cloud sign-in (Google Drive, Dropbox, OneDrive) needs registered app Client IDs 
 | `npm run check` | Type check (`svelte-check`) and lint (`eslint`) |
 | `npm test` | Unit tests (Vitest) |
 | `npm run test:e2e` | Build, then end-to-end tests (Playwright) in Chromium with the extension loaded |
-| `npm run icons` | Render the extension icons in `public/icons` from the SVGs in `icon/` |
+| `npm run icons` | Render the extension icons in `public/icons` (and the store logo) from the SVGs in `icon/` |
+| `npm run package` | Build and pack `dist` into `release/speeddial-<version>.zip` for the stores (from a commit) |
+| `npm run store-assets` | Screenshots (English and Russian) and the promotional tile for the store, into `docs/store` (needs the internet) |
 
 End-to-end tests start a separate browser for each test. `E2E_CHANNEL=msedge npm run test:e2e` runs them in the
 installed Edge. The first run needs the browser: `npx playwright install chromium`.
@@ -59,7 +61,9 @@ When the release changes, the next new tab tells the user what's new. The list o
    `whatsNew.releases`, commit.
 2. Tag the commit and push the tag: `git tag -a v2.1.0 -m "SpeedDial 2.1.0"`, then `git push origin v2.1.0`.
 3. On GitHub, create a release from the tag (Releases → Draft a new release) with the same list of changes, and
-   attach the built extension (`dist` zipped, or the `speeddial-dist` artifact of the CI run).
+   attach the package from `npm run package`.
+4. Upload the same package to the stores; texts, permission notes and assets are in
+   [docs/store/listing.md](docs/store/listing.md), the privacy policy in [docs/privacy-policy.md](docs/privacy-policy.md).
 
 ## Issues and discussions
 
