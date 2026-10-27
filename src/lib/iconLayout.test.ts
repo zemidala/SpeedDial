@@ -37,6 +37,21 @@ describe('analyzeLayout', () => {
     expect(layout.contentBox).toEqual({x: 24 / 64, y: 24 / 64, w: 16 / 64, h: 16 / 64});
   });
 
+  it('a dark square lighter at the top (GitHub\'s app icon) — its top and bottom colours are kept', () => {
+    const layout = analyzeLayout(image((x, y) => {
+      if (inCircle(x, y, 22)) return [255, 255, 255, 255];
+      const shade = Math.round(30 - y / 4);
+      return [shade, shade + 2, shade + 4, 255];
+    }), SIZE)!;
+    expect(layout.kind).toBe('seamless');
+    expect(layout.edgeGradient).toEqual(['#1e2022', '#0f1113']);
+  });
+
+  it('a flat edge has no gradient', () => {
+    const layout = analyzeLayout(image((x, y) => (inSquare(x, y, 24, 40) ? [255, 255, 255, 255] : [252, 63, 29, 255])), SIZE)!;
+    expect(layout.edgeGradient).toBeNull();
+  });
+
   it('a circle on transparency with a drawing (Discord) — seamless too', () => {
     const layout = analyzeLayout(image((x, y) => {
       if (!inCircle(x, y)) return CLEAR;

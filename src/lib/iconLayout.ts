@@ -24,6 +24,8 @@ export interface IconLayout {
   kind: LayoutKind;
   /** The edge colour (#rrggbb) — the tile's colour for a seamless icon */
   edgeColor: string;
+  /** The edge's colours at the top and the bottom when they differ (GitHub's dark square is lighter at the top) */
+  edgeGradient: [string, string] | null;
   /** A light edge (a white background, like VK's): in the dark theme such an icon stays on a plate */
   lightEdge: boolean;
   /** The visible part of the image */
@@ -66,6 +68,8 @@ const PHOTO_COLORS = 900;
 const PHOTO_TOP_SHARE = 0.05;
 /** Lc enough for a large shape without text: the theme's own plate is kept if it reaches this */
 const PLATE_LC = 30;
+/** Top and bottom edge colours closer than this (RGB distance) count as one colour */
+const GRADIENT_DISTANCE = 6;
 /** Edge lighter than this (relative luminance) is "light": white, but also pale blue like Reddit's — a glare among dark tiles */
 const LIGHT_EDGE = 0.6;
 
@@ -112,6 +116,8 @@ export function analyzeLayout(data: Uint8ClampedArray, size: number): IconLayout
   let opaque = 0;
   let bandTotal = 0;
   const edge: Rgb[] = [];
+  const edgeTop: Rgb[] = [];
+  const edgeBottom: Rgb[] = [];
   const counts = new Map<number, number>();
   const logo: Rgb[] = [];
   for (let y = y0; y <= y1; y++) {
@@ -122,6 +128,8 @@ export function analyzeLayout(data: Uint8ClampedArray, size: number): IconLayout
       if (a <= OPAQUE_ALPHA) continue;
       opaque++;
       if (inBand) edge.push([r, g, b]);
+      if (y - y0 < band) edgeTop.push([r, g, b]);
+      if (y1 - y < band) edgeBottom.push([r, g, b]);
       const key = ((r >> 3) << 10) | ((g >> 3) << 5) | (b >> 3);
       counts.set(key, (counts.get(key) ?? 0) + 1);
       logo.push([r, g, b]);
@@ -129,9 +137,11 @@ export function analyzeLayout(data: Uint8ClampedArray, size: number): IconLayout
   }
   const shape = opaque / (boxWidth * boxHeight) >= SHAPE_COVERAGE && edge.length / bandTotal >= SHAPE_EDGE;
 
-  const edgeRgb: Rgb = edge.length > 0
-    ? [median(edge.map((p) => p[0])), median(edge.map((p) => p[1])), median(edge.map((p) => p[2]))]
-    : [255, 255, 255];
+  const medianRgb = (pixels: Rgb[]): Rgb => [0, 1, 2].map((i) => median(pixels.map((p) => p[i]))) as Rgb;
+  const edgeRgb: Rgb = edge.length > 0 ? medianRgb(edge) : [255, 255, 255];
+  const topRgb = medianRgb(edgeTop);
+  const bottomRgb = medianRgb(edgeBottom);
+  const gradient = edgeTop.length > 0 && edgeBottom.length > 0 && distance(topRgb, bottomRgb) > GRADIENT_DISTANCE;
   const edgeShare = edge.length > 0 ? edge.filter((p) => distance(p, edgeRgb) <= EDGE_DISTANCE).length / edge.length : 0;
 
   // The drawing: paint unlike the edge colour
@@ -184,6 +194,7 @@ export function analyzeLayout(data: Uint8ClampedArray, size: number): IconLayout
   return {
     kind,
     edgeColor: hex(edgeRgb),
+    edgeGradient: kind === 'seamless' && gradient ? [hex(topRgb), hex(bottomRgb)] : null,
     lightEdge: relativeLuminance(edgeRgb) > LIGHT_EDGE,
     box: visible,
     contentBox: kind === 'seamless' && cx1 >= 0 ? box(cx0, cy0, cx1, cy1) : visible,

@@ -30,6 +30,8 @@
   const maxSize = $derived(info ? `${Math.max(16, Math.round(info.size / window.devicePixelRatio * 1.5))}px` : undefined);
 
   // ===== "By the logo" =====
+  /** How far a seamless icon's fade reaches into it, at most — a share of its side */
+  const MAX_FADE = 0.12;
   const layout = $derived(appearance === 'smart' ? info?.layout ?? null : null);
   /**
    * seamless — the area takes the icon's edge colour; logo — a plate of the logo's colour; app — on a blurred copy
@@ -43,7 +45,10 @@
   });
   const smartBackground = $derived.by(() => {
     if (!layout) return undefined;
-    if (smartMode === 'seamless') return layout.edgeColor;
+    if (smartMode === 'seamless') {
+      const gradient = layout.edgeGradient;
+      return gradient ? `linear-gradient(${gradient[0]}, ${gradient[1]})` : layout.edgeColor;
+    }
     if (smartMode !== 'logo') return undefined;
     const theme = icons.dark ? 'dark' : 'light';
     const plate = smartLighten ? 'dark' : layout.plateFor[theme];
@@ -55,6 +60,23 @@
   const smartLighten = $derived(smartMode === 'logo' && icons.dark && Boolean(info?.darkMonochrome));
   /** What's sized and centred: the drawing inside a seamless icon, the visible part of a logo */
   const smartBox = $derived(layout ? (smartMode === 'seamless' ? layout.contentBox : layout.box) : null);
+  /**
+   * A seamless icon fades out over its margins (between its edge and the drawing, at most MAX_FADE of it): an edge
+   * a shade off the tile — a gradient, a vignette — doesn't show as a square
+   */
+  const fadeMask = $derived.by(() => {
+    if (smartMode !== 'seamless' || !layout) return undefined;
+    const {box, contentBox: drawing} = layout;
+    const width = (margin: number) => Math.max(0, Math.min(margin * 0.8, MAX_FADE));
+    const percent = (value: number) => `${(value * 100).toFixed(2)}%`;
+    const ramp = (direction: string, from: number, to: number, start: number, end: number) =>
+      `linear-gradient(${direction}, transparent ${percent(from)}, #000 ${percent(from + width(start))}, ` +
+      `#000 ${percent(to - width(end))}, transparent ${percent(to)})`;
+    const right = box.x + box.w;
+    const bottom = box.y + box.h;
+    return `${ramp('to right', box.x, right, drawing.x - box.x, right - drawing.x - drawing.w)}, ` +
+      ramp('to bottom', box.y, bottom, drawing.y - box.y, bottom - drawing.y - drawing.h);
+  });
 </script>
 
 {#if appearance === 'smart'}
@@ -83,7 +105,7 @@
           <img class="site-icon-smart__image" src={info.src} alt="">
         </span>
       {:else}
-        <img class="site-icon-smart__image" src={info.src} alt="">
+        <img class="site-icon-smart__image" src={info.src} alt="" style:mask-image={fadeMask}>
       {/if}
     {:else if showLetter}
       <span class="site-icon-smart__letter">{letter}</span>
@@ -225,6 +247,10 @@
     width: var(--side);
     height: var(--side);
     object-fit: contain;
+  }
+
+  .site-icon-smart--seamless .site-icon-smart__image {
+    mask-composite: intersect;
   }
 
   .site-icon-smart--lighten .site-icon-smart__image {
