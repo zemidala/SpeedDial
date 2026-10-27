@@ -184,6 +184,11 @@ export function makeIco(png: Buffer, size: number): Buffer {
   return Buffer.concat([header, png]);
 }
 
+/** After choosing or pasting an image the crop dialog opens: keep the whole image, as before cropping existed */
+export async function keepWholeImage(page: Page) {
+  await page.getByRole('dialog', {name: 'Выберите область'}).getByRole('button', {name: 'Вся картинка'}).click();
+}
+
 /** Imitates granted site access: the permission prompt is browser UI and can't be clicked in a test */
 export async function grantPermissions(context: BrowserContext) {
   await context.addInitScript(() => {

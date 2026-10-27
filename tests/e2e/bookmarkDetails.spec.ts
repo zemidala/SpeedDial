@@ -1,5 +1,5 @@
 import type {Page} from '@playwright/test';
-import {expect, makePng, seed, test, tile} from './fixtures';
+import {expect, keepWholeImage, makePng, seed, test, tile} from './fixtures';
 
 // The page's name and description are read from the site — that needs access to sites
 test.use({hostAccess: true});
@@ -91,6 +91,7 @@ test('the tile can show the site icon instead of its thumbnail, and back', async
   const chooser = newtab.waitForEvent('filechooser');
   await dialog.getByRole('button', {name: 'Выбрать картинку…'}).click();
   await (await chooser).setFiles({name: 'a.png', mimeType: 'image/png', buffer: await makePng(newtab, 300, '#ff8800')});
+  await keepWholeImage(newtab);
   const thumbnail = tile(newtab, 'Shot').locator('.tile__thumbnail');
   await expect(thumbnail).toBeVisible();
 

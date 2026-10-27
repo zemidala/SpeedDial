@@ -1,5 +1,5 @@
 import type {Page} from '@playwright/test';
-import {expect, makePng, openSettings, seed, test, tile} from './fixtures';
+import {expect, keepWholeImage, makePng, openSettings, seed, test, tile} from './fixtures';
 
 test.use({hostAccess: true});
 // Screenshots need real windows to be drawn; with many browsers running in parallel one sometimes isn't ready in time
@@ -31,6 +31,7 @@ async function chooseImage(page: Page, title: string, color: string) {
   const chooser = page.waitForEvent('filechooser');
   await dialog.getByRole('button', {name: 'Выбрать картинку…'}).click();
   await (await chooser).setFiles({name: 'logo.png', mimeType: 'image/png', buffer: await makePng(page, 300, color)});
+  await keepWholeImage(page);
   await expect(dialog.getByRole('status')).toHaveText('Картинка обновлена');
   return dialog;
 }
@@ -45,6 +46,8 @@ test('page screenshot from the "Icon" dialog and removing the thumbnail', async 
   // The preview in the dialog and the tile update when the screenshot is ready
   await expect(dialog.getByRole('img', {name: 'Текущая картинка'})).toBeVisible({timeout: 20_000});
   await expect(dialog.getByRole('status')).toHaveText('Снимок страницы готов');
+  // A part of the screenshot can be chosen right away; the whole one is kept
+  await keepWholeImage(newtab);
   // The screenshot window was in front; focus is back in the window with the new tab
   expect(await newtab.evaluate(async () => (await chrome.windows.getLastFocused()).id))
     .toBe(await newtab.evaluate(async () => (await chrome.windows.getCurrent()).id));

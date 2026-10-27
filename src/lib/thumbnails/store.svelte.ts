@@ -1,9 +1,10 @@
 import {idbKeys} from '../idb';
-import {resizeImage, THUMBNAIL_HEIGHT, THUMBNAIL_WIDTH} from '../images';
+import {cropImage, resizeImage, THUMBNAIL_HEIGHT, THUMBNAIL_WIDTH} from '../images';
 import {type CaptureItem, type CaptureProgress, onMessage, requestCaptureStatus, sendMessage} from '../messages';
 import {permissions} from '../permissions.svelte';
 import {settings} from '../settings/store.svelte';
 import {queued} from '../siteIcons';
+import type {CropRect} from './crop';
 import {fetchPageImage, forgetMisses, isRecentMiss, rememberMiss} from './pageImage';
 import {clearThumbnails, deleteThumbnail, getThumbnail, saveThumbnail, type StoredThumbnail} from './storage';
 
@@ -111,9 +112,11 @@ class ThumbnailsStore {
     return sendMessage({type: 'cancel-capture'});
   }
 
-  /** A custom image instead of a page screenshot */
-  async setCustom(bookmarkId: string, image: Blob): Promise<void> {
-    const blob = await resizeImage(image, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
+  /** A custom image instead of a page screenshot; crop — the part of it chosen in the crop dialog (image pixels) */
+  async setCustom(bookmarkId: string, image: Blob, crop?: CropRect): Promise<void> {
+    const blob = crop
+      ? await cropImage(image, crop, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT)
+      : await resizeImage(image, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
     await saveThumbnail(bookmarkId, blob, 'custom');
     await this.#changed([bookmarkId]);
   }

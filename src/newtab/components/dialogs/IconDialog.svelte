@@ -6,11 +6,13 @@
   import {iconOnly} from '../../../lib/perBookmark.svelte';
   import {SITE_ACCESS} from '../../../lib/permissionSets';
   import {permissions} from '../../../lib/permissions.svelte';
+  import type {CropRect} from '../../../lib/thumbnails/crop';
   import {thumbnails} from '../../../lib/thumbnails/store.svelte';
   import {isWebUrl} from '../../../lib/url';
   import SiteIcon from '../grid/SiteIcon.svelte';
   import Icon from '../ui/Icon.svelte';
   import Modal from '../ui/Modal.svelte';
+  import CropDialog from './CropDialog.svelte';
 
   // Bookmark icon and thumbnail: a preview and every way to change them. A folder gets only its own picture —
   // shown on its tile instead of the previews of what's inside
@@ -68,6 +70,8 @@
       working = null;
       status = t.iconDialog.captureDone;
       void useThumbnail();
+      // The screenshot is kept as it is; a part of it can be chosen right away
+      void chooseArea();
       return;
     }
     if (thumbnails.progress !== null) return;
@@ -87,19 +91,38 @@
   // A new image is wanted on the tile — so the tile shows it again, even if the icon was chosen before
   const useThumbnail = () => iconOnly.set(node.id, null);
 
+  /**
+   * An image waiting for its area to be chosen. fresh — a new image (a file, the clipboard): nothing is saved until
+   * the crop dialog says what; otherwise it's the current thumbnail, and "whole image" leaves it as it is
+   */
+  let cropping = $state<{image: Blob; fresh: boolean; doneMessage: string} | null>(null);
+
   const pick = () => run(async () => {
     const file = await pickFile('image/*');
-    if (!file) return;
-    await thumbnails.setCustom(node.id, file);
-    await useThumbnail();
-  }, t.iconDialog.imageUpdated);
+    if (file) cropping = {image: file, fresh: true, doneMessage: t.iconDialog.imageUpdated};
+  }, '');
 
   const paste = () => run(async () => {
     const image = await readClipboardImage();
     if (!image) throw new Error(t.iconDialog.noClipboardImage);
-    await thumbnails.setCustom(node.id, image);
-    await useThumbnail();
-  }, t.iconDialog.pasted);
+    cropping = {image, fresh: true, doneMessage: t.iconDialog.pasted};
+  }, '');
+
+  async function chooseArea() {
+    if (!thumbnail.url) return;
+    const image = await (await fetch(thumbnail.url)).blob();
+    cropping = {image, fresh: false, doneMessage: t.iconDialog.areaSaved};
+  }
+
+  function saveCrop(crop: CropRect | null) {
+    const current = cropping;
+    cropping = null;
+    if (!current || (!crop && !current.fresh)) return;
+    void run(async () => {
+      await thumbnails.setCustom(node.id, current.image, crop ?? undefined);
+      await useThumbnail();
+    }, crop ? t.iconDialog.areaSaved : current.doneMessage);
+  }
 
   const removeThumbnail = () => run(async () => {
     await thumbnails.remove(node.id);
@@ -171,6 +194,9 @@
       {t.iconDialog.paste}
     </button>
     {#if thumbnail.url}
+      <button type="button" class="button" disabled={busy || working !== null} onclick={() => run(chooseArea, '')}>
+        {t.iconDialog.chooseArea}
+      </button>
       <button type="button" class="button" disabled={busy || working !== null} onclick={removeThumbnail}>{t.iconDialog.removeImage}</button>
     {/if}
   </div>
@@ -188,6 +214,10 @@
     <button type="button" class="button button--primary" onclick={onclose}>{t.common.done}</button>
   {/snippet}
 </Modal>
+
+{#if cropping}
+  <CropDialog image={cropping.image} name={node.title} onsave={saveCrop} onclose={() => (cropping = null)}/>
+{/if}
 
 <style>
   .icon-dialog__preview {

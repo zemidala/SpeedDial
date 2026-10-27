@@ -20,6 +20,25 @@ export async function coverTop(source: Blob, width: number, height: number, type
   return canvas.convertToBlob({type, quality});
 }
 
+/** Cuts the rectangle (in image pixels) out of the image and fits it into maxWidth×maxHeight without enlarging */
+export async function cropImage(
+  source: Blob,
+  rect: {x: number; y: number; width: number; height: number},
+  maxWidth: number,
+  maxHeight: number,
+  type = 'image/webp',
+  quality = 0.85,
+): Promise<Blob> {
+  const bitmap = await createImageBitmap(source);
+  const scale = Math.min(1, maxWidth / rect.width, maxHeight / rect.height);
+  const canvas = new OffscreenCanvas(Math.max(1, Math.round(rect.width * scale)), Math.max(1, Math.round(rect.height * scale)));
+  const context = canvas.getContext('2d')!;
+  context.imageSmoothingQuality = 'high';
+  context.drawImage(bitmap, rect.x, rect.y, rect.width, rect.height, 0, 0, canvas.width, canvas.height);
+  bitmap.close();
+  return canvas.convertToBlob({type, quality});
+}
+
 /** Fits the image into maxWidth×maxHeight (without enlarging) and compresses it */
 export async function resizeImage(
   source: Blob,

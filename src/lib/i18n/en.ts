@@ -207,6 +207,16 @@ export const en = {
     showIcon: 'Site icon',
     thumbnailShown: 'The tile shows the thumbnail',
     iconShown: 'The tile shows the site icon — the thumbnail is kept',
+    chooseArea: 'Choose area…',
+    areaSaved: 'Area saved',
+  },
+
+  crop: {
+    title: 'Choose the area',
+    frame: 'Thumbnail area',
+    onTile: 'On the tile',
+    hint: 'Drag the frame or pull a corner. Arrow keys move the frame, Shift+arrows resize it.',
+    whole: 'Whole image',
   },
 
   sort: {

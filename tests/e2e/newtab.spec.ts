@@ -1,4 +1,4 @@
-import {expect, getChildren, makePng, openSettings, seed, test, tile} from './fixtures';
+import {expect, getChildren, keepWholeImage, makePng, openSettings, seed, test, tile} from './fixtures';
 
 test.beforeEach(async ({newtab}) => {
   await seed(newtab, [
@@ -380,6 +380,7 @@ test('subfolders in a folder\'s preview: four looks; a subfolder\'s own picture 
   const chooser = newtab.waitForEvent('filechooser');
   await newtab.getByRole('dialog').getByRole('button', {name: 'Выбрать картинку…'}).click();
   await (await chooser).setFiles({name: 'p.png', mimeType: 'image/png', buffer: await makePng(newtab, 200, '#ff6600')});
+  await keepWholeImage(newtab);
   await newtab.getByRole('dialog').getByRole('button', {name: 'Готово'}).click();
   await newtab.goBack();
   await expect(tile(newtab, 'Внешняя').locator(`.folder-preview [title="Проекты"] img`)).toBeVisible();

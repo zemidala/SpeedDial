@@ -1,5 +1,5 @@
 import type {Page} from '@playwright/test';
-import {expect, getChildren, makePng, seed, test, tile} from './fixtures';
+import {expect, getChildren, keepWholeImage, makePng, seed, test, tile} from './fixtures';
 
 test.beforeEach(async ({context, newtab}) => {
   await context.route('https://*.example/**', (route) => route.fulfill({body: '<title>Страница</title>'}));
@@ -257,6 +257,7 @@ test('a folder gets its own picture instead of the previews of its contents', as
   const chooser = newtab.waitForEvent('filechooser');
   await dialog.getByRole('button', {name: 'Выбрать картинку…'}).click();
   await (await chooser).setFiles({name: 'folder.png', mimeType: 'image/png', buffer: await makePng(newtab, 300, '#2080ff')});
+  await keepWholeImage(newtab);
   const picture = tile(newtab, 'Папка').locator('.tile__thumbnail');
   await expect(picture).toBeVisible();
   await expect(tile(newtab, 'Папка').locator('.folder-preview')).toHaveCount(0);
