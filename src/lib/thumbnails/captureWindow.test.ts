@@ -1,5 +1,78 @@
-import {describe, expect, it} from 'vitest';
-import {cornerBounds, isFlatImage} from './captureWindow';
+import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
+import {cornerBounds, isFlatImage, type TabStatusSource, waitForSettledLoad} from './captureWindow';
+
+describe('waitForSettledLoad', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  /** A tab whose status the test changes; `initial` is what current() answers */
+  function fakeTab(initial: string | undefined) {
+    const listeners = new Set<(status: string) => void>();
+    const source: TabStatusSource = {
+      current: () => Promise.resolve(initial),
+      subscribe: (listener) => {
+        listeners.add(listener);
+        return () => listeners.delete(listener);
+      },
+    };
+    const emit = (status: string) => listeners.forEach((listener) => listener(status));
+    return {source, emit, listeners};
+  }
+
+  /** Resolves `done` when the wait ends, so the test can check it at any moment */
+  function start(source: TabStatusSource) {
+    const state = {done: false};
+    void waitForSettledLoad(source, {settle: 1000, timeout: 10_000}).then(() => {
+      state.done = true;
+    });
+    return state;
+  }
+
+  it('an already loaded page — after the settle time', async () => {
+    const tab = fakeTab('complete');
+    const state = start(tab.source);
+    await vi.advanceTimersByTimeAsync(999);
+    expect(state.done).toBe(false);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(state.done).toBe(true);
+    expect(tab.listeners.size).toBe(0);
+  });
+
+  it('loading again after "complete" (a redirect) — the settle time starts over', async () => {
+    const tab = fakeTab('loading');
+    const state = start(tab.source);
+    await vi.advanceTimersByTimeAsync(100);
+    tab.emit('complete');
+    await vi.advanceTimersByTimeAsync(800);
+    tab.emit('loading');
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(state.done).toBe(false);
+    tab.emit('complete');
+    await vi.advanceTimersByTimeAsync(999);
+    expect(state.done).toBe(false);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(state.done).toBe(true);
+  });
+
+  it('a page that never settles — captured at the timeout', async () => {
+    const tab = fakeTab('loading');
+    const state = start(tab.source);
+    await vi.advanceTimersByTimeAsync(9999);
+    expect(state.done).toBe(false);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(state.done).toBe(true);
+  });
+
+  it('the tab is gone — no waiting', async () => {
+    const state = start(fakeTab(undefined).source);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(state.done).toBe(true);
+  });
+});
 
 describe('cornerBounds', () => {
   it('puts the window into the bottom-right corner of the browser window', () => {

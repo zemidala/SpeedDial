@@ -1,7 +1,7 @@
 // Page screenshots for thumbnails: the page opens in a separate window, gets captured, and the window closes
 import {t} from '../lib/i18n/index.svelte';
 import {resizeImage, THUMBNAIL_HEIGHT, THUMBNAIL_WIDTH} from '../lib/images';
-import {cornerBounds, HIDDEN_BOUNDS, isFlatImage} from '../lib/thumbnails/captureWindow';
+import {cornerBounds, HIDDEN_BOUNDS, isFlatImage, waitForSettledLoad} from '../lib/thumbnails/captureWindow';
 import {type CaptureItem, type CaptureProgress, sendMessage} from '../lib/messages';
 import {loadSettings} from '../lib/settings/storage';
 import {saveThumbnail} from '../lib/thumbnails/storage';
@@ -9,25 +9,22 @@ import {saveThumbnail} from '../lib/thumbnails/storage';
 const WINDOW_WIDTH = 1280;
 const WINDOW_HEIGHT = 800;
 const LOAD_TIMEOUT = 20_000; // A page that takes longer to load is captured as is
+const LOAD_SETTLE = 1500; // Ms the page must stay loaded: redirects and single-page sites load again after "complete"
 const MIN_SHOWN = 300; // Ms on the screen before the screenshot, even with no delay set: time to draw a frame
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function waitForLoad(tabId: number): Promise<void> {
-  return new Promise((resolve) => {
-    const done = () => {
-      clearTimeout(timer);
-      chrome.tabs.onUpdated.removeListener(onUpdated);
-      resolve();
-    };
-    const onUpdated = (id: number, change: chrome.tabs.OnUpdatedInfo) => {
-      if (id === tabId && change.status === 'complete') done();
-    };
-    const timer = setTimeout(done, LOAD_TIMEOUT);
-    chrome.tabs.onUpdated.addListener(onUpdated);
-    // The page may have finished loading before we subscribed
-    chrome.tabs.get(tabId).then((tab) => tab.status === 'complete' && done(), done);
-  });
+  return waitForSettledLoad({
+    current: () => chrome.tabs.get(tabId).then((tab) => tab.status ?? 'loading', () => undefined),
+    subscribe: (listener) => {
+      const onUpdated = (id: number, change: chrome.tabs.OnUpdatedInfo) => {
+        if (id === tabId && change.status) listener(change.status);
+      };
+      chrome.tabs.onUpdated.addListener(onUpdated);
+      return () => chrome.tabs.onUpdated.removeListener(onUpdated);
+    },
+  }, {settle: LOAD_SETTLE, timeout: LOAD_TIMEOUT});
 }
 
 // Capture "session" number: cancelling bumps it, and captures started earlier stop

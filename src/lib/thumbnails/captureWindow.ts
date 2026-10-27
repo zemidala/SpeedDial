@@ -32,6 +32,47 @@ export function cornerBounds(browser: Partial<Bounds> | undefined, width: number
   };
 }
 
+/** Loading status of the tab being captured, as the browser reports it */
+export interface TabStatusSource {
+  /** The status now; undefined — the tab is gone */
+  current(): Promise<string | undefined>;
+  /** Status changes; returns a function that unsubscribes */
+  subscribe(listener: (status: string) => void): () => void;
+}
+
+/**
+ * Waits until the page has stayed loaded for `settle` ms in a row. "complete" alone isn't enough: redirects and
+ * single-page sites start loading again right after it, and a screenshot then catches a blank or half-drawn page.
+ * Gives up after `timeout` ms in total — such a page is captured as is
+ */
+export function waitForSettledLoad(source: TabStatusSource, {settle, timeout}: {settle: number; timeout: number}): Promise<void> {
+  return new Promise((resolve) => {
+    let settleTimer: ReturnType<typeof setTimeout> | undefined;
+    let changed = false; // A status came before current() answered — it's newer than that answer
+
+    const done = () => {
+      clearTimeout(settleTimer);
+      clearTimeout(timeoutTimer);
+      unsubscribe();
+      resolve();
+    };
+    const apply = (status: string) => {
+      clearTimeout(settleTimer);
+      settleTimer = status === 'complete' ? setTimeout(done, settle) : undefined;
+    };
+
+    const timeoutTimer = setTimeout(done, timeout);
+    const unsubscribe = source.subscribe((status) => {
+      changed = true;
+      apply(status);
+    });
+    source.current().then((status) => {
+      if (status === undefined) done();
+      else if (!changed) apply(status);
+    }, done);
+  });
+}
+
 /**
  * A screenshot that is one flat colour: the browser drew nothing (the window ended up behind another one).
  * pixels — RGBA of a small copy of the screenshot
