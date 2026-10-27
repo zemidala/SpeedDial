@@ -34,6 +34,11 @@ export interface IconLayout {
   plates: Record<Plate, string>;
   /** Which plate a logo stands on in the light and in the dark theme */
   plateFor: Record<Plate, Plate>;
+  /**
+   * The logo has a colour of its own, so its plates are shades of it. A colourless logo (GitHub's) would only get
+   * a grey plate — a square a shade off the tile; on its own theme's side it stands on the tile itself
+   */
+  tinted: boolean;
 }
 
 /** Visible: more opaque than this */
@@ -160,7 +165,8 @@ export function analyzeLayout(data: Uint8ClampedArray, size: number): IconLayout
     const max = Math.max(r, g, b);
     return max > 40 && (max - Math.min(r, g, b)) / max > 0.25;
   });
-  const hue: Rgb = saturated.length > logo.length * 0.15
+  const tinted = saturated.length > logo.length * 0.15;
+  const hue: Rgb = tinted
     ? [0, 1, 2].map((i) => Math.round(saturated.reduce((sum, p) => sum + p[i], 0) / saturated.length)) as Rgb
     : [128, 128, 128];
   const plates: Record<Plate, Rgb> = {light: mix(hue, [255, 255, 255], 0.88), dark: mix(hue, [18, 20, 24], 0.86)};
@@ -183,5 +189,6 @@ export function analyzeLayout(data: Uint8ClampedArray, size: number): IconLayout
     contentBox: kind === 'seamless' && cx1 >= 0 ? box(cx0, cy0, cx1, cy1) : visible,
     plates: {light: hex(plates.light), dark: hex(plates.dark)},
     plateFor: {light: choose('light'), dark: choose('dark')},
+    tinted,
   };
 }

@@ -44,8 +44,12 @@
   const smartBackground = $derived.by(() => {
     if (!layout) return undefined;
     if (smartMode === 'seamless') return layout.edgeColor;
-    if (smartMode === 'logo') return smartLighten ? layout.plates.dark : layout.plates[layout.plateFor[icons.dark ? 'dark' : 'light']];
-    return undefined;
+    if (smartMode !== 'logo') return undefined;
+    const theme = icons.dark ? 'dark' : 'light';
+    const plate = smartLighten ? 'dark' : layout.plateFor[theme];
+    // A colourless logo that's seen on its own theme's plate needs no plate: a grey one is just a square a shade
+    // off the tile. The other theme's plate stays — without it the logo isn't seen (white YouTube on a light tile)
+    return plate === theme && !layout.tinted ? undefined : layout.plates[plate];
   });
   // A black logo in the dark theme: a pale plate would glare, so it's drawn light on the dark plate, as in "fill"
   const smartLighten = $derived(smartMode === 'logo' && icons.dark && Boolean(info?.darkMonochrome));

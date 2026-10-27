@@ -78,12 +78,15 @@ describe('analyzeLayout', () => {
     expect(layout.plateFor.light).toBe('light');
     // Black on a dark plate isn't seen: the pale plate is kept in the dark theme too
     expect(layout.plateFor.dark).toBe('light');
+    // No colour of its own — its plates are grey
+    expect(layout.tinted).toBe(false);
   });
 
   it('a small logo with wide margins: the visible part is found, the margins aren\'t', () => {
     const layout = analyzeLayout(image((x, y) => (inSquare(x, y, 20, 44) && (x * y) % 7 !== 0 ? [30, 160, 90, 255] : CLEAR)), SIZE)!;
     expect(layout.kind).toBe('logo');
     expect(layout.box).toEqual({x: 20 / 64, y: 20 / 64, w: 24 / 64, h: 24 / 64});
+    expect(layout.tinted).toBe(true);
     // A green logo: its plates are shades of green
     const [, g] = [1, 3, 5].map((i) => parseInt(layout.plates.light.slice(i, i + 2), 16));
     expect(g).toBeGreaterThan(parseInt(layout.plates.light.slice(1, 3), 16));

@@ -409,10 +409,9 @@ test.describe('"By the logo" style', () => {
     await expect(visual(newtab, 'Red')).toHaveClass(/site-icon-smart--seamless/);
     await expect(visual(newtab, 'Red')).toHaveCSS('background-color', 'rgb(252, 63, 29)');
     await expect(visual(newtab, 'White')).toHaveCSS('background-color', 'rgb(255, 255, 255)');
-    // A logo on transparency: a pale plate of its colour (grey for black)
+    // A colourless logo on transparency stands on the tile itself: a grey plate would only be a square a shade off it
     await expect(visual(newtab, 'Black')).toHaveClass(/site-icon-smart--logo/);
-    const plate = await visual(newtab, 'Black').evaluate((el) => getComputedStyle(el).backgroundColor);
-    expect(plate).toMatch(/^rgb\((2[2-5]\d), \1, \1\)$/);
+    await expect(visual(newtab, 'Black')).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
     // A busy background: whole, on a blurred copy of itself
     await expect(visual(newtab, 'Gradient')).toHaveClass(/site-icon-smart--app/);
     await expect(visual(newtab, 'Gradient').locator('.site-icon-smart__backdrop')).toBeVisible();
@@ -423,7 +422,7 @@ test.describe('"By the logo" style', () => {
     expect(Math.abs(mark.x + mark.width / 2 - (area.x + area.width / 2))).toBeLessThan(2);
   });
 
-  test('in the dark theme a white edge stays on a plate, a black logo is drawn light on a dark plate', async ({context, newtab}) => {
+  test('in the dark theme a white edge becomes its own plate, a black logo is drawn light', async ({context, newtab}) => {
     await serveIcons(context, newtab);
     await enableSiteIcons(context, newtab, {iconStyle: 'smart', theme: 'dark'});
     await seed(newtab, [
@@ -439,10 +438,9 @@ test.describe('"By the logo" style', () => {
     const [shapeBox, imageBox] = [await shape.boundingBox(), await shape.locator('img').boundingBox()];
     expect(Math.abs(shapeBox!.width - imageBox!.width)).toBeLessThan(2);
     await expect(visual(newtab, 'Red')).toHaveClass(/site-icon-smart--seamless/);
-    // A pale plate would glare among dark tiles: a dark one, the logo drawn light on it
+    // A pale plate would glare among dark tiles: the logo is drawn light right on the tile, no square around it
     await expect(visual(newtab, 'Black')).toHaveClass(/site-icon-smart--lighten/);
-    const plate = await visual(newtab, 'Black').evaluate((el) => getComputedStyle(el).backgroundColor);
-    expect(plate).toMatch(/^rgb\((\d{2}), (\d{2}), (\d{2})\)$/);
+    await expect(visual(newtab, 'Black')).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
   });
 
   test('chosen with a button in the settings; the letter fills the area too', async ({newtab}) => {
