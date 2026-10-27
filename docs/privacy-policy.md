@@ -27,7 +27,7 @@ Each of these happens only when you use or turn on the feature:
 
 | Feature | What is sent | Where |
 |---|---|---|
-| Site icons and thumbnails | Requests to your bookmarked sites, as when you open them; screenshots of pages are made in your browser | The bookmarked sites |
+| Site icons and thumbnails | Requests to your bookmarked sites, as when you open them; screenshots of pages are made in your browser. With "Picture from the page" on (off by default), also a request for the preview picture the page names | The bookmarked sites and the servers their pictures are on |
 | Icon service (off by default) | The domain of each bookmarked site | The service you choose: Google, DuckDuckGo, Icon Horse, logo.dev or your own |
 | Page name and description "from the site", link check | A request to that page | The bookmarked site |
 | "Image of the day" background | A request for the picture | bing.com |
@@ -82,7 +82,7 @@ SpeedDial — расширение браузера, которое показы
 
 | Функция | Что отправляется | Куда |
 |---|---|---|
-| Иконки сайтов и миниатюры | Запросы к сайтам из закладок, как при их открытии; снимки страниц делаются в вашем браузере | Сайты из закладок |
+| Иконки сайтов и миниатюры | Запросы к сайтам из закладок, как при их открытии; снимки страниц делаются в вашем браузере. С включённой «Картинкой со страницы» (по умолчанию выключена) — ещё запрос картинки для превью, которую указала страница | Сайты из закладок и серверы, где лежат их картинки |
 | Сервис иконок (по умолчанию выключен) | Домен каждого сайта из закладок | Выбранный сервис: Google, DuckDuckGo, Icon Horse, logo.dev или свой |
 | Название и описание «с сайта», проверка ссылок | Запрос к этой странице | Сайт из закладок |
 | Фон «Изображение дня» | Запрос картинки | bing.com |

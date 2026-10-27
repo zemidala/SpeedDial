@@ -664,6 +664,15 @@ export const en = {
     // The newest release first; each release lists what users will notice
     releases: [
       {
+        release: '2.1.0',
+        changes: [
+          'Picture from the page: a bookmark without a thumbnail gets the picture its site provides for link previews. Turn it on in Settings → General',
+          'Choose which part of an image or screenshot goes onto the tile — with a frame, seeing the tile as you go',
+          'One image for all bookmarks of a site at once — a button in the “Icon” dialog',
+          'A page screenshot waits until the page has finished loading: redirects and slow pages are captured whole',
+        ],
+      },
+      {
         release: '2.0.0',
         changes: [
           'Bookmarks from another browser merge with yours: same-named folders join, repeats are skipped, and it can be undone',

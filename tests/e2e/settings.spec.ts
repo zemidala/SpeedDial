@@ -270,15 +270,15 @@ test('background image from a link: checked before it\'s used', async ({context,
 });
 
 test('after an update to a new release the new tab tells what\'s new, once', async ({newtab}) => {
-  // What the service worker leaves after an update from 1.9.0 to this release
-  await newtab.evaluate(() => chrome.storage.local.set({whatsNewPending: '2.0.0'}));
+  // What the service worker leaves after an update from 2.0.0 to this release
+  await newtab.evaluate(() => chrome.storage.local.set({whatsNewPending: '2.1.0'}));
   await newtab.reload();
-  const notice = newtab.getByRole('status').filter({hasText: 'SpeedDial обновлён до версии 2.0.0'});
+  const notice = newtab.getByRole('status').filter({hasText: 'SpeedDial обновлён до версии 2.1.0'});
   await notice.getByRole('button', {name: 'Что нового'}).click();
 
   const dialog = newtab.getByRole('dialog', {name: 'Настройки'});
-  await expect(dialog.getByRole('heading', {name: 'Что нового в версии 2.0.0'})).toBeVisible();
-  await expect(dialog.getByText('Поиск дублей закладок')).toBeVisible();
+  await expect(dialog.getByRole('heading', {name: 'Что нового в версии 2.1.0'})).toBeVisible();
+  await expect(dialog.getByText('Одна картинка сразу для всех закладок сайта — кнопка в окне «Значок»')).toBeVisible();
 
   // Told once
   await newtab.reload();
