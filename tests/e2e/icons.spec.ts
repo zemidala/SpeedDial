@@ -351,9 +351,9 @@ test('an icon found while the site\'s manifest was "busy" is only a stand-in', a
 });
 
 /** A PNG drawn in the page: kind picks one of the shapes the "by the logo" style tells apart */
-async function makeIcon(page: Page, kind: 'red-square' | 'white-square' | 'black-logo' | 'gradient') {
+async function makeIcon(page: Page, kind: 'red-square' | 'white-square' | 'black-logo' | 'gradient' | 'small-stripes') {
   const bytes = await page.evaluate(async (kind) => {
-    const canvas = new OffscreenCanvas(192, 192);
+    const canvas = kind === 'small-stripes' ? new OffscreenCanvas(128, 128) : new OffscreenCanvas(192, 192);
     const context = canvas.getContext('2d')!;
     if (kind === 'red-square' || kind === 'white-square') {
       // One colour all over with a mark in the middle — like Yandex's or VK's icon
@@ -368,6 +368,14 @@ async function makeIcon(page: Page, kind: 'red-square' | 'white-square' | 'black
       context.arc(96, 96, 40, 0, Math.PI * 2);
       context.fill();
       context.clearRect(84, 70, 24, 52);
+    } else if (kind === 'small-stripes') {
+      // A 32-pixel picture blown up four times — like a small favicon from the browser cache
+      for (let y = 0; y < 32; y++) {
+        for (let x = 0; x < 32; x++) {
+          context.fillStyle = Math.floor((x + y) / 4) % 2 ? '#1e5bff' : '#f91155';
+          context.fillRect(x * 4, y * 4, 4, 4);
+        }
+      }
     } else {
       // A shape with a busy background — like Instagram's
       const gradient = context.createLinearGradient(0, 0, 192, 192);
@@ -420,6 +428,21 @@ test.describe('"By the logo" style', () => {
     const area = (await visual(newtab, 'Red').boundingBox())!;
     const mark = (await visual(newtab, 'Red').locator('img').boundingBox())!;
     expect(Math.abs(mark.x + mark.width / 2 - (area.x + area.width / 2))).toBeLessThan(2);
+  });
+
+  test('a small busy icon is not blown up into squares', async ({context, newtab}) => {
+    await serveSite(context, 'https://small.example', {
+      '/': {type: 'text/html', body: '<link rel="icon" sizes="128x128" href="/icon.png">'},
+      '/icon.png': {type: 'image/png', body: await makeIcon(newtab, 'small-stripes')},
+    });
+    await enableSiteIcons(context, newtab, {iconStyle: 'smart'});
+    await seed(newtab, [{title: 'Small', url: 'https://small.example/'}]);
+
+    const app = visual(newtab, 'Small').locator('.site-icon-smart__app');
+    await expect(app).toBeVisible();
+    // 32 real pixels: at most 1.5 times that
+    const ratio = await newtab.evaluate(() => window.devicePixelRatio);
+    expect((await app.boundingBox())!.height).toBeLessThanOrEqual(Math.round(32 / ratio * 1.5) + 1);
   });
 
   test('in the dark theme a white edge becomes its own plate, a black logo is drawn light', async ({context, newtab}) => {

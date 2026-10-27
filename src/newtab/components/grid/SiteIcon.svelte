@@ -288,6 +288,12 @@
     transform: translate(-50%, -50%);
   }
 
+  /* Whole, it's not blown up past the image's real pixels either — a small favicon would turn into squares */
+  .site-icon-smart__app,
+  .site-icon-smart__plate--cover {
+    max-height: var(--icon-max, none);
+  }
+
   .site-icon-smart__app {
     border-radius: 20%;
     box-shadow: 0 2px 8px rgb(0 0 0 / 0.25);
@@ -306,7 +312,7 @@
     position: absolute;
     left: 50%;
     top: 50%;
-    height: min(calc(var(--icon-scale) * 1.16cqh), 70cqh);
+    height: min(calc(var(--icon-scale) * 1.16cqh), 70cqh, calc(var(--icon-max, 100cqh) * var(--box-area, 1)));
     aspect-ratio: 1;
     overflow: hidden;
     border-radius: 22%;
