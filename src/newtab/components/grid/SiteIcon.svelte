@@ -33,12 +33,12 @@
   const layout = $derived(appearance === 'smart' ? info?.layout ?? null : null);
   /**
    * seamless — the area takes the icon's edge colour; logo — a plate of the logo's colour; app — on a blurred copy
-   * of itself; photo — covers the area; plate — a white edge in the dark theme (a white area would glare) or an icon
-   * whose pixels couldn't be read
+   * of itself; photo — covers the area; shape — a light-edged icon in the dark theme (a light area would glare):
+   * its own shape, stretched to the size of a plate, is the plate; plate — an icon whose pixels couldn't be read
    */
   const smartMode = $derived.by(() => {
     if (!layout) return 'plate';
-    if (layout.kind === 'seamless') return layout.lightEdge && icons.dark ? 'plate' : 'seamless';
+    if (layout.kind === 'seamless') return layout.lightEdge && icons.dark ? 'shape' : 'seamless';
     return layout.kind;
   });
   const smartBackground = $derived.by(() => {
@@ -72,6 +72,8 @@
       {#if smartMode === 'app'}
         <img class="site-icon-smart__backdrop" src={info.src} alt="">
         <span class="site-icon-smart__app"><img class="site-icon-smart__image" src={info.src} alt=""></span>
+      {:else if smartMode === 'shape'}
+        <span class="site-icon-smart__shape"><img class="site-icon-smart__image" src={info.src} alt=""></span>
       {:else if smartMode === 'plate'}
         <span class="site-icon-smart__plate" class:site-icon-smart__plate--cover={info.fullBleed}>
           <img class="site-icon-smart__image" src={info.src} alt="">
@@ -266,6 +268,29 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
+  }
+
+  /* The icon's own shape as the plate: its visible part fills a plate-sized square. Sharp corners get rounded
+     like a plate; a rounded square or a circle keeps its own outline */
+  .site-icon-smart__shape {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    height: min(calc(var(--icon-scale) * 1.16cqh), 70cqh);
+    aspect-ratio: 1;
+    overflow: hidden;
+    border-radius: 22%;
+    transform: translate(-50%, -50%);
+    container-type: size;
+  }
+
+  .site-icon-smart__shape .site-icon-smart__image {
+    position: absolute;
+    left: calc(-100cqw * var(--box-x) / var(--box-w));
+    top: calc(-100cqh * var(--box-y) / var(--box-h));
+    width: calc(100cqw / var(--box-w));
+    height: calc(100cqh / var(--box-h));
+    max-width: none;
   }
 
   .site-icon-smart__plate {

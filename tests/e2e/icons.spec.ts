@@ -432,8 +432,12 @@ test.describe('"By the logo" style', () => {
       {title: 'Black', url: 'https://black-logo.example/'},
     ]);
 
-    await expect(visual(newtab, 'White')).toHaveClass(/site-icon-smart--plate/);
-    await expect(visual(newtab, 'White').locator('.site-icon-smart__plate')).toBeVisible();
+    // The icon's own white square is the plate — no grey plate around it
+    await expect(visual(newtab, 'White')).toHaveClass(/site-icon-smart--shape/);
+    const shape = visual(newtab, 'White').locator('.site-icon-smart__shape');
+    await expect(shape).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+    const [shapeBox, imageBox] = [await shape.boundingBox(), await shape.locator('img').boundingBox()];
+    expect(Math.abs(shapeBox!.width - imageBox!.width)).toBeLessThan(2);
     await expect(visual(newtab, 'Red')).toHaveClass(/site-icon-smart--seamless/);
     // A pale plate would glare among dark tiles: a dark one, the logo drawn light on it
     await expect(visual(newtab, 'Black')).toHaveClass(/site-icon-smart--lighten/);
