@@ -61,6 +61,12 @@ describe('needsScreenshot', () => {
     expect(needsScreenshot(thumbnail('custom', STALE_AFTER * 10), 'stale', now)).toBe(false);
   });
 
+  it('the page\'s preview picture is replaced by a screenshot in any mode', () => {
+    expect(needsScreenshot(thumbnail('page', 0), 'missing', now)).toBe(true);
+    expect(needsScreenshot(thumbnail('page', 0), 'stale', now)).toBe(true);
+    expect(needsScreenshot(thumbnail('page', 0), 'off', now)).toBe(false);
+  });
+
   it('does nothing when turned off', () => {
     expect(needsScreenshot(undefined, 'off', now)).toBe(false);
   });

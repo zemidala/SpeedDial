@@ -24,6 +24,7 @@
     type TypeOrder,
   } from '../../../lib/settings/schema';
   import {settings} from '../../../lib/settings/store.svelte';
+  import {thumbnails} from '../../../lib/thumbnails/store.svelte';
   import {openDuplicates, openLinkCheck} from '../../../lib/ui.svelte';
   import {
     MOST_VISITED_ID,
@@ -71,6 +72,16 @@
   async function changeAutoCapture(mode: AutoCapture) {
     if (mode !== 'off' && !permissions.siteAccess && !(await permissions.request(SITE_ACCESS))) return;
     settings.update({autoCapture: mode});
+  }
+
+  /** Page pictures are downloaded from sites: access is asked first, while the click still counts as a gesture */
+  async function togglePageImages(enabled: boolean) {
+    if (enabled) {
+      if (permissions.siteAccess || await permissions.request(SITE_ACCESS)) settings.update({pageImages: true});
+    } else {
+      settings.update({pageImages: false});
+      await thumbnails.clearPageImages();
+    }
   }
 
   /** Suggestions send the query to the search engine: its permission is asked first, while the click still counts */
@@ -244,6 +255,13 @@
       <button type="button" class="button" onclick={() => permissions.request(SITE_ACCESS)}>{t.common.allow}</button>
     </SettingRow>
   {/if}
+  <SwitchRow
+    label={t.general.pageImages}
+    hint={t.general.pageImagesHint}
+    checked={thumbnails.pageImagesEnabled}
+    setting="pageImages"
+    onchange={(enabled) => togglePageImages(enabled)}
+  />
   <SwitchRow
     key="showThumbnailRefresh"
     label={t.general.showThumbnailRefresh}

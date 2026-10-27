@@ -1,10 +1,17 @@
+import {idbKeys} from '../idb';
 import {resizeImage, THUMBNAIL_HEIGHT, THUMBNAIL_WIDTH} from '../images';
 import {type CaptureItem, type CaptureProgress, onMessage, requestCaptureStatus, sendMessage} from '../messages';
+import {permissions} from '../permissions.svelte';
+import {settings} from '../settings/store.svelte';
+import {queued} from '../siteIcons';
+import {fetchPageImage, forgetMisses, isRecentMiss, rememberMiss} from './pageImage';
 import {clearThumbnails, deleteThumbnail, getThumbnail, saveThumbnail, type StoredThumbnail} from './storage';
 
 /** Thumbnail of one bookmark; url — object URL of the image, or null if there's none */
 export class ThumbnailEntry {
   url = $state<string | null>(null);
+  /** The first look into storage is done: "no thumbnail" is now known, not just not loaded yet */
+  loaded = $state(false);
 
   #generation = 0;
 
@@ -17,6 +24,7 @@ export class ThumbnailEntry {
 
     if (this.url) URL.revokeObjectURL(this.url);
     this.url = stored ? URL.createObjectURL(stored.blob) : null;
+    this.loaded = true;
   }
 }
 
@@ -25,6 +33,8 @@ class ThumbnailsStore {
   progress = $state<CaptureProgress | null>(null);
 
   #entries = new Map<string, ThumbnailEntry>();
+  /** Bookmarks whose page picture was already asked for in this tab */
+  #pageImageAsked = new Set<string>();
 
   start(): void {
     onMessage((message) => {
@@ -50,6 +60,42 @@ class ThumbnailsStore {
       entry.load().catch((error) => console.error('Failed to load thumbnail', error));
     }
     return entry;
+  }
+
+  get pageImagesEnabled(): boolean {
+    return settings.current.pageImages && permissions.siteAccess;
+  }
+
+  /**
+   * For a bookmark without a thumbnail: the picture its page declares for link previews (see pageImage.ts).
+   * Asked once per tab; a page without a picture isn't asked again for a while
+   */
+  async loadPageImage(bookmarkId: string, pageUrl: string): Promise<void> {
+    if (!this.pageImagesEnabled || this.#pageImageAsked.has(bookmarkId) || isRecentMiss(pageUrl)) return;
+    this.#pageImageAsked.add(bookmarkId);
+
+    const {image, final} = await queued(() => fetchPageImage(pageUrl));
+    if (!image) {
+      if (final) rememberMiss(pageUrl);
+      return;
+    }
+    // A screenshot or the user's image may have come meanwhile — it's better; turned off meanwhile — not wanted
+    if (!this.pageImagesEnabled || await getThumbnail(bookmarkId).catch(() => undefined)) return;
+    await saveThumbnail(bookmarkId, image, 'page');
+    await this.#changed([bookmarkId]);
+  }
+
+  /** Turned off: the page pictures go, screenshots and the user's images stay */
+  async clearPageImages(): Promise<void> {
+    const removed: string[] = [];
+    for (const id of await idbKeys('thumbnails')) {
+      if ((await getThumbnail(id).catch(() => undefined))?.source !== 'page') continue;
+      await deleteThumbnail(id);
+      removed.push(id);
+    }
+    this.#pageImageAsked.clear();
+    forgetMisses();
+    if (removed.length > 0) await this.#changed(removed);
   }
 
   /** Page screenshots are taken by the service worker; site access is required */

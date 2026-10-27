@@ -19,7 +19,7 @@ export const TAB_SETTINGS: Record<SettingsTab, SettingKey[]> = {
     'defaultFolderId', 'rememberLastFolder', 'folderPreview', 'folderPreviewGrid', 'subfolderStyle', 'showMostVisited',
     'showRecentlyClosed', 'searchEngine', 'customSearchUrl', 'searchSuggestions', 'searchHistory', 'showServices',
     'services', 'openInNewTab', 'newBookmarksFirst', 'confirmDelete', 'dragAndDrop', 'sortOrder', 'typeOrder',
-    'autoCapture', 'showThumbnailRefresh', 'captureOnCreate', 'captureDelay', 'refreshIncludesSubfolders',
+    'autoCapture', 'pageImages', 'showThumbnailRefresh', 'captureOnCreate', 'captureDelay', 'refreshIncludesSubfolders',
     'browserContextMenu', 'closeTabAfterAdd', 'syncEnabled',
   ],
   backup: [],

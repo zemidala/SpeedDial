@@ -1,7 +1,8 @@
 // Storing bookmark thumbnails in IndexedDB. No Svelte — also used in the service worker.
 import {idbClear, idbDelete, idbGet, idbSet} from '../idb';
 
-export type ThumbnailSource = 'capture' | 'custom';
+/** capture — a screenshot; custom — the user's image; page — the picture the page declares for link previews */
+export type ThumbnailSource = 'capture' | 'custom' | 'page';
 
 export interface StoredThumbnail {
   blob: Blob;

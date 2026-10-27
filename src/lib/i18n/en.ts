@@ -399,6 +399,9 @@ export const en = {
     },
     autoCaptureAccess: 'Needs access to sites',
     autoCaptureAccessHint: 'Without it automatic thumbnails can’t take screenshots',
+    pageImages: 'Picture from the page',
+    pageImagesHint: 'A bookmark without a thumbnail gets the picture its site provides for link previews in messengers. '
+      + 'A screenshot of the page replaces it. Needs access to sites',
     showThumbnailRefresh: 'Thumbnail refresh button',
     showThumbnailRefreshHint: 'Takes screenshots of all bookmarks in the open folder. Needs access to sites',
     captureOnCreate: 'Take a screenshot when adding a bookmark',

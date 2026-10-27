@@ -32,6 +32,14 @@
   const hasThumbnail = $derived(Boolean(thumbnail.url) && !broken && !iconOnly.get(bookmark.id));
   const tint = $derived(iconTint && !hasThumbnail ? icon.info?.color : null);
 
+  // No thumbnail: the picture the page declares for link previews stands in, if that's turned on. Not for a bookmark
+  // switched to its icon or marked broken — the picture wouldn't be shown anyway
+  $effect(() => {
+    if (!thumbnail.loaded || thumbnail.url || broken || iconOnly.get(bookmark.id) || !isWebUrl(url)) return;
+    if (!thumbnails.pageImagesEnabled) return;
+    thumbnails.loadPageImage(bookmark.id, url).catch((error) => console.error('Failed to load page picture', url, error));
+  });
+
   // In "fill" mode a site letter gets its colour as the background. An icon with its own background fills the area
   // itself (SiteIcon); no colour is guessed from the icon's edges — a guess never quite matches the image
   // (a band of another shade beside gradients) and differs between browsers

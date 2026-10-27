@@ -19,9 +19,12 @@ export function indexBookmarks(nodes: chrome.bookmarks.BookmarkTreeNode[]): Map<
   return index;
 }
 
-/** Whether a visit should take a screenshot for the bookmark. A custom image is never replaced */
+/**
+ * Whether a visit should take a screenshot for the bookmark. A custom image is never replaced; the page's preview
+ * picture only stands in until there's a screenshot
+ */
 export function needsScreenshot(stored: StoredThumbnail | undefined, mode: AutoCapture, now: number): boolean {
   if (mode === 'off') return false;
-  if (!stored) return true;
+  if (!stored || stored.source === 'page') return true;
   return mode === 'stale' && stored.source === 'capture' && now - stored.updatedAt > STALE_AFTER;
 }

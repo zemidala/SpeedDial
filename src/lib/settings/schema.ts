@@ -136,6 +136,8 @@ export interface Settings {
   showThumbnailRefresh: boolean;
   captureOnCreate: boolean;
   autoCapture: AutoCapture;
+  /** A bookmark without a thumbnail shows the picture its page declares for link previews (og:image) */
+  pageImages: boolean;
   /** Delay before a page screenshot, seconds */
   captureDelay: number;
   refreshIncludesSubfolders: boolean;
@@ -230,6 +232,7 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = {
   showThumbnailRefresh: true,
   captureOnCreate: false,
   autoCapture: 'missing',
+  pageImages: false,
   captureDelay: 0.5,
   refreshIncludesSubfolders: false,
   openInNewTab: false,
