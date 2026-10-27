@@ -294,9 +294,11 @@ export const en = {
     containerWidth: 'Panel width',
     verticalCenter: 'Center vertically',
     iconStyle: 'Icon style',
-    iconStyleHint: '“Fill” shows the icon large and fills the area around it with the color of its edges',
+    iconStyleHint: '“Fill” shows the icon large, without a plate. “By the logo” paints the tile after the logo: '
+      + 'in the color of its background or a shade of its color',
     iconPlate: 'On a plate',
     iconFill: 'Fill',
+    iconSmart: 'By the logo',
     iconScale: 'Icon size',
     iconScaleHint: 'Icons aren’t stretched beyond their quality — large sizes need high-quality icons',
     iconTint: 'Tint tiles with the icon color',
@@ -670,6 +672,7 @@ export const en = {
           'Choose which part of an image or screenshot goes onto the tile — with a frame, seeing the tile as you go',
           'One image for all bookmarks of a site at once — a button in the “Icon” dialog',
           'A page screenshot waits until the page has finished loading: redirects and slow pages are captured whole',
+          'A new “By the logo” icon style: the tile takes the color of the icon’s background or a shade of the logo, and icons are evened out by their visible size',
         ],
       },
       {

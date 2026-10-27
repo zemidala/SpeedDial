@@ -13,7 +13,7 @@ export const FONT_SIZES = ['xs', 's', 'm', 'l', 'xl'] as const;
 /** Tile name size */
 export const TITLE_SIZES = ['s', 'm', 'l'] as const;
 export const BACKGROUNDS = ['none', 'color', 'image', 'url', 'bing'] as const;
-export const ICON_STYLES = ['plate', 'fill'] as const;
+export const ICON_STYLES = ['plate', 'fill', 'smart'] as const;
 export const TITLE_POSITIONS = ['bottom-inside', 'top-inside', 'bottom-outside', 'top-outside'] as const;
 export const TITLE_ALIGNS = ['left', 'center', 'right'] as const;
 export const LOGO_SERVICE_IDS = ['none', 'google', 'duckduckgo', 'iconhorse', 'logodev', 'custom'] as const;

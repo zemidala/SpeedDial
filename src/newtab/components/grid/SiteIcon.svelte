@@ -3,9 +3,10 @@
   import {type IconEntry, icons} from '../../../lib/icons.svelte';
   import {siteName} from '../../../lib/url';
 
-  // plate — icon on a plate; fill — no plate, large (the tile fills the area around it);
-  // cell — fills a folder preview cell; mini — small, next to the name
-  let {entry, appearance = 'plate'}: {entry: IconEntry; appearance?: 'plate' | 'fill' | 'cell' | 'mini'} = $props();
+  // plate — icon on a plate; fill — no plate, large (the tile fills the area around it); smart — "by the logo":
+  // the whole picture area takes after the icon (see iconLayout.ts); cell — fills a folder preview cell;
+  // mini — small, next to the name
+  let {entry, appearance = 'plate'}: {entry: IconEntry; appearance?: 'plate' | 'fill' | 'smart' | 'cell' | 'mini'} = $props();
 
   const info = $derived(entry.info);
   // Letter and colour come from the site name: for ru.wikipedia.org it's W, not R
@@ -27,7 +28,62 @@
 
   // Don't stretch the image more than 1.5× beyond its real pixels — otherwise it gets blurry
   const maxSize = $derived(info ? `${Math.max(16, Math.round(info.size / window.devicePixelRatio * 1.5))}px` : undefined);
+
+  // ===== "By the logo" =====
+  const layout = $derived(appearance === 'smart' ? info?.layout ?? null : null);
+  /**
+   * seamless — the area takes the icon's edge colour; logo — a plate of the logo's colour; app — on a blurred copy
+   * of itself; photo — covers the area; plate — a white edge in the dark theme (a white area would glare) or an icon
+   * whose pixels couldn't be read
+   */
+  const smartMode = $derived.by(() => {
+    if (!layout) return 'plate';
+    if (layout.kind === 'seamless') return layout.lightEdge && icons.dark ? 'plate' : 'seamless';
+    return layout.kind;
+  });
+  const smartBackground = $derived.by(() => {
+    if (!layout) return undefined;
+    if (smartMode === 'seamless') return layout.edgeColor;
+    if (smartMode === 'logo') return smartLighten ? layout.plates.dark : layout.plates[layout.plateFor[icons.dark ? 'dark' : 'light']];
+    return undefined;
+  });
+  // A black logo in the dark theme: a pale plate would glare, so it's drawn light on the dark plate, as in "fill"
+  const smartLighten = $derived(smartMode === 'logo' && icons.dark && Boolean(info?.darkMonochrome));
+  /** What's sized and centred: the drawing inside a seamless icon, the visible part of a logo */
+  const smartBox = $derived(layout ? (smartMode === 'seamless' ? layout.contentBox : layout.box) : null);
 </script>
+
+{#if appearance === 'smart'}
+  <!-- The image is a square: the layout's boxes are fractions of it. Sizes are worked out in CSS from the boxes -->
+  <span
+    aria-hidden="true"
+    class="site-icon-smart site-icon-smart--{showLetter ? 'letter' : smartMode}"
+    class:site-icon-smart--loading={!info && !entry.loaded}
+    class:site-icon-smart--lighten={smartLighten}
+    style:background={showLetter ? hashColor(host) : smartBackground}
+    style:--icon-max={maxSize}
+    style:--box-x={smartBox?.x}
+    style:--box-y={smartBox?.y}
+    style:--box-w={smartBox?.w}
+    style:--box-h={smartBox?.h}
+    style:--box-area={smartBox ? Math.sqrt(smartBox.w * smartBox.h) : undefined}
+  >
+    {#if info}
+      {#if smartMode === 'app'}
+        <img class="site-icon-smart__backdrop" src={info.src} alt="">
+        <span class="site-icon-smart__app"><img class="site-icon-smart__image" src={info.src} alt=""></span>
+      {:else if smartMode === 'plate'}
+        <span class="site-icon-smart__plate" class:site-icon-smart__plate--cover={info.fullBleed}>
+          <img class="site-icon-smart__image" src={info.src} alt="">
+        </span>
+      {:else}
+        <img class="site-icon-smart__image" src={info.src} alt="">
+      {/if}
+    {:else if showLetter}
+      <span class="site-icon-smart__letter">{letter}</span>
+    {/if}
+  </span>
+{:else}
 
 <!-- The icon is decorative: the site name is always next to it -->
 <span
@@ -47,6 +103,7 @@
     <span class="site-icon__letter">{letter}</span>
   {/if}
 </span>
+{/if}
 
 <style>
   .site-icon {
@@ -137,6 +194,115 @@
     font-size: clamp(16px, calc(var(--icon-scale) * 0.5cqi), 120px);
   }
 
+  /* ===== By the logo: the whole picture area of the tile =====
+     The drawing (or the visible part of a logo) is sized by its area — sqrt(w·h) is 0.88 × icon size % of the height
+     (44% by default), so a small icon with wide margins and one without them weigh the same; within 80% of the width
+     and 64% of the height, and not blown up past the image's real pixels */
+  .site-icon-smart {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    container-type: size;
+    --side: min(
+      calc(var(--icon-scale) * 0.88cqh / var(--box-area, 1)),
+      calc(80cqw / var(--box-w, 1)),
+      calc(64cqh / var(--box-h, 1)),
+      var(--icon-max, 100cqh)
+    );
+  }
+
+  .site-icon-smart--seamless .site-icon-smart__image,
+  .site-icon-smart--logo .site-icon-smart__image {
+    position: absolute;
+    left: calc(50cqw - (var(--box-x) + var(--box-w) / 2) * var(--side));
+    top: calc(50cqh - (var(--box-y) + var(--box-h) / 2) * var(--side));
+    width: var(--side);
+    height: var(--side);
+    object-fit: contain;
+  }
+
+  .site-icon-smart--lighten .site-icon-smart__image {
+    filter: brightness(0) invert(0.9);
+  }
+
+  .site-icon-smart--photo .site-icon-smart__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* A busy background: the icon whole, as an app icon, on a blurred copy of itself — the colours always match */
+  .site-icon-smart__backdrop {
+    position: absolute;
+    inset: -20%;
+    width: 140%;
+    height: 140%;
+    object-fit: cover;
+    filter: blur(14px) saturate(1.2);
+    opacity: 0.9;
+  }
+
+  .site-icon-smart__app,
+  .site-icon-smart__plate {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: min(calc(var(--icon-scale) * 1.2cqh), 72cqh);
+    aspect-ratio: 1;
+    overflow: hidden;
+    transform: translate(-50%, -50%);
+  }
+
+  .site-icon-smart__app {
+    border-radius: 20%;
+    box-shadow: 0 2px 8px rgb(0 0 0 / 0.25);
+  }
+
+  .site-icon-smart__app .site-icon-smart__image,
+  .site-icon-smart__plate--cover .site-icon-smart__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .site-icon-smart__plate {
+    height: min(calc(var(--icon-scale) * 1.16cqh), 70cqh);
+    border-radius: 22%;
+    background: var(--plate-bg);
+    box-shadow: 0 1px 3px var(--shadow-color);
+  }
+
+  .site-icon-smart__plate:not(.site-icon-smart__plate--cover) .site-icon-smart__image {
+    width: min(62%, var(--icon-max));
+    object-fit: contain;
+  }
+
+  .site-icon-smart--letter {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .site-icon-smart__letter {
+    color: #fff;
+    font-size: clamp(16px, calc(var(--icon-scale) * 0.9cqh), 120px);
+    font-weight: 600;
+    line-height: 1;
+    user-select: none;
+  }
+
+  .site-icon-smart--loading::after {
+    position: absolute;
+    inset: 0;
+    background: color-mix(in oklab, var(--text) 8%, transparent);
+    content: '';
+    opacity: 0;
+    animation: skeleton-pulse 1.4s ease-in-out 0.15s infinite;
+  }
+
   /* ===== Fills a folder preview cell: the same size as the subfolder icon =====
      A square by the cell's shorter side (the cell is a size container) — not stretched in tall or wide cells */
   .site-icon--cell {
@@ -209,7 +375,8 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .site-icon--loading::after {
+    .site-icon--loading::after,
+    .site-icon-smart--loading::after {
       opacity: 0.6;
       animation: none;
     }

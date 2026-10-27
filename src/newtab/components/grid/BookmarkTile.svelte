@@ -30,7 +30,8 @@
   ].filter(Boolean).join('\n'));
   // The thumbnail can be switched off for this bookmark in the "Icon" dialog — then the site icon is shown
   const hasThumbnail = $derived(Boolean(thumbnail.url) && !broken && !iconOnly.get(bookmark.id));
-  const tint = $derived(iconTint && !hasThumbnail ? icon.info?.color : null);
+  // "By the logo" paints the whole picture area itself — a tint would show only around the name
+  const tint = $derived(iconTint && !hasThumbnail && iconStyle !== 'smart' ? icon.info?.color : null);
 
   // No thumbnail: the picture the page declares for link previews stands in, if that's turned on. Not for a bookmark
   // switched to its icon or marked broken — the picture wouldn't be shown anyway

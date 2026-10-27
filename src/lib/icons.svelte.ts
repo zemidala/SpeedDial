@@ -2,6 +2,7 @@ import {MediaQuery} from 'svelte/reactivity';
 import {analyzePixels, effectiveResolution, meanDifference} from './color';
 import {extractLargestIcoImage, isIco} from './ico';
 import {VECTOR_SIZE} from './iconCandidates';
+import {analyzeLayout, type IconLayout} from './iconLayout';
 import {idbClear, idbDelete, idbGet, idbSet} from './idb';
 import {buildLogoUrl, logoTemplate, UNKNOWN_SITE_URL} from './logoServices';
 import {permissions} from './permissions.svelte';
@@ -26,6 +27,8 @@ export interface IconInfo {
   fullBleed: boolean;
   /** A black logo on a transparent background — drawn light where it'd sit on a dark tile */
   darkMonochrome: boolean;
+  /** How the icon fills a tile in the "by the logo" style; null if the pixels can't be read */
+  layout: IconLayout | null;
 }
 
 interface CachedSiteIcon {
@@ -38,6 +41,7 @@ interface CachedSiteIcon {
 
 const BROWSER_ICON_SIZE = 64;
 const SAMPLE_SIZE = 32; // The icon is scaled down to 32×32 for colour analysis
+const LAYOUT_SIZE = 64; // …and to 64×64 to see its shape and drawing for the "by the logo" style
 const MAX_RESOLUTION_CHECK = 256; // Upscaled images larger than this don't occur, and the check costs more
 const DAY = 24 * 60 * 60 * 1000;
 const SITE_ICON_TTL = 30 * DAY;
@@ -63,6 +67,17 @@ function readPixels(img: HTMLImageElement, size: number): Uint8ClampedArray {
 
 const samplePixels = (img: HTMLImageElement) => readPixels(img, SAMPLE_SIZE);
 
+/** The icon drawn whole and centred, smoothed — as SiteIcon shows it — for its layout */
+function layoutOf(img: HTMLImageElement): IconLayout | null {
+  const canvas = new OffscreenCanvas(LAYOUT_SIZE, LAYOUT_SIZE);
+  const context = canvas.getContext('2d', {willReadFrequently: true})!;
+  const scale = LAYOUT_SIZE / Math.max(img.naturalWidth, img.naturalHeight, 1);
+  const width = img.naturalWidth * scale;
+  const height = img.naturalHeight * scale;
+  context.drawImage(img, (LAYOUT_SIZE - width) / 2, (LAYOUT_SIZE - height) / 2, width, height);
+  return analyzeLayout(context.getImageData(0, 0, LAYOUT_SIZE, LAYOUT_SIZE).data, LAYOUT_SIZE);
+}
+
 /** Real resolution of a raster image: upscaled favicons are recognised by single-coloured squares */
 function measureResolution(img: HTMLImageElement): number {
   const natural = Math.min(img.naturalWidth, img.naturalHeight);
@@ -84,7 +99,7 @@ async function analyze(src: string, source: IconSource, {vector = false, placeho
     const pixels = samplePixels(img);
     if (placeholder && meanDifference(pixels, placeholder) < DEFAULT_ICON_THRESHOLD) return null;
     const size = vector ? VECTOR_SIZE : measureResolution(img);
-    return {src, size, source, ...analyzePixels(pixels, SAMPLE_SIZE, SAMPLE_SIZE)};
+    return {src, size, source, ...analyzePixels(pixels, SAMPLE_SIZE, SAMPLE_SIZE), layout: layoutOf(img)};
   } catch {
     return null;
   }
@@ -153,7 +168,7 @@ async function loadExternalIcon(logoUrl: string, placeholderUrl: string | null):
     try {
       const img = await loadImage(logoUrl);
       const size = Math.min(img.naturalWidth, img.naturalHeight, BROWSER_ICON_SIZE);
-      return {src: logoUrl, size, source: 'external', color: null, edgeColor: null, fullBleed: false, darkMonochrome: false};
+      return {src: logoUrl, size, source: 'external', color: null, edgeColor: null, fullBleed: false, darkMonochrome: false, layout: null};
     } catch {
       return null;
     }

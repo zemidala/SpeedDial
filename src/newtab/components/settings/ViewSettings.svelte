@@ -216,19 +216,21 @@
 </SettingsGroup>
 
 <SettingsGroup title={t.settings.groups.icons}>
-  <SelectRow
+  <IconChoiceRow
     label={t.view.iconStyle}
     hint={t.view.iconStyleHint}
     value={current.iconStyle}
     setting="iconStyle"
     options={[
-      {value: 'plate', label: t.view.iconPlate},
-      {value: 'fill', label: t.view.iconFill},
+      {value: 'plate', label: t.view.iconPlate, icon: 'iconStylePlate'},
+      {value: 'fill', label: t.view.iconFill, icon: 'iconStyleFill'},
+      {value: 'smart', label: t.view.iconSmart, icon: 'iconStyleSmart'},
     ]}
     onchange={(value) => settings.update({iconStyle: value as IconStyle})}
   />
   <RangeRow key="iconScale" label={t.view.iconScale} hint={t.view.iconScaleHint} unit="%"/>
-  <SwitchRow key="iconTint" label={t.view.iconTint}/>
+  <!-- "By the logo" paints the tile itself -->
+  <SwitchRow key="iconTint" label={t.view.iconTint} disabled={current.iconStyle === 'smart'}/>
   <SwitchRow
     label={t.view.siteIcons}
     hint={t.view.siteIconsHint}

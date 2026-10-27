@@ -202,6 +202,24 @@ function luminance([r, g, b]: [number, number, number]): number {
   return 0.2126 * lr + 0.7152 * lg + 0.0722 * lb;
 }
 
+/**
+ * APCA lightness contrast (Lc) of a colour on a background, as in APCA-W3 0.0.98G: about ±108 at most; negative —
+ * light on dark. |Lc| 75 suits body text, 45 large text, 30 large shapes without text
+ */
+export function apcaContrast([tr, tg, tb]: readonly number[], [br, bg, bb]: readonly number[]): number {
+  const y = (r: number, g: number, b: number) =>
+    0.2126729 * (r / 255) ** 2.4 + 0.7151522 * (g / 255) ** 2.4 + 0.072175 * (b / 255) ** 2.4;
+  const soften = (value: number) => (value > 0.022 ? value : value + (0.022 - value) ** 1.414);
+  const text = soften(y(tr, tg, tb));
+  const background = soften(y(br, bg, bb));
+  if (background > text) {
+    const s = (background ** 0.56 - text ** 0.57) * 1.14;
+    return s < 0.1 ? 0 : (s - 0.027) * 100;
+  }
+  const s = (background ** 0.65 - text ** 0.62) * 1.14;
+  return s > -0.1 ? 0 : (s + 0.027) * 100;
+}
+
 /** Text colour readable on the given background */
 export function readableTextColor(background: string): string {
   const rgb = parseHex(background);

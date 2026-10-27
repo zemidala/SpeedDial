@@ -253,7 +253,7 @@ test('a black logo is drawn light on a dark tile without a plate, and left as is
 
   // On the light plate the black logo is visible as it is
   const dialog = await openSettings(newtab);
-  await dialog.getByLabel('Вид иконок').selectOption('plate');
+  await dialog.getByRole('radiogroup', {name: 'Вид иконок'}).getByRole('radio', {name: 'На подложке'}).check();
   await expect(icon).not.toHaveClass(/site-icon--lighten/);
 });
 
@@ -348,4 +348,112 @@ test('an icon found while the site\'s manifest was "busy" is only a stand-in', a
       get.onsuccess = () => resolve(get.result ? {blob: Boolean(get.result.blob), retrySoon: get.result.retrySoon ?? false} : null);
     };
   }))).toEqual({blob: true, retrySoon: true});
+});
+
+/** A PNG drawn in the page: kind picks one of the shapes the "by the logo" style tells apart */
+async function makeIcon(page: Page, kind: 'red-square' | 'white-square' | 'black-logo' | 'gradient') {
+  const bytes = await page.evaluate(async (kind) => {
+    const canvas = new OffscreenCanvas(192, 192);
+    const context = canvas.getContext('2d')!;
+    if (kind === 'red-square' || kind === 'white-square') {
+      // One colour all over with a mark in the middle — like Yandex's or VK's icon
+      context.fillStyle = kind === 'red-square' ? '#fc3f1d' : '#ffffff';
+      context.fillRect(0, 0, 192, 192);
+      context.fillStyle = kind === 'red-square' ? '#ffffff' : '#0077ff';
+      context.fillRect(72, 64, 48, 64);
+    } else if (kind === 'black-logo') {
+      // A black drawing on transparency with wide margins — like GitHub's mark
+      context.fillStyle = '#18181a';
+      context.beginPath();
+      context.arc(96, 96, 40, 0, Math.PI * 2);
+      context.fill();
+      context.clearRect(84, 70, 24, 52);
+    } else {
+      // A shape with a busy background — like Instagram's
+      const gradient = context.createLinearGradient(0, 0, 192, 192);
+      gradient.addColorStop(0, '#feda75');
+      gradient.addColorStop(0.5, '#d62976');
+      gradient.addColorStop(1, '#4f5bd5');
+      context.fillStyle = gradient;
+      context.fillRect(0, 0, 192, 192);
+    }
+    const blob = await canvas.convertToBlob({type: 'image/png'});
+    return [...new Uint8Array(await blob.arrayBuffer())];
+  }, kind);
+  return Buffer.from(bytes);
+}
+
+test.describe('"By the logo" style', () => {
+  async function serveIcons(context: BrowserContext, newtab: Page) {
+    for (const kind of ['red-square', 'white-square', 'black-logo', 'gradient'] as const) {
+      await serveSite(context, `https://${kind}.example`, {
+        '/': {type: 'text/html', body: '<link rel="icon" sizes="192x192" href="/icon.png">'},
+        '/icon.png': {type: 'image/png', body: await makeIcon(newtab, kind)},
+      });
+    }
+  }
+
+  const visual = (page: Page, title: string) => tile(page, title).locator('.site-icon-smart');
+
+  test('the tile takes after each icon', async ({context, newtab}) => {
+    await serveIcons(context, newtab);
+    await enableSiteIcons(context, newtab, {iconStyle: 'smart'});
+    await seed(newtab, [
+      {title: 'Red', url: 'https://red-square.example/'},
+      {title: 'White', url: 'https://white-square.example/'},
+      {title: 'Black', url: 'https://black-logo.example/'},
+      {title: 'Gradient', url: 'https://gradient.example/'},
+    ]);
+
+    // One colour at the edge: the whole picture area in that colour, the mark in the middle
+    await expect(visual(newtab, 'Red')).toHaveClass(/site-icon-smart--seamless/);
+    await expect(visual(newtab, 'Red')).toHaveCSS('background-color', 'rgb(252, 63, 29)');
+    await expect(visual(newtab, 'White')).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+    // A logo on transparency: a pale plate of its colour (grey for black)
+    await expect(visual(newtab, 'Black')).toHaveClass(/site-icon-smart--logo/);
+    const plate = await visual(newtab, 'Black').evaluate((el) => getComputedStyle(el).backgroundColor);
+    expect(plate).toMatch(/^rgb\((2[2-5]\d), \1, \1\)$/);
+    // A busy background: whole, on a blurred copy of itself
+    await expect(visual(newtab, 'Gradient')).toHaveClass(/site-icon-smart--app/);
+    await expect(visual(newtab, 'Gradient').locator('.site-icon-smart__backdrop')).toBeVisible();
+
+    // The drawing is centred in the picture area
+    const area = (await visual(newtab, 'Red').boundingBox())!;
+    const mark = (await visual(newtab, 'Red').locator('img').boundingBox())!;
+    expect(Math.abs(mark.x + mark.width / 2 - (area.x + area.width / 2))).toBeLessThan(2);
+  });
+
+  test('in the dark theme a white edge stays on a plate, a black logo is drawn light on a dark plate', async ({context, newtab}) => {
+    await serveIcons(context, newtab);
+    await enableSiteIcons(context, newtab, {iconStyle: 'smart', theme: 'dark'});
+    await seed(newtab, [
+      {title: 'White', url: 'https://white-square.example/'},
+      {title: 'Red', url: 'https://red-square.example/'},
+      {title: 'Black', url: 'https://black-logo.example/'},
+    ]);
+
+    await expect(visual(newtab, 'White')).toHaveClass(/site-icon-smart--plate/);
+    await expect(visual(newtab, 'White').locator('.site-icon-smart__plate')).toBeVisible();
+    await expect(visual(newtab, 'Red')).toHaveClass(/site-icon-smart--seamless/);
+    // A pale plate would glare among dark tiles: a dark one, the logo drawn light on it
+    await expect(visual(newtab, 'Black')).toHaveClass(/site-icon-smart--lighten/);
+    const plate = await visual(newtab, 'Black').evaluate((el) => getComputedStyle(el).backgroundColor);
+    expect(plate).toMatch(/^rgb\((\d{2}), (\d{2}), (\d{2})\)$/);
+  });
+
+  test('chosen with a button in the settings; the letter fills the area too', async ({newtab}) => {
+    await seed(newtab, [{title: 'Example', url: 'https://example.com/'}]);
+    const dialog = await openSettings(newtab);
+    const styles = dialog.getByRole('radiogroup', {name: 'Вид иконок'});
+    await expect(styles.getByRole('radio', {name: 'На подложке'})).toBeChecked();
+    await styles.getByRole('radio', {name: 'По логотипу'}).check();
+    await dialog.getByRole('button', {name: 'Готово'}).click();
+
+    const area = visual(newtab, 'Example');
+    await expect(area).toHaveClass(/site-icon-smart--letter/);
+    await expect(area).toHaveText('E');
+    const box = (await area.boundingBox())!;
+    const card = (await tile(newtab, 'Example').locator('.tile__visual').boundingBox())!;
+    expect(Math.round(box.width)).toBe(Math.round(card.width));
+  });
 });
