@@ -7,9 +7,11 @@
   import {SITE_ACCESS} from '../../../lib/permissionSets';
   import {permissions} from '../../../lib/permissions.svelte';
   import type {CropRect} from '../../../lib/thumbnails/crop';
+  import {sameSiteBookmarks} from '../../../lib/thumbnails/sameSite';
   import {thumbnails} from '../../../lib/thumbnails/store.svelte';
-  import {isWebUrl} from '../../../lib/url';
+  import {displayHost, isWebUrl} from '../../../lib/url';
   import SiteIcon from '../grid/SiteIcon.svelte';
+  import ConfirmDialog from '../ui/ConfirmDialog.svelte';
   import Icon from '../ui/Icon.svelte';
   import Modal from '../ui/Modal.svelte';
   import CropDialog from './CropDialog.svelte';
@@ -124,6 +126,28 @@
     }, crop ? t.iconDialog.areaSaved : current.doneMessage);
   }
 
+  // Other bookmarks of the same site: the thumbnail can be given to all of them at once. Counted when the dialog opens
+  let sameSite = $state<string[]>([]);
+  $effect(() => {
+    if (isFolder || !isWebUrl(url)) return;
+    let current = true;
+    chrome.bookmarks.getTree()
+      .then((tree) => current && (sameSite = sameSiteBookmarks(tree, url, node.id)))
+      .catch((error) => console.error('Failed to find bookmarks of the site', error));
+    return () => {
+      current = false;
+    };
+  });
+  let confirmingSameSite = $state(false);
+
+  async function applyToSameSite() {
+    const ids = sameSite;
+    await thumbnails.copyTo(node.id, ids);
+    await iconOnly.setMany(Object.fromEntries(ids.map((id) => [id, null])));
+    status = t.iconDialog.sameSiteDone(ids.length);
+    error = '';
+  }
+
   const removeThumbnail = () => run(async () => {
     await thumbnails.remove(node.id);
     await useThumbnail();
@@ -197,6 +221,11 @@
       <button type="button" class="button" disabled={busy || working !== null} onclick={() => run(chooseArea, '')}>
         {t.iconDialog.chooseArea}
       </button>
+      {#if sameSite.length > 0}
+        <button type="button" class="button" disabled={busy || working !== null} onclick={() => (confirmingSameSite = true)}>
+          {t.iconDialog.sameSite(sameSite.length)}
+        </button>
+      {/if}
       <button type="button" class="button" disabled={busy || working !== null} onclick={removeThumbnail}>{t.iconDialog.removeImage}</button>
     {/if}
   </div>
@@ -214,6 +243,18 @@
     <button type="button" class="button button--primary" onclick={onclose}>{t.common.done}</button>
   {/snippet}
 </Modal>
+
+{#if confirmingSameSite}
+  <ConfirmDialog
+    options={{
+      title: t.iconDialog.sameSiteTitle(displayHost(url)),
+      message: t.iconDialog.sameSiteMessage(sameSite.length),
+      confirmLabel: t.iconDialog.sameSiteConfirm,
+      onConfirm: applyToSameSite,
+    }}
+    onclose={() => (confirmingSameSite = false)}
+  />
+{/if}
 
 {#if cropping}
   <CropDialog image={cropping.image} name={node.title} onsave={saveCrop} onclose={() => (cropping = null)}/>

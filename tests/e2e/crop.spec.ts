@@ -128,3 +128,25 @@ test('cancel saves nothing; "Choose area…" crops the current thumbnail', async
   await expect(crop).toHaveCount(0);
   expect((await centreColor(newtab, 'Halves'))[0]).toBeGreaterThan(180);
 });
+
+test('the image goes to all bookmarks of the site at once', async ({newtab}) => {
+  await seed(newtab, [
+    {title: 'Halves 2', url: 'https://www.halves.example/other'},
+    {title: 'Halves 3', url: 'http://halves.example/third'},
+    {title: 'Elsewhere', url: 'https://elsewhere.example/'},
+  ]);
+  const {iconDialog, crop} = await chooseFile(newtab, 'Halves');
+  await crop.getByRole('button', {name: 'Вся картинка'}).click();
+  await expect(iconDialog.getByRole('status')).toHaveText('Картинка обновлена');
+
+  await iconDialog.getByRole('button', {name: 'Для всех закладок сайта (3)'}).click();
+  const confirm = newtab.getByRole('dialog', {name: 'Одна картинка для сайта halves.example'});
+  await expect(confirm).toContainText('Ещё 2 закладки этого сайта получат такую же картинку');
+  await confirm.getByRole('button', {name: 'Применить'}).click();
+  await expect(confirm).toHaveCount(0);
+  await expect(iconDialog.getByRole('status')).toHaveText('Картинка поставлена ещё 2 закладкам');
+
+  await expect(tile(newtab, 'Halves 2').locator('.tile__thumbnail')).toBeVisible();
+  await expect(tile(newtab, 'Halves 3').locator('.tile__thumbnail')).toBeVisible();
+  await expect(tile(newtab, 'Elsewhere').locator('.tile__thumbnail')).toHaveCount(0);
+});

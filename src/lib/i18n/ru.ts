@@ -219,6 +219,14 @@ export const ru: Messages = {
     iconShown: 'На плитке иконка сайта — миниатюра сохранена',
     chooseArea: 'Выбрать область…',
     areaSaved: 'Область сохранена',
+    sameSite: (count: number) => `Для всех закладок сайта (${count + 1})`,
+    sameSiteTitle: (host: string) => `Одна картинка для сайта ${host}`,
+    sameSiteMessage: (count: number) =>
+      `Ещё ${count} ${plural(count, 'закладка', 'закладки', 'закладок')} этого сайта `
+      + `${plural(count, 'получит', 'получат', 'получат')} такую же картинку. `
+      + 'Их снимки и свои картинки заменятся.',
+    sameSiteConfirm: 'Применить',
+    sameSiteDone: (count: number) => `Картинка поставлена ещё ${count} ${plural(count, 'закладке', 'закладкам', 'закладкам')}`,
   },
 
   crop: {

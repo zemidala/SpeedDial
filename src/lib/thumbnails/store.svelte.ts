@@ -121,6 +121,17 @@ class ThumbnailsStore {
     await this.#changed([bookmarkId]);
   }
 
+  /**
+   * The same thumbnail for other bookmarks (e.g. all of one site). Saved as their own image: it was chosen on purpose,
+   * automatic screenshots don't replace it
+   */
+  async copyTo(fromId: string, toIds: string[]): Promise<void> {
+    const stored = await getThumbnail(fromId);
+    if (!stored || toIds.length === 0) return;
+    for (const id of toIds) await saveThumbnail(id, stored.blob, 'custom');
+    await this.#changed(toIds);
+  }
+
   async remove(bookmarkId: string): Promise<void> {
     await deleteThumbnail(bookmarkId);
     await this.#changed([bookmarkId]);

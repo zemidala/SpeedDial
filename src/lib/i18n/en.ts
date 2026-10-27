@@ -209,6 +209,13 @@ export const en = {
     iconShown: 'The tile shows the site icon — the thumbnail is kept',
     chooseArea: 'Choose area…',
     areaSaved: 'Area saved',
+    sameSite: (count: number) => `For all bookmarks of the site (${count + 1})`,
+    sameSiteTitle: (host: string) => `One image for the site ${host}`,
+    sameSiteMessage: (count: number) =>
+      `${count} more ${count === 1 ? 'bookmark' : 'bookmarks'} of this site will get the same image. `
+      + 'Their screenshots and own images will be replaced.',
+    sameSiteConfirm: 'Apply',
+    sameSiteDone: (count: number) => `The image is set for ${count} more ${count === 1 ? 'bookmark' : 'bookmarks'}`,
   },
 
   crop: {
