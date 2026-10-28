@@ -52,12 +52,13 @@ describe('analyzeLayout', () => {
     expect(layout.edgeGradient).toBeNull();
   });
 
-  it('a circle on transparency with a drawing (Discord) — seamless too', () => {
+  it('a circle on transparency with a drawing (Discord) — shown whole, its outline kept', () => {
     const layout = analyzeLayout(image((x, y) => {
       if (!inCircle(x, y)) return CLEAR;
       return inSquare(x, y, 22, 42) ? [255, 255, 255, 255] : [88, 101, 242, 255];
     }), SIZE)!;
-    expect(layout.kind).toBe('seamless');
+    expect(layout.kind).toBe('app');
+    expect(layout.uniformEdge).toBe(true);
     expect(layout.edgeColor).toBe('#5865f2');
   });
 
@@ -67,7 +68,8 @@ describe('analyzeLayout', () => {
       if (inCircle(x, y, 31)) return [0, 0, 0, 40];
       return CLEAR;
     }), SIZE)!;
-    expect(layout.kind).toBe('seamless');
+    expect(layout.kind).toBe('app');
+    expect(layout.uniformEdge).toBe(true);
     expect(layout.lightEdge).toBe(true);
   });
 

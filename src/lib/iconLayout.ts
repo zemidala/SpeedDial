@@ -4,8 +4,8 @@
 import {apcaContrast} from './color';
 
 /**
- * seamless — a shape (square, circle) with a one-colour edge and a drawing inside: the tile takes the edge colour
- * and the icon merges into it; app — a shape with a busy edge (gradient, picture): shown whole on a blurred copy;
+ * seamless — a square filled to its edges, with a one-colour edge and a drawing inside: the tile takes the edge
+ * colour and the icon merges into it; app — any other shape (a circle, a rounded square, a busy edge): shown whole;
  * logo — a drawing on transparency, or a one-colour silhouette: on a plate of its colour; photo — a picture: covers
  */
 export type LayoutKind = 'seamless' | 'app' | 'logo' | 'photo';
@@ -24,6 +24,8 @@ export interface IconLayout {
   kind: LayoutKind;
   /** The edge colour (#rrggbb) — the tile's colour for a seamless icon */
   edgeColor: string;
+  /** A shape with a one-colour edge and a drawing inside — seamless if it fills the square, else an app icon */
+  uniformEdge: boolean;
   /** The edge's colours at the top and the bottom when they differ (GitHub's dark square is lighter at the top) */
   edgeGradient: [string, string] | null;
   /** A light edge (a white background, like VK's): in the dark theme it's cut out, or the icon stays on a plate */
@@ -57,8 +59,11 @@ const SHAPE_EDGE = 0.3;
 const EDGE_BAND = 0.07;
 /** A pixel is of the edge colour if it's closer to it than this (RGB distance, 0–441) */
 const EDGE_DISTANCE = 24;
-/** A one-colour edge: this share of the band is of the edge colour (a drawing may touch the edge here and there) */
-const EDGE_SHARE = 0.7;
+/**
+ * A one-colour edge: this share of the band is of the edge colour (a drawing may touch the edge here and there).
+ * Less, and the tile in the edge's median colour shows the icon's square: Rutube's red corner, a thin frame
+ */
+const EDGE_SHARE = 0.9;
 /** A drawing: pixels farther than this from the edge colour … */
 const DRAWING_DISTANCE = 40;
 /** … making up this share of the shape */
@@ -175,12 +180,15 @@ export function analyzeLayout(data: Uint8ClampedArray, size: number): IconLayout
   const hasDrawing = opaque > 0 && drawing / opaque >= DRAWING_SHARE;
 
   const full = opaque >= size * size * 0.95;
+  const uniformEdge = shape && edgeShare >= EDGE_SHARE && hasDrawing;
   const topShare = Math.max(...counts.values()) / opaque;
   const photo = full && counts.size >= PHOTO_COLORS && topShare < PHOTO_TOP_SHARE;
 
   let kind: LayoutKind;
   if (photo) kind = 'photo';
-  else if (shape && edgeShare >= EDGE_SHARE && hasDrawing) kind = 'seamless';
+  // Only a square filled to its edges merges into the tile; a shape on transparency (YouTube's rounded red
+  // rectangle, Discord's circle) is its brand's outline and is shown whole
+  else if (uniformEdge && full) kind = 'seamless';
   else if (shape && !(edgeShare >= SILHOUETTE_EDGE_SHARE && !hasDrawing)) kind = 'app';
   else kind = 'logo';
 
@@ -209,12 +217,13 @@ export function analyzeLayout(data: Uint8ClampedArray, size: number): IconLayout
   return {
     kind,
     edgeColor: hex(edgeRgb),
+    uniformEdge,
     edgeGradient: kind === 'seamless' && gradient ? [hex(topRgb), hex(bottomRgb)] : null,
     lightEdge: relativeLuminance(edgeRgb) > LIGHT_EDGE,
     darkDrawing: drawingPixels.filter((p) => Math.abs(apcaContrast(p, DARK_TILE)) < DARK_LC).length
       > drawingPixels.length * DARK_SHARE,
     box: visible,
-    contentBox: kind === 'seamless' && cx1 >= 0 ? box(cx0, cy0, cx1, cy1) : visible,
+    contentBox: uniformEdge && cx1 >= 0 ? box(cx0, cy0, cx1, cy1) : visible,
     plates: {light: hex(plates.light), dark: hex(plates.dark)},
     plateFor: {light: choose('light'), dark: choose('dark')},
     tinted,

@@ -424,9 +424,10 @@ test.describe('"By the logo" style', () => {
     // A colourless logo on transparency stands on the tile itself: a grey plate would only be a square a shade off it
     await expect(visual(newtab, 'Black')).toHaveClass(/site-icon-smart--logo/);
     await expect(visual(newtab, 'Black')).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
-    // A busy background: whole, on a blurred copy of itself
+    // A busy background: shown whole, as an app icon, on the tile itself
     await expect(visual(newtab, 'Gradient')).toHaveClass(/site-icon-smart--app/);
-    await expect(visual(newtab, 'Gradient').locator('.site-icon-smart__backdrop')).toBeVisible();
+    await expect(visual(newtab, 'Gradient')).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+    await expect(visual(newtab, 'Gradient').locator('.site-icon-smart__app')).toBeVisible();
 
     // The drawing is centred in the picture area
     const area = (await visual(newtab, 'Red').boundingBox())!;

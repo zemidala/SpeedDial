@@ -35,19 +35,24 @@
   const MAX_FADE = 0.12;
   const layout = $derived(appearance === 'smart' ? info?.layout ?? null : null);
   /**
-   * seamless — the area takes the icon's edge colour; logo — a plate of the logo's colour; app — on a blurred copy
-   * of itself; photo — covers the area; a light-edged icon in the dark theme (a light area would glare): cutout —
+   * seamless — the area takes the icon's edge colour; logo — a plate of the logo's colour; app — the icon whole,
+   * its own outline kept; photo — covers the area; a light-edged icon in the dark theme (a light area would glare): cutout —
    * its background cut out, the drawing on the tile itself; shape — its own shape, stretched to the size of a plate,
    * is the plate (if asked for, or if the drawing is dark and needs the light background); pale — a logo seen only on
    * a pale plate, in the dark theme: a pale plate-sized square, not a whole pale tile; plate — an icon whose pixels
    * couldn't be read
    */
   const smartMode = $derived.by(() => {
-    if (!layout) return 'plate';
+    // The browser's cached favicon is small (16–32 px, often already upscaled): it can't be blown up to the tile,
+    // so it's on a plate, as in the default style. Small site icons aren't taken at all (MIN_USEFUL_SIZE)
+    if (!layout || info?.source === 'browser') return 'plate';
+    // A light icon would glare among dark tiles: its background is cut out, or it stands on its own shape
+    if ((layout.kind === 'seamless' || layout.kind === 'app') && layout.lightEdge && icons.dark) {
+      if (!layout.uniformEdge) return 'shape';
+      return settings.current.iconShapePlate || layout.darkDrawing ? 'shape' : 'cutout';
+    }
     if (layout.kind === 'logo' && icons.dark && layout.plateFor.dark === 'light' && !info?.darkMonochrome) return 'pale';
-    if (layout.kind !== 'seamless') return layout.kind;
-    if (!layout.lightEdge || !icons.dark) return 'seamless';
-    return settings.current.iconShapePlate || layout.darkDrawing ? 'shape' : 'cutout';
+    return layout.kind;
   });
   $effect(() => {
     if (smartMode === 'cutout') void entry.requestCutout();
@@ -68,7 +73,7 @@
   // A black logo in the dark theme: a pale plate would glare, so it's drawn light on the dark plate, as in "fill"
   const smartLighten = $derived(smartMode === 'logo' && icons.dark && Boolean(info?.darkMonochrome));
   /** What's sized and centred: the drawing inside a seamless icon, the visible part of a logo */
-  const smartBox = $derived(layout ? (smartMode === 'seamless' || smartMode === 'cutout' ? layout.contentBox : layout.box) : null);
+  const smartBox = $derived(layout ? (smartMode === 'cutout' ? layout.contentBox : layout.box) : null);
   /**
    * A seamless icon fades out over its margins (between its edge and the drawing, at most MAX_FADE of it): an edge
    * a shade off the tile — a gradient, a vignette — doesn't show as a square
@@ -105,7 +110,6 @@
   >
     {#if info}
       {#if smartMode === 'app'}
-        <img class="site-icon-smart__backdrop" src={info.src} alt="">
         <span class="site-icon-smart__app"><img class="site-icon-smart__image" src={info.src} alt=""></span>
       {:else if smartMode === 'shape'}
         <span class="site-icon-smart__shape"><img class="site-icon-smart__image" src={info.src} alt=""></span>
@@ -254,6 +258,17 @@
     );
   }
 
+  /* A seamless icon is drawn whole, the size of a plate — its drawing keeps its proportion in it (YouTube's play
+     button isn't blown up to the whole tile); the tile only carries its background on */
+  .site-icon-smart--seamless {
+    --side: min(
+      calc(var(--icon-scale) * 1.16cqh / var(--box-area, 1)),
+      calc(90cqw / var(--box-w, 1)),
+      calc(70cqh / var(--box-h, 1)),
+      var(--icon-max, 100cqh)
+    );
+  }
+
   .site-icon-smart--seamless .site-icon-smart__image,
   .site-icon-smart--cutout .site-icon-smart__image,
   .site-icon-smart--logo .site-icon-smart__image {
@@ -279,17 +294,7 @@
     object-fit: cover;
   }
 
-  /* A busy background: the icon whole, as an app icon, on a blurred copy of itself — the colours always match */
-  .site-icon-smart__backdrop {
-    position: absolute;
-    inset: -20%;
-    width: 140%;
-    height: 140%;
-    object-fit: cover;
-    filter: blur(14px) saturate(1.2);
-    opacity: 0.9;
-  }
-
+  /* Any other shape — a circle, a rounded square, a busy background: the icon whole, as an app icon, on the tile */
   .site-icon-smart__app,
   .site-icon-smart__plate {
     position: absolute;
@@ -312,7 +317,6 @@
 
   .site-icon-smart__app {
     border-radius: 20%;
-    box-shadow: 0 2px 8px rgb(0 0 0 / 0.25);
   }
 
   .site-icon-smart__app .site-icon-smart__image,
