@@ -38,11 +38,13 @@
    * seamless — the area takes the icon's edge colour; logo — a plate of the logo's colour; app — on a blurred copy
    * of itself; photo — covers the area; a light-edged icon in the dark theme (a light area would glare): cutout —
    * its background cut out, the drawing on the tile itself; shape — its own shape, stretched to the size of a plate,
-   * is the plate (if asked for, or if the drawing is dark and needs the light background); plate — an icon whose
-   * pixels couldn't be read
+   * is the plate (if asked for, or if the drawing is dark and needs the light background); pale — a logo seen only on
+   * a pale plate, in the dark theme: a pale plate-sized square, not a whole pale tile; plate — an icon whose pixels
+   * couldn't be read
    */
   const smartMode = $derived.by(() => {
     if (!layout) return 'plate';
+    if (layout.kind === 'logo' && icons.dark && layout.plateFor.dark === 'light' && !info?.darkMonochrome) return 'pale';
     if (layout.kind !== 'seamless') return layout.kind;
     if (!layout.lightEdge || !icons.dark) return 'seamless';
     return settings.current.iconShapePlate || layout.darkDrawing ? 'shape' : 'cutout';
@@ -109,6 +111,10 @@
         <span class="site-icon-smart__shape"><img class="site-icon-smart__image" src={info.src} alt=""></span>
       {:else if smartMode === 'cutout'}
         {#if entry.cutout}<img class="site-icon-smart__image" src={entry.cutout} alt="">{/if}
+      {:else if smartMode === 'pale'}
+        <span class="site-icon-smart__plate" style:background={layout?.plates.light}>
+          <img class="site-icon-smart__image" src={info.src} alt="">
+        </span>
       {:else if smartMode === 'plate'}
         <span class="site-icon-smart__plate" class:site-icon-smart__plate--cover={info.fullBleed}>
           <img class="site-icon-smart__image" src={info.src} alt="">

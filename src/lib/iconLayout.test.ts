@@ -107,6 +107,12 @@ describe('analyzeLayout', () => {
     expect(g).toBeGreaterThan(parseInt(layout.plates.light.slice(1, 3), 16));
   });
 
+  it('a purple logo (Deezer heart) keeps the dark plate in the dark theme — a pale one would glare', () => {
+    const layout = analyzeLayout(image((x, y) => (inCircle(x, y, 22) ? [162, 56, 255, 255] : CLEAR)), SIZE)!;
+    expect(layout.kind).toBe('logo');
+    expect(layout.plateFor.dark).toBe('dark');
+  });
+
   it('a picture with many colours, opaque all over — a photo', () => {
     const layout = analyzeLayout(image((x, y) => [(x * 37 + y * 11) % 256, (x * 13 + y * 41) % 256, (x * y) % 256, 255]), SIZE)!;
     expect(layout.kind).toBe('photo');
@@ -144,6 +150,13 @@ describe('cutOutBackground', () => {
     expect(pixel(data, 2, 2)[3]).toBe(0);
     expect(pixel(data, 31, 15)).toEqual([0, 119, 255, 255]);
     expect(pixel(data, 31, 31)).toEqual([255, 255, 255, 255]);
+  });
+
+  it('an off-white edge colour (#fefefe) still takes pure white pixels away', () => {
+    const data = image((x, y) => (inSquare(x, y, 16, 48) ? [0, 119, 255, 255] : [255, 255, 255, 255]));
+    cutOutBackground(data, SIZE, SIZE, '#fefefe');
+    expect(pixel(data, 32, 3)[3]).toBe(0);
+    expect(pixel(data, 32, 32)).toEqual([0, 119, 255, 255]);
   });
 
   it('a soft border becomes the drawing colour, partly transparent — no light fringe', () => {

@@ -70,6 +70,8 @@ const PHOTO_COLORS = 900;
 const PHOTO_TOP_SHARE = 0.05;
 /** Lc enough for a large shape without text: the theme's own plate is kept if it reaches this */
 const PLATE_LC = 30;
+/** In the dark theme its own plate is kept down to this: a pale plate glares among dark tiles (Deezer's purple heart) */
+const DARK_PLATE_LC = 25;
 /** Top and bottom edge colours closer than this (RGB distance) count as one colour */
 const GRADIENT_DISTANCE = 6;
 /** A dark tile, to judge whether a drawing is seen on it */
@@ -79,6 +81,8 @@ const DARK_LC = 25;
 const DARK_SHARE = 0.25;
 /** Background cut-out: pixels this close to the edge colour (RGB distance), joined to the edge, are background */
 const BACKGROUND_DISTANCE = 96;
+/** Per channel: this close to the edge colour is the background itself (an off-white #fefefe edge with 255 pixels) */
+const BACKGROUND_NOISE = 8;
 /** Edge lighter than this (relative luminance) is "light": white, but also pale blue like Reddit's — a glare among dark tiles */
 const LIGHT_EDGE = 0.6;
 
@@ -196,7 +200,7 @@ export function analyzeLayout(data: Uint8ClampedArray, size: number): IconLayout
   const scores = {light: score(plates.light), dark: score(plates.dark)};
   const choose = (own: Plate): Plate => {
     const other: Plate = own === 'light' ? 'dark' : 'light';
-    return scores[own] >= PLATE_LC || scores[own] >= scores[other] ? own : other;
+    return scores[own] >= (own === 'dark' ? DARK_PLATE_LC : PLATE_LC) || scores[own] >= scores[other] ? own : other;
   };
 
   const box = (left: number, top: number, right: number, bottom: number): Box =>
@@ -275,8 +279,9 @@ export function cutOutBackground(data: Uint8ClampedArray, width: number, height:
     let alpha = 0;
     for (let c = 0; c < 3; c++) {
       const value = data[o + c];
+      const shift = Math.abs(value - edge[c]);
       const room = value > edge[c] ? 255 - edge[c] : edge[c];
-      if (room > 0) alpha = Math.max(alpha, Math.abs(value - edge[c]) / room);
+      if (shift > BACKGROUND_NOISE && room > 0) alpha = Math.max(alpha, shift / room);
     }
     if (alpha < 0.02) {
       data[o + 3] = 0;

@@ -351,7 +351,7 @@ test('an icon found while the site\'s manifest was "busy" is only a stand-in', a
 });
 
 /** A PNG drawn in the page: kind picks one of the shapes the "by the logo" style tells apart */
-async function makeIcon(page: Page, kind: 'red-square' | 'white-square' | 'black-logo' | 'gradient' | 'small-stripes') {
+async function makeIcon(page: Page, kind: 'red-square' | 'white-square' | 'black-logo' | 'gradient' | 'small-stripes' | 'navy-logo') {
   const bytes = await page.evaluate(async (kind) => {
     const canvas = kind === 'small-stripes' ? new OffscreenCanvas(128, 128) : new OffscreenCanvas(192, 192);
     const context = canvas.getContext('2d')!;
@@ -368,6 +368,10 @@ async function makeIcon(page: Page, kind: 'red-square' | 'white-square' | 'black
       context.arc(96, 96, 40, 0, Math.PI * 2);
       context.fill();
       context.clearRect(84, 70, 24, 52);
+    } else if (kind === 'navy-logo') {
+      // A dark blue drawing on transparency — like the X of xcom-shop: it's seen only on a pale plate
+      context.fillStyle = '#0b3d6e';
+      context.fillRect(48, 64, 96, 64);
     } else if (kind === 'small-stripes') {
       // A 32-pixel picture blown up four times — like a small favicon from the browser cache
       for (let y = 0; y < 32; y++) {
@@ -393,7 +397,7 @@ async function makeIcon(page: Page, kind: 'red-square' | 'white-square' | 'black
 
 test.describe('"By the logo" style', () => {
   async function serveIcons(context: BrowserContext, newtab: Page) {
-    for (const kind of ['red-square', 'white-square', 'black-logo', 'gradient'] as const) {
+    for (const kind of ['red-square', 'white-square', 'black-logo', 'gradient', 'navy-logo'] as const) {
       await serveSite(context, `https://${kind}.example`, {
         '/': {type: 'text/html', body: '<link rel="icon" sizes="192x192" href="/icon.png">'},
         '/icon.png': {type: 'image/png', body: await makeIcon(newtab, kind)},
@@ -452,7 +456,14 @@ test.describe('"By the logo" style', () => {
       {title: 'White', url: 'https://white-square.example/'},
       {title: 'Red', url: 'https://red-square.example/'},
       {title: 'Black', url: 'https://black-logo.example/'},
+      {title: 'Navy', url: 'https://navy-logo.example/'},
     ]);
+
+    // A dark logo is seen only on a pale plate: a plate-sized one, the tile stays dark
+    await expect(visual(newtab, 'Navy')).toHaveClass(/site-icon-smart--pale/);
+    await expect(visual(newtab, 'Navy')).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+    const pale = (await visual(newtab, 'Navy').locator('.site-icon-smart__plate').boundingBox())!;
+    expect(pale.width).toBeLessThan((await visual(newtab, 'Navy').boundingBox())!.width * 0.7);
 
     // The white square goes: the blue mark stands on the tile itself
     await expect(visual(newtab, 'White')).toHaveClass(/site-icon-smart--cutout/);
