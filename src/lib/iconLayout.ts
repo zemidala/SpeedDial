@@ -26,8 +26,10 @@ export interface IconLayout {
   edgeColor: string;
   /** The edge's colours at the top and the bottom when they differ (GitHub's dark square is lighter at the top) */
   edgeGradient: [string, string] | null;
-  /** A light edge (a white background, like VK's): in the dark theme such an icon stays on a plate */
+  /** A light edge (a white background, like VK's): in the dark theme it's cut out, or the icon stays on a plate */
   lightEdge: boolean;
+  /** The drawing of a seamless icon can't be seen on a dark tile (Wikipedia's black W): its edge isn't cut out */
+  darkDrawing: boolean;
   /** The visible part of the image */
   box: Box;
   /** The drawing: for a seamless icon — what differs from the edge colour; otherwise the visible part */
@@ -70,6 +72,13 @@ const PHOTO_TOP_SHARE = 0.05;
 const PLATE_LC = 30;
 /** Top and bottom edge colours closer than this (RGB distance) count as one colour */
 const GRADIENT_DISTANCE = 6;
+/** A dark tile, to judge whether a drawing is seen on it */
+const DARK_TILE: Rgb = [24, 26, 30];
+/** A drawing isn't seen on it if more than DARK_SHARE of its paint is below this Lc (Gosuslugi's dark blue text) */
+const DARK_LC = 25;
+const DARK_SHARE = 0.25;
+/** Background cut-out: pixels this close to the edge colour (RGB distance), joined to the edge, are background */
+const BACKGROUND_DISTANCE = 96;
 /** Edge lighter than this (relative luminance) is "light": white, but also pale blue like Reddit's — a glare among dark tiles */
 const LIGHT_EDGE = 0.6;
 
@@ -146,11 +155,13 @@ export function analyzeLayout(data: Uint8ClampedArray, size: number): IconLayout
 
   // The drawing: paint unlike the edge colour
   let cx0 = size, cy0 = size, cx1 = -1, cy1 = -1, drawing = 0;
+  const drawingPixels: Rgb[] = [];
   for (let y = y0; y <= y1; y++) {
     for (let x = x0; x <= x1; x++) {
       const pixel = at(x, y);
       if (pixel[3] <= OPAQUE_ALPHA || distance(pixel, edgeRgb) <= DRAWING_DISTANCE) continue;
       drawing++;
+      drawingPixels.push([pixel[0], pixel[1], pixel[2]]);
       cx0 = Math.min(cx0, x);
       cy0 = Math.min(cy0, y);
       cx1 = Math.max(cx1, x);
@@ -196,10 +207,82 @@ export function analyzeLayout(data: Uint8ClampedArray, size: number): IconLayout
     edgeColor: hex(edgeRgb),
     edgeGradient: kind === 'seamless' && gradient ? [hex(topRgb), hex(bottomRgb)] : null,
     lightEdge: relativeLuminance(edgeRgb) > LIGHT_EDGE,
+    darkDrawing: drawingPixels.filter((p) => Math.abs(apcaContrast(p, DARK_TILE)) < DARK_LC).length
+      > drawingPixels.length * DARK_SHARE,
     box: visible,
     contentBox: kind === 'seamless' && cx1 >= 0 ? box(cx0, cy0, cx1, cy1) : visible,
     plates: {light: hex(plates.light), dark: hex(plates.dark)},
     plateFor: {light: choose('light'), dark: choose('dark')},
     tinted,
   };
+}
+
+/**
+ * Cuts a seamless icon's background out (in place): the edge-coloured area joined to the image's edge or to
+ * transparency becomes transparent, and its soft border turns into partial transparency of the drawing's colour —
+ * as if the drawing had been painted on nothing (colour to alpha), so no light fringe is left on a dark tile.
+ * Light parts inside the drawing aren't joined to the edge and stay
+ */
+export function cutOutBackground(data: Uint8ClampedArray, width: number, height: number, edgeColor: string): void {
+  const edge = [1, 3, 5].map((i) => parseInt(edgeColor.slice(i, i + 2), 16)) as Rgb;
+  const count = width * height;
+  const background = new Uint8Array(count);
+  const queue: number[] = [];
+  const near = (i: number) => data[i * 4 + 3] <= VISIBLE_ALPHA
+    || distance([data[i * 4], data[i * 4 + 1], data[i * 4 + 2]], edge) <= BACKGROUND_DISTANCE;
+  const visit = (i: number) => {
+    if (background[i] || !near(i)) return;
+    background[i] = 1;
+    queue.push(i);
+  };
+  for (let x = 0; x < width; x++) {
+    visit(x);
+    visit((height - 1) * width + x);
+  }
+  for (let y = 0; y < height; y++) {
+    visit(y * width);
+    visit(y * width + width - 1);
+  }
+  for (let head = 0; head < queue.length; head++) {
+    const i = queue[head];
+    const x = i % width;
+    if (x > 0) visit(i - 1);
+    if (x < width - 1) visit(i + 1);
+    if (i >= width) visit(i - width);
+    if (i < count - width) visit(i + width);
+  }
+
+  // The anti-aliased border of the drawing lies just outside the background — a pixel's ring around it is cut too:
+  // the drawing's own colour stays opaque there, a half-tone becomes half-transparent
+  const cut = background.slice();
+  for (let i = 0; i < count; i++) {
+    if (!background[i]) continue;
+    const x = i % width;
+    const y = (i - x) / width;
+    for (let dy = -1; dy <= 1; dy++) {
+      for (let dx = -1; dx <= 1; dx++) {
+        const nx = x + dx;
+        const ny = y + dy;
+        if (nx >= 0 && nx < width && ny >= 0 && ny < height) cut[ny * width + nx] = 1;
+      }
+    }
+  }
+
+  for (let i = 0; i < count; i++) {
+    if (!cut[i]) continue;
+    const o = i * 4;
+    // How much of each channel is the drawing's: the most any channel moved off the edge colour towards 0 or 255
+    let alpha = 0;
+    for (let c = 0; c < 3; c++) {
+      const value = data[o + c];
+      const room = value > edge[c] ? 255 - edge[c] : edge[c];
+      if (room > 0) alpha = Math.max(alpha, Math.abs(value - edge[c]) / room);
+    }
+    if (alpha < 0.02) {
+      data[o + 3] = 0;
+      continue;
+    }
+    for (let c = 0; c < 3; c++) data[o + c] = Math.round(edge[c] + (data[o + c] - edge[c]) / alpha);
+    data[o + 3] = Math.round(data[o + 3] * alpha);
+  }
 }

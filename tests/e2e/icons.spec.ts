@@ -445,7 +445,7 @@ test.describe('"By the logo" style', () => {
     expect((await app.boundingBox())!.height).toBeLessThanOrEqual(Math.round(32 / ratio * 1.5) + 1);
   });
 
-  test('in the dark theme a white edge becomes its own plate, a black logo is drawn light', async ({context, newtab}) => {
+  test('in the dark theme a white background is cut out, a black logo is drawn light', async ({context, newtab}) => {
     await serveIcons(context, newtab);
     await enableSiteIcons(context, newtab, {iconStyle: 'smart', theme: 'dark'});
     await seed(newtab, [
@@ -454,16 +454,38 @@ test.describe('"By the logo" style', () => {
       {title: 'Black', url: 'https://black-logo.example/'},
     ]);
 
+    // The white square goes: the blue mark stands on the tile itself
+    await expect(visual(newtab, 'White')).toHaveClass(/site-icon-smart--cutout/);
+    await expect(visual(newtab, 'White')).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+    const cutout = visual(newtab, 'White').locator('img');
+    await expect(cutout).toHaveAttribute('src', /^blob:/);
+    const [corner, middle] = await cutout.evaluate(async (img: HTMLImageElement) => {
+      await img.decode();
+      const canvas = new OffscreenCanvas(img.naturalWidth, img.naturalHeight);
+      const context = canvas.getContext('2d')!;
+      context.drawImage(img, 0, 0);
+      const at = (x: number, y: number) => [...context.getImageData(x, y, 1, 1).data];
+      return [at(2, 2), at(img.naturalWidth / 2, img.naturalHeight / 2)];
+    });
+    expect(corner[3]).toBe(0);
+    expect(middle).toEqual([0, 119, 255, 255]);
+    await expect(visual(newtab, 'Red')).toHaveClass(/site-icon-smart--seamless/);
+    // A pale plate would glare among dark tiles: the logo is drawn light right on the tile, no square around it
+    await expect(visual(newtab, 'Black')).toHaveClass(/site-icon-smart--lighten/);
+    await expect(visual(newtab, 'Black')).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+  });
+
+  test('on request a white-background icon stands on its own shape instead', async ({context, newtab}) => {
+    await serveIcons(context, newtab);
+    await enableSiteIcons(context, newtab, {iconStyle: 'smart', theme: 'dark', iconShapePlate: true});
+    await seed(newtab, [{title: 'White', url: 'https://white-square.example/'}]);
+
     // The icon's own white square is the plate — no grey plate around it
     await expect(visual(newtab, 'White')).toHaveClass(/site-icon-smart--shape/);
     const shape = visual(newtab, 'White').locator('.site-icon-smart__shape');
     await expect(shape).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
     const [shapeBox, imageBox] = [await shape.boundingBox(), await shape.locator('img').boundingBox()];
     expect(Math.abs(shapeBox!.width - imageBox!.width)).toBeLessThan(2);
-    await expect(visual(newtab, 'Red')).toHaveClass(/site-icon-smart--seamless/);
-    // A pale plate would glare among dark tiles: the logo is drawn light right on the tile, no square around it
-    await expect(visual(newtab, 'Black')).toHaveClass(/site-icon-smart--lighten/);
-    await expect(visual(newtab, 'Black')).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
   });
 
   test('chosen with a button in the settings; the letter fills the area too', async ({newtab}) => {

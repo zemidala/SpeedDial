@@ -1,6 +1,7 @@
 <script lang="ts">
   import {hashColor} from '../../../lib/color';
   import {type IconEntry, icons} from '../../../lib/icons.svelte';
+  import {settings} from '../../../lib/settings/store.svelte';
   import {siteName} from '../../../lib/url';
 
   // plate — icon on a plate; fill — no plate, large (the tile fills the area around it); smart — "by the logo":
@@ -35,13 +36,19 @@
   const layout = $derived(appearance === 'smart' ? info?.layout ?? null : null);
   /**
    * seamless — the area takes the icon's edge colour; logo — a plate of the logo's colour; app — on a blurred copy
-   * of itself; photo — covers the area; shape — a light-edged icon in the dark theme (a light area would glare):
-   * its own shape, stretched to the size of a plate, is the plate; plate — an icon whose pixels couldn't be read
+   * of itself; photo — covers the area; a light-edged icon in the dark theme (a light area would glare): cutout —
+   * its background cut out, the drawing on the tile itself; shape — its own shape, stretched to the size of a plate,
+   * is the plate (if asked for, or if the drawing is dark and needs the light background); plate — an icon whose
+   * pixels couldn't be read
    */
   const smartMode = $derived.by(() => {
     if (!layout) return 'plate';
-    if (layout.kind === 'seamless') return layout.lightEdge && icons.dark ? 'shape' : 'seamless';
-    return layout.kind;
+    if (layout.kind !== 'seamless') return layout.kind;
+    if (!layout.lightEdge || !icons.dark) return 'seamless';
+    return settings.current.iconShapePlate || layout.darkDrawing ? 'shape' : 'cutout';
+  });
+  $effect(() => {
+    if (smartMode === 'cutout') void entry.requestCutout();
   });
   const smartBackground = $derived.by(() => {
     if (!layout) return undefined;
@@ -59,7 +66,7 @@
   // A black logo in the dark theme: a pale plate would glare, so it's drawn light on the dark plate, as in "fill"
   const smartLighten = $derived(smartMode === 'logo' && icons.dark && Boolean(info?.darkMonochrome));
   /** What's sized and centred: the drawing inside a seamless icon, the visible part of a logo */
-  const smartBox = $derived(layout ? (smartMode === 'seamless' ? layout.contentBox : layout.box) : null);
+  const smartBox = $derived(layout ? (smartMode === 'seamless' || smartMode === 'cutout' ? layout.contentBox : layout.box) : null);
   /**
    * A seamless icon fades out over its margins (between its edge and the drawing, at most MAX_FADE of it): an edge
    * a shade off the tile — a gradient, a vignette — doesn't show as a square
@@ -100,6 +107,8 @@
         <span class="site-icon-smart__app"><img class="site-icon-smart__image" src={info.src} alt=""></span>
       {:else if smartMode === 'shape'}
         <span class="site-icon-smart__shape"><img class="site-icon-smart__image" src={info.src} alt=""></span>
+      {:else if smartMode === 'cutout'}
+        {#if entry.cutout}<img class="site-icon-smart__image" src={entry.cutout} alt="">{/if}
       {:else if smartMode === 'plate'}
         <span class="site-icon-smart__plate" class:site-icon-smart__plate--cover={info.fullBleed}>
           <img class="site-icon-smart__image" src={info.src} alt="">
@@ -240,6 +249,7 @@
   }
 
   .site-icon-smart--seamless .site-icon-smart__image,
+  .site-icon-smart--cutout .site-icon-smart__image,
   .site-icon-smart--logo .site-icon-smart__image {
     position: absolute;
     left: calc(50cqw - (var(--box-x) + var(--box-w) / 2) * var(--side));

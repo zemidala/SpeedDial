@@ -74,6 +74,8 @@ export interface Settings {
   iconScale: number;
   /** Tint the tile with the icon's main colour */
   iconTint: boolean;
+  /** "By the logo", dark theme: a light-edged icon stands on its own shape instead of having its background cut out */
+  iconShapePlate: boolean;
   /** Third-party icon service — a fallback when the site itself has no large icon */
   logoService: LogoService;
   /** Custom URL template for logoService = custom; {{website}} is replaced with the site domain */
@@ -188,6 +190,7 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = {
   iconStyle: 'plate',
   iconScale: 50,
   iconTint: true,
+  iconShapePlate: false,
   logoService: 'none',
   externalLogoUrl: '',
   logoDevToken: '',

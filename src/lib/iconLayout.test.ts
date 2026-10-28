@@ -1,6 +1,6 @@
 import {describe, expect, it} from 'vitest';
 import {apcaContrast} from './color';
-import {analyzeLayout} from './iconLayout';
+import {analyzeLayout, cutOutBackground} from './iconLayout';
 
 type Pixel = [number, number, number, number];
 const SIZE = 64;
@@ -118,7 +118,41 @@ describe('analyzeLayout', () => {
     expect(layout.lightEdge).toBe(true);
   });
 
+  it('a white square with a black drawing (Wikipedia) — the drawing is not seen on a dark tile', () => {
+    const layout = analyzeLayout(image((x, y) => (inSquare(x, y, 16, 48) ? [20, 20, 20, 255] : [255, 255, 255, 255])), SIZE)!;
+    expect(layout.kind).toBe('seamless');
+    expect(layout.darkDrawing).toBe(true);
+    const vk = analyzeLayout(image((x, y) => (inSquare(x, y, 16, 48) ? [0, 119, 255, 255] : [255, 255, 255, 255])), SIZE)!;
+    expect(vk.darkDrawing).toBe(false);
+  });
+
   it('nothing visible — no layout', () => {
     expect(analyzeLayout(image(() => CLEAR), SIZE)).toBeNull();
+  });
+});
+
+describe('cutOutBackground', () => {
+  const pixel = (data: Uint8ClampedArray, x: number, y: number) => [...data.slice((y * SIZE + x) * 4, (y * SIZE + x) * 4 + 4)];
+
+  it('the white background goes, the drawing and white inside it stay', () => {
+    // A blue ring on white, white inside the ring
+    const data = image((x, y) => {
+      const r = Math.hypot(x - 31.5, y - 31.5);
+      return r >= 12 && r <= 20 ? [0, 119, 255, 255] : [255, 255, 255, 255];
+    });
+    cutOutBackground(data, SIZE, SIZE, '#ffffff');
+    expect(pixel(data, 2, 2)[3]).toBe(0);
+    expect(pixel(data, 31, 15)).toEqual([0, 119, 255, 255]);
+    expect(pixel(data, 31, 31)).toEqual([255, 255, 255, 255]);
+  });
+
+  it('a soft border becomes the drawing colour, partly transparent — no light fringe', () => {
+    // Half blue, half white: what anti-aliasing leaves at a border
+    const data = image((x) => (x < 32 ? [0, 119, 255, 255] : x === 32 ? [128, 187, 255, 255] : [255, 255, 255, 255]));
+    cutOutBackground(data, SIZE, SIZE, '#ffffff');
+    const [r, g, b, a] = pixel(data, 32, 10);
+    expect(Math.max(Math.abs(r - 0), Math.abs(g - 119), Math.abs(b - 255))).toBeLessThanOrEqual(2);
+    expect(a).toBeGreaterThan(110);
+    expect(a).toBeLessThan(145);
   });
 });

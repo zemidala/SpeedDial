@@ -2,7 +2,7 @@ import {MediaQuery} from 'svelte/reactivity';
 import {analyzePixels, effectiveResolution, meanDifference} from './color';
 import {extractLargestIcoImage, isIco} from './ico';
 import {VECTOR_SIZE} from './iconCandidates';
-import {analyzeLayout, type IconLayout} from './iconLayout';
+import {analyzeLayout, cutOutBackground, type IconLayout} from './iconLayout';
 import {idbClear, idbDelete, idbGet, idbSet} from './idb';
 import {buildLogoUrl, logoTemplate, UNKNOWN_SITE_URL} from './logoServices';
 import {permissions} from './permissions.svelte';
@@ -42,6 +42,9 @@ interface CachedSiteIcon {
 const BROWSER_ICON_SIZE = 64;
 const SAMPLE_SIZE = 32; // The icon is scaled down to 32×32 for colour analysis
 const LAYOUT_SIZE = 64; // …and to 64×64 to see its shape and drawing for the "by the logo" style
+// A cut-out copy is drawn at the image's own size, within these bounds (an SVG may report no size)
+const CUTOUT_MIN_SIZE = 128;
+const CUTOUT_MAX_SIZE = 512;
 const MAX_RESOLUTION_CHECK = 256; // Upscaled images larger than this don't occur, and the check costs more
 const DAY = 24 * 60 * 60 * 1000;
 const SITE_ICON_TTL = 30 * DAY;
@@ -189,6 +192,13 @@ export class IconEntry {
   /** The first attempt is done: a letter can be shown instead of an empty plate */
   loaded = $state(false);
 
+  /**
+   * The icon with its light background cut out — a light-edged icon in the dark theme, "by the logo". Made on
+   * request (requestCutout), square like the layout's image, so the layout's boxes fit it too
+   */
+  cutout = $state<string | null>(null);
+  #cutoutOf: string | null = null;
+
   /** The site's icon changes with the theme — it's drawn again when SpeedDial's theme changes */
   schemeDependent = false;
 
@@ -305,7 +315,36 @@ export class IconEntry {
     return new Blob([fixSvgColorScheme(svg, icons.dark)], {type: 'image/svg+xml'});
   }
 
+  async requestCutout(): Promise<void> {
+    const info = this.info;
+    if (!info?.layout || this.#cutoutOf === info.src) return;
+    this.#cutoutOf = info.src;
+    try {
+      const img = await loadImage(info.src);
+      const side = Math.min(Math.max(img.naturalWidth, img.naturalHeight, CUTOUT_MIN_SIZE), CUTOUT_MAX_SIZE);
+      const canvas = new OffscreenCanvas(side, side);
+      const context = canvas.getContext('2d', {willReadFrequently: true})!;
+      const scale = side / Math.max(img.naturalWidth, img.naturalHeight, 1);
+      const width = img.naturalWidth * scale;
+      const height = img.naturalHeight * scale;
+      context.drawImage(img, (side - width) / 2, (side - height) / 2, width, height);
+      const pixels = context.getImageData(0, 0, side, side);
+      cutOutBackground(pixels.data, side, side, info.layout.edgeColor);
+      context.putImageData(pixels, 0, 0);
+      const url = URL.createObjectURL(await canvas.convertToBlob({type: 'image/png'}));
+      if (this.info !== info) return URL.revokeObjectURL(url);
+      this.cutout = url;
+    } catch (error) {
+      console.error('Failed to cut out the icon background', error);
+    }
+  }
+
   #setInfo(info: IconInfo | null): void {
+    if (this.cutout && this.info?.src !== info?.src) {
+      URL.revokeObjectURL(this.cutout);
+      this.cutout = null;
+      this.#cutoutOf = null;
+    }
     // Free the memory of the previous image if it was loaded as a Blob
     if (this.info?.src.startsWith('blob:') && this.info.src !== info?.src) URL.revokeObjectURL(this.info.src);
     this.info = info;

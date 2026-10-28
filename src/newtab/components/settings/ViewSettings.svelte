@@ -232,6 +232,12 @@
   <!-- "By the logo" paints the tile itself -->
   <SwitchRow key="iconTint" label={t.view.iconTint} disabled={current.iconStyle === 'smart'}/>
   <SwitchRow
+    key="iconShapePlate"
+    label={t.view.iconShapePlate}
+    hint={t.view.iconShapePlateHint}
+    disabled={current.iconStyle !== 'smart'}
+  />
+  <SwitchRow
     label={t.view.siteIcons}
     hint={t.view.siteIconsHint}
     checked={icons.siteIconsEnabled}

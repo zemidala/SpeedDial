@@ -302,6 +302,9 @@ export const en = {
     iconScale: 'Icon size',
     iconScaleHint: 'Icons aren’t stretched beyond their quality — large sizes need high-quality icons',
     iconTint: 'Tint tiles with the icon color',
+    iconShapePlate: 'White-background icons on their own shape',
+    iconShapePlateHint: 'For “By the logo” in the dark theme. Off: the white background is cut out and the logo stands '
+      + 'on the tile itself. On: the icon keeps its white square or circle.',
     siteIcons: 'High-quality icons',
     siteIconsHint: 'The extension finds SVG icons, app icons and large favicons on bookmarked sites. Needs access to sites',
     reloadSiteIcons: 'Load site icons again',
