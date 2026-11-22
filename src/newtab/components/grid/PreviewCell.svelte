@@ -130,7 +130,7 @@
     color: #fff;
     /* Grows with the cell */
     font-size: clamp(8px, 28cqmin, 22px);
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1;
     transform: translateY(-50%);
   }

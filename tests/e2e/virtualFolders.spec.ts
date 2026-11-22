@@ -131,10 +131,10 @@ test('shelf items can be removed one by one or all at once, and brought back', a
   await mostVisited.getByRole('heading', {name: 'Часто посещаемые'}).click({button: 'right'});
   await newtab.getByRole('menuitem', {name: 'Очистить список'}).click();
   await expect(mostVisited.getByRole('link')).toHaveCount(0);
-  await expect(mostVisited).toContainText('Список очищен.');
+  await expect(mostVisited).toContainText('Список очищен');
   // Still hidden after a reload
   await newtab.reload();
-  await expect(mostVisited).toContainText('Список очищен.');
+  await expect(mostVisited).toContainText('Список очищен');
 
   await mostVisited.getByRole('button', {name: 'Вернуть'}).click();
   await expect(mostVisited.getByRole('link', {name: 'Alpha site'})).toBeVisible();

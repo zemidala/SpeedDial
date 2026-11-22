@@ -262,11 +262,11 @@
     display: flex;
     flex: 1;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     min-width: 0;
     /* A fixed height: the same in every browser, and the same as the folder list next to it */
     height: 44px;
-    padding: 0 14px;
+    padding: 0 16px;
     border: 1px solid var(--border);
     border-radius: var(--radius);
     background: var(--surface);
@@ -293,12 +293,12 @@
   /* ===== The list under the box ===== */
   .search-suggest {
     position: absolute;
-    top: calc(100% + 6px);
+    top: calc(100% + 8px);
     right: 0;
     left: 0;
     z-index: 950;
     margin: 0;
-    padding: 6px;
+    padding: 4px;
     border: 1px solid var(--border);
     border-radius: var(--radius);
     background: var(--surface);
@@ -309,7 +309,7 @@
   .search-suggest__item {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     min-height: 36px;
     padding: 0 8px;
     border-radius: var(--radius-small);
@@ -343,8 +343,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 26px;
-    height: 26px;
+    width: 28px;
+    height: 28px;
     padding: 0;
     border: none;
     border-radius: 50%;

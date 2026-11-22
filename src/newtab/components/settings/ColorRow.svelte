@@ -47,7 +47,7 @@
   .color-row__picker {
     flex-shrink: 0;
     width: 40px;
-    height: 32px;
+    height: var(--control-height);
     padding: 0;
     border: 1px solid var(--border);
     border-radius: var(--radius-small);

@@ -26,7 +26,15 @@ test('the theme colours panels, tiles and folders in both modes', async ({newtab
   // Light variant of Nord
   await expect.poll(style(newtab, '.breadcrumbs', 'background-color')).toBe('rgb(248, 249, 251)');
   await expect.poll(style(newtab, '.tile--folder .tile__card', 'background-color')).toBe('rgb(221, 230, 240)');
-  await expect.poll(style(newtab, '.breadcrumbs__item', 'color')).toBe('rgb(75, 107, 148)');
+  const nordLink = await newtab.evaluate(() => {
+    const probe = document.createElement('span');
+    probe.style.color = 'color-mix(in oklab, rgb(75, 107, 148), #000 25%)';
+    document.body.append(probe);
+    const color = getComputedStyle(probe).color;
+    probe.remove();
+    return color;
+  });
+  await expect.poll(style(newtab, '.breadcrumbs__item', 'color')).toBe(nordLink);
 
   // The dark variant — automatically, when the system mode changes
   await newtab.emulateMedia({colorScheme: 'dark'});

@@ -110,7 +110,7 @@
     aspect-ratio: 16 / 10;
     padding: 8px;
     overflow: hidden;
-    border-radius: 6px;
+    border-radius: 4px;
     box-shadow: inset 0 0 0 1px var(--border);
   }
 

@@ -59,7 +59,7 @@ test('About shows the version and build and copies the details', async ({newtab}
   const welcome = newtab.context().waitForEvent('page');
   await dialog.getByRole('link', {name: 'Страница приветствия'}).click();
   const page = await welcome;
-  await expect(page.getByRole('heading', {name: 'Спасибо за установку SpeedDial!'})).toBeVisible();
+  await expect(page.getByRole('heading', {name: 'Спасибо за установку SpeedDial'})).toBeVisible();
   await expect(page.getByRole('link', {name: '♥ Поддержать автора'})).toHaveAttribute('href', /^https:\/\/boosty\.to\//);
   await page.getByRole('link', {name: 'Открыть SpeedDial'}).click();
   await expect(page).toHaveURL(/newtab\.html$/);

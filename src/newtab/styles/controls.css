@@ -1,7 +1,11 @@
 /* ===== Buttons ===== */
 .button {
-  display: inline-block;
-  padding: 8px 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: var(--control-height);
+  padding: 4px 16px;
   border: 1px solid var(--field-border);
   border-radius: var(--radius-small);
   background: var(--field-bg);
@@ -91,7 +95,7 @@
   align-items: center;
   justify-content: center;
   min-width: 32px;
-  height: 30px;
+  height: 32px;
   padding: 0 4px;
   border-radius: var(--radius-small);
   color: var(--text-muted);
@@ -105,7 +109,7 @@
 
 .tool-button:has(:checked) {
   background: color-mix(in oklab, var(--accent) 16%, transparent);
-  color: var(--accent);
+  color: var(--accent-ink);
 }
 
 .tool-button:has(:focus-visible) {
@@ -134,14 +138,15 @@
 }
 
 .tool-button__text--bold {
-  font-weight: 700;
+  font-weight: 600;
 }
 
 /* ===== Input fields ===== */
 .input,
 .textarea {
   width: 100%;
-  padding: 8px 10px;
+  min-height: var(--control-height);
+  padding: 4px 12px;
   border: 1px solid var(--field-border);
   border-radius: var(--radius-small);
   background: var(--field-bg);

@@ -48,7 +48,7 @@
   .welcome__lead {
     margin: 0;
     color: var(--text-muted);
-    font-size: 1.0625rem;
+    font-size: 1rem;
     line-height: 1.5;
   }
 

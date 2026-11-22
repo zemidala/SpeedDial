@@ -36,16 +36,26 @@
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     align-items: center;
     gap: 8px 24px;
-    padding: 10px 0;
+    padding: 12px 0;
   }
 
-  /* Changed since the dialog opened: an accent bar at the edge — easy to find when going over the changes */
+  /* Changed since the dialog opened: a tinted row and the same dot as on the tab — easy to find when going over the changes */
   .setting-row--changed {
     margin: 0 -12px;
     padding-inline: 12px;
     border-radius: var(--radius-small);
     background: color-mix(in oklab, var(--accent) 10%, transparent);
-    box-shadow: inset 3px 0 0 var(--accent);
+  }
+
+  .setting-row--changed .setting-row__label::before {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-right: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    vertical-align: 1px;
+    content: '';
   }
 
   .setting-row--stacked {
@@ -66,9 +76,9 @@
 
   .setting-row__hint {
     margin: 4px 0 0;
-    color: var(--text-muted);
-    font-size: 0.75rem;
-    line-height: 1.4;
+    color: color-mix(in oklab, var(--text-muted), var(--text) 30%);
+    font-size: 0.8125rem;
+    line-height: 1.5;
     white-space: pre-line;
   }
 

@@ -168,7 +168,7 @@
     align-self: stretch;
     flex-direction: column;
     gap: 8px;
-    padding: 10px 12px;
+    padding: 12px;
     border: 1px solid var(--border);
     border-radius: var(--radius);
     background: var(--surface);
@@ -234,7 +234,7 @@
     gap: 8px;
     min-width: 0;
     height: var(--shelf-card-height);
-    padding: 0 10px;
+    padding: 0 12px;
     border: 1px solid var(--border);
     border-radius: var(--radius-small);
     background: var(--field-bg);

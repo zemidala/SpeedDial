@@ -80,15 +80,9 @@
     white-space: nowrap;
   }
 
-  .selection-bar .button {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-  }
-
   .selection-bar__close {
-    width: 34px;
-    height: 34px;
+    width: var(--control-height);
+    height: var(--control-height);
     box-shadow: none;
   }
 </style>

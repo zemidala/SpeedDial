@@ -140,7 +140,7 @@ export const en = {
     hide: 'Remove from the list',
     clear: 'Clear the list',
     showHidden: 'Bring back removed',
-    cleared: 'The list is cleared.',
+    cleared: 'The list is cleared',
     collapse: 'Tuck away most visited and recently closed',
     expand: 'Show most visited and recently closed',
     restore: 'Bring back',
@@ -749,7 +749,7 @@ export const en = {
   },
 
   welcome: {
-    title: 'Thanks for installing SpeedDial!',
+    title: 'Thanks for installing SpeedDial',
     lead: 'Your bookmarks are now on the new tab page — as tiles with site icons and thumbnails.',
     features: [
       'Folders, drag and drop, selecting several tiles',

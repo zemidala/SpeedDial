@@ -127,7 +127,8 @@
     justify-content: center;
     gap: 8px;
     min-width: 0;
-    padding: 8px 10px;
+    min-height: 32px;
+    padding: 0 12px;
     border: 1px solid transparent;
     border-radius: 8px;
     background: none;
@@ -139,8 +140,8 @@
 
   .settings-tabs__changed {
     flex-shrink: 0;
-    width: 7px;
-    height: 7px;
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
     background: var(--accent);
   }
@@ -161,7 +162,7 @@
   .settings-tabs__tab--active:hover {
     border-color: var(--border);
     background: light-dark(var(--surface), color-mix(in oklab, var(--surface), #fff 8%));
-    color: var(--accent);
+    color: var(--text);
     box-shadow: 0 1px 3px var(--shadow-color);
   }
 

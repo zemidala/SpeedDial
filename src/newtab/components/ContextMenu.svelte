@@ -392,8 +392,9 @@
   .context-menu__item {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 7px 12px 7px 8px;
+    gap: 8px;
+    min-height: 32px;
+    padding: 4px 12px 4px 8px;
     border: none;
     border-radius: 4px;
     background: none;

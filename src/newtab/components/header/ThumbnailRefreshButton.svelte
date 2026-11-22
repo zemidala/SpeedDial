@@ -112,13 +112,14 @@
     position: absolute;
     bottom: -6px;
     left: 50%;
-    padding: 0 5px;
+    padding: 0 4px;
     border-radius: 8px;
     background: var(--accent);
     color: var(--accent-text);
-    font-size: 0.625rem;
+    font-size: 0.6875rem;
+    font-variant-numeric: tabular-nums;
     font-weight: 600;
-    line-height: 15px;
+    line-height: 16px;
     white-space: nowrap;
     transform: translateX(-50%);
   }

@@ -153,13 +153,6 @@
     white-space: nowrap;
   }
 
-  .popup__settings {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-  }
-
   .popup__settings :global(svg) {
     width: 16px;
     height: 16px;

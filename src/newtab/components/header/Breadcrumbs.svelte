@@ -39,18 +39,21 @@
     min-width: 0;
     /* At least as tall as the round buttons next to it — the rows line up in every browser */
     min-height: 44px;
-    padding: 6px 16px;
+    padding: 4px 16px;
     border-radius: var(--radius);
     background: var(--surface);
     box-shadow: var(--shadow);
   }
 
   .breadcrumbs__item {
-    padding: 2px 4px;
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    padding: 0 4px;
     border: none;
     border-radius: 4px;
     background: none;
-    color: var(--accent);
+    color: var(--accent-ink);
     font-weight: 500;
     cursor: pointer;
   }
