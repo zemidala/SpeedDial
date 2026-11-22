@@ -73,7 +73,7 @@
   }
 
   .sort-form__hint {
-    margin: 10px 0 0;
+    margin: 12px 0 0;
     color: var(--text-muted);
     font-size: 0.8125rem;
     line-height: 1.4;

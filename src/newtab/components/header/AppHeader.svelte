@@ -52,4 +52,10 @@
     justify-content: flex-end;
     gap: 12px;
   }
+
+  @media (max-width: 560px) {
+    .app-header {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
 </style>

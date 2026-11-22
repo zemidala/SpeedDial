@@ -265,7 +265,7 @@
 
   .crop__tile-title {
     overflow: hidden;
-    padding: 7px 10px;
+    padding: 8px 12px;
     font-size: 0.8125rem;
     text-align: center;
     text-overflow: ellipsis;
@@ -273,9 +273,9 @@
   }
 
   .crop__hint {
-    margin: 10px 0 0;
+    margin: 12px 0 0;
     color: var(--text-muted);
-    font-size: 0.75rem;
+    font-size: 0.8125rem;
   }
 
   /* Narrow window: the tile goes under the image, beside the hint; the image is lower so both fit */
