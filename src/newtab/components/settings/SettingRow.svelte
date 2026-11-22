@@ -64,6 +64,7 @@
 
   .setting-row__text {
     text-align: right;
+    text-box: trim-both cap alphabetic;
   }
 
   .setting-row--stacked .setting-row__text {
@@ -75,7 +76,7 @@
   }
 
   .setting-row__hint {
-    margin: 4px 0 0;
+    margin: 8px 0 0;
     color: color-mix(in oklab, var(--text-muted), var(--text) 30%);
     font-size: 0.8125rem;
     line-height: 1.5;

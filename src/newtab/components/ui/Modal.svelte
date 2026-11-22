@@ -93,6 +93,7 @@
   .modal__title {
     margin: 0;
     padding: 20px 20px 12px;
+    text-box: trim-both cap alphabetic;
   }
 
   .modal__body {

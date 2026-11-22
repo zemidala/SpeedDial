@@ -59,6 +59,6 @@
     flex: 1;
     color: var(--text-muted);
     font-family: ui-monospace, monospace;
-    font-size: 0.8125rem;
+    font-size: 0.875rem;
   }
 </style>

@@ -135,6 +135,12 @@
   font-family: Georgia, 'Times New Roman', serif;
   font-size: 1rem;
   line-height: 1;
+  text-box: trim-both cap alphabetic;
+}
+
+.tool-button:has(.tool-button__text) {
+  align-items: flex-end;
+  padding-bottom: 10px;
 }
 
 .tool-button__text--bold {

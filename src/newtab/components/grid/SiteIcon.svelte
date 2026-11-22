@@ -176,6 +176,7 @@
     color: #fff;
     font-weight: 600;
     line-height: 1;
+    text-box: trim-both cap alphabetic;
     user-select: none;
   }
 

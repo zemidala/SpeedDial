@@ -83,10 +83,11 @@
 
   .font-row__sample {
     margin-top: -4px;
-    margin-bottom: 6px;
+    margin-bottom: 12px;
     color: var(--text-muted);
     font-size: 1rem;
     line-height: 1.4;
+    text-box: trim-both cap alphabetic;
   }
 
   .font-row__actions {
@@ -94,7 +95,7 @@
     flex-wrap: wrap;
     align-items: center;
     gap: 12px;
-    padding-bottom: 8px;
+    padding-bottom: 12px;
   }
 
   .font-row__status {

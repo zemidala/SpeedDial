@@ -30,7 +30,7 @@
 
   /* The card is a shade apart from the dialog: lighter in dark themes, darker in light ones */
   .settings-group__body {
-    padding: 4px 16px;
+    padding: 0 16px;
     border: 1px solid var(--border);
     border-radius: var(--radius);
     background: light-dark(var(--surface-muted), color-mix(in oklab, var(--surface), #fff 4%));

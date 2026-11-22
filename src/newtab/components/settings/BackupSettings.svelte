@@ -1,5 +1,6 @@
 <script lang="ts">
   import {onMount} from 'svelte';
+  import Icon from '../ui/Icon.svelte';
   import {type Backup, backupFileName, createBackup, parseBackup} from '../../../lib/backup/backup';
   import {connectionLabel} from '../../../lib/backup/cloud';
   import {redirectUrl} from '../../../lib/backup/oauth';
@@ -183,7 +184,7 @@
   </SettingRow>
   <!-- Where each browser saves its bookmarks file -->
   <details class="backup-settings__howto">
-    <summary>{t.importHtml.howToTitle}</summary>
+    <summary><Icon name="chevronDown" size={16} class="backup-settings__chevron"/>{t.importHtml.howToTitle}</summary>
     <ul>
       {#each t.importHtml.howTo as [browserName, steps] (browserName)}
         <li><strong>{browserName}:</strong> {steps}</li>
@@ -333,21 +334,50 @@
 <style>
 
   .backup-settings__howto {
-    padding: 4px 0 10px;
+    padding: 8px 0;
     color: var(--text-muted);
     font-size: 0.8125rem;
     line-height: 1.5;
   }
 
   .backup-settings__howto summary {
+    display: flex;
+    align-items: center;
+    gap: 4px;
     width: fit-content;
-    color: var(--accent);
+    min-height: 28px;
+    border-radius: 4px;
+    color: var(--accent-ink);
+    list-style: none;
     cursor: pointer;
   }
 
+  .backup-settings__howto summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .backup-settings__howto summary:hover {
+    text-decoration: underline;
+  }
+
+  .backup-settings__howto summary:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .backup-settings__howto :global(.backup-settings__chevron) {
+    flex-shrink: 0;
+    transform: rotate(-90deg);
+    transition: transform 0.15s ease-out;
+  }
+
+  .backup-settings__howto[open] :global(.backup-settings__chevron) {
+    transform: none;
+  }
+
   .backup-settings__howto ul {
-    margin: 6px 0 0;
-    padding-left: 18px;
+    margin: 4px 0 0;
+    padding-left: 20px;
   }
 
   .backup-settings__howto strong {
@@ -356,16 +386,22 @@
   }
 
   .backup-settings__note {
-    margin: 8px 0;
+    margin: 0;
+    padding: 12px 0;
     color: var(--text-muted);
     font-size: 0.8125rem;
-    line-height: 1.45;
+    line-height: 1.5;
+    text-box: trim-both cap alphabetic;
   }
 
   .backup-settings__actions {
     display: flex;
     justify-content: flex-end;
-    padding: 8px 0;
+    padding: 12px 0;
+  }
+
+  .backup-settings__form .backup-settings__actions {
+    padding-top: 0;
   }
 
   .backup-settings__code {
